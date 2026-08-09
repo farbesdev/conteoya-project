@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+vendor/
+.venv/
+build/
+dist/
+
+# Environment & Credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Storage & Uploads
+/api/storage/app/public/political-organizationals/*
+!/api/storage/app/public/political-organizationals/.gitignore
+/api/storage/app/public/candidates/*
+!/api/storage/app/public/candidates/.gitignore
+/api/storage/*.key
+/api/public/storage
+
+# Big Data & SQLite source
+#/database/erm2026.db
+
+# Mobile (Flutter / SQLite local)
+.dart_tool/
+.pub-cache/
+.pub/
+build/
