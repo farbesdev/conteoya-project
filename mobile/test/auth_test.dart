@@ -1,8 +1,18 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:conteoya_mobile/core/network/api_client.dart';
+import 'package:conteoya_mobile/features/auth/data/auth_repository.dart';
 import 'package:conteoya_mobile/features/auth/domain/user_model.dart';
 import 'package:conteoya_mobile/features/auth/domain/auth_state.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   group('Auth Tests', () {
     test('UserSession serializa y deserializa correctamente con tipos int nativos', () {
       const session = UserSession(
@@ -28,11 +38,11 @@ void main() {
 
     test('UserSession soporta IDs numéricos serializados como Strings sin lanzar type exception', () {
       final backendJson = {
-        'id': '3', // String en vez de int
+        'id': '3',
         'name': 'Juan Personero',
         'email': 'personero@conteoya.pe',
         'role': 'PERSONERO',
-        'personero_id': '1', // String en vez de int
+        'personero_id': '1',
         'token': 'sanctum-token-xyz',
         'device_uuid': 'device-123',
       };
@@ -55,6 +65,34 @@ void main() {
 
       expect(fromBackend.id, 45);
       expect(fromBackend.personeroId, isNull);
+    });
+
+    test('AuthRepository maneja respuestas de error en formato HTML o String sin lanzar String-index exception', () async {
+      final mockDio = Dio();
+      final apiClient = ApiClient(customDio: mockDio);
+      final repo = AuthRepository(apiClient: apiClient);
+
+      mockDio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            handler.reject(
+              DioException(
+                requestOptions: options,
+                response: Response(
+                  requestOptions: options,
+                  statusCode: 404,
+                  data: '<!DOCTYPE html><html><head><title>404 Not Found</title></head><body>404 Not Found</body></html>',
+                ),
+              ),
+            );
+          },
+        ),
+      );
+
+      expect(
+        () async => await repo.login(email: 'test@test.pe', password: 'password'),
+        throwsA(predicate((e) => e is Exception && e.toString().contains('404'))),
+      );
     });
 
     test('AuthState sealed classes modelan estados exhaustivos', () {

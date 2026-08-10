@@ -67,25 +67,10 @@ class AuthRepository {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        Map<String, dynamic> data;
-        if (response.data is Map<String, dynamic>) {
-          data = response.data as Map<String, dynamic>;
-        } else if (response.data is Map) {
-          data = Map<String, dynamic>.from(response.data as Map);
-        } else if (response.data is String) {
-          data = jsonDecode(response.data as String) as Map<String, dynamic>;
-        } else {
-          throw Exception('Formato de respuesta inesperado del servidor');
-        }
+        final Map<String, dynamic> data = _normalizeToMap(response.data);
 
         final token = data['access_token']?.toString() ?? '';
-        
-        Map<String, dynamic> userData = {};
-        if (data['user'] is Map<String, dynamic>) {
-          userData = data['user'] as Map<String, dynamic>;
-        } else if (data['user'] is Map) {
-          userData = Map<String, dynamic>.from(data['user'] as Map);
-        }
+        final userData = _normalizeToMap(data['user']);
 
         final session = UserSession.fromBackendResponse(
           userData: userData,
@@ -100,23 +85,65 @@ class AuthRepository {
 
         return session;
       } else {
-        throw Exception('Respuesta inválida del servidor');
+        throw Exception('El servidor respondió con código ${response.statusCode}');
       }
     } on DioException catch (e) {
-      if (e.response?.statusCode == 401) {
-        throw Exception('Credenciales incorrectas. Verifique su email y contraseña.');
-      } else if (e.response?.statusCode == 403) {
-        throw Exception('El usuario se encuentra inactivo.');
+      final statusCode = e.response?.statusCode;
+      final rawErrorData = e.response?.data;
+
+      String serverMessage = '';
+      if (rawErrorData is Map) {
+        serverMessage = rawErrorData['message']?.toString() ?? '';
+      } else if (rawErrorData is String) {
+        if (rawErrorData.contains('<html') || rawErrorData.contains('<!DOCTYPE')) {
+          serverMessage = 'El servidor devolvió una página HTML (Código HTTP $statusCode).';
+        } else {
+          serverMessage = rawErrorData;
+        }
+      }
+
+      if (statusCode == 401) {
+        throw Exception('Credenciales incorrectas. Verifique su correo y contraseña.');
+      } else if (statusCode == 403) {
+        throw Exception('El usuario se encuentra inactivo en el sistema.');
+      } else if (statusCode == 404) {
+        throw Exception('Ruta no encontrada (404) en ${apiClient.baseUrl}/login. Verifique la URL del servidor.');
+      } else if (statusCode == 500) {
+        throw Exception(
+          serverMessage.isNotEmpty
+              ? 'Error interno del servidor (500): $serverMessage'
+              : 'Error interno del servidor (500). Verifique los logs en el VPS.',
+        );
       } else if (e.type == DioExceptionType.connectionError ||
                  e.type == DioExceptionType.connectionTimeout ||
                  e.type == DioExceptionType.sendTimeout ||
                  e.type == DioExceptionType.receiveTimeout) {
-        throw Exception(
-          'Sin conexión al servidor (${apiClient.baseUrl}). Verifique que el VPS esté accesible y su conexión de red.',
-        );
+        throw Exception('Sin conexión con ${apiClient.baseUrl}. Verifique su acceso a internet o el estado del VPS.');
       }
-      throw Exception(e.response?.data?['message'] ?? 'Error al iniciar sesión: ${e.message}');
+
+      if (serverMessage.isNotEmpty) {
+        throw Exception(serverMessage);
+      }
+      throw Exception('Error al conectar (${statusCode ?? 'sin respuesta'}): ${e.message ?? 'Desconocido'}');
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Error inesperado al iniciar sesión: $e');
     }
+  }
+
+  /// Convierte dinámicamente cualquier objeto a Map sin lanzar IndexExceptions
+  static Map<String, dynamic> _normalizeToMap(dynamic input) {
+    if (input == null) return <String, dynamic>{};
+    if (input is Map<String, dynamic>) return input;
+    if (input is Map) return Map<String, dynamic>.from(input);
+    if (input is String) {
+      try {
+        final decoded = jsonDecode(input);
+        if (decoded is Map<String, dynamic>) return decoded;
+        if (decoded is Map) return Map<String, dynamic>.from(decoded);
+      } catch (_) {}
+    }
+    return <String, dynamic>{};
   }
 
   /// Restaura la sesión persistida para soporte Offline-First
