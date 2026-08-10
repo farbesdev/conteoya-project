@@ -118,7 +118,8 @@ class AuthRepository {
                  e.type == DioExceptionType.connectionTimeout ||
                  e.type == DioExceptionType.sendTimeout ||
                  e.type == DioExceptionType.receiveTimeout) {
-        throw Exception('Sin conexión con ${apiClient.baseUrl}. Verifique su acceso a internet o el estado del VPS.');
+        final detail = e.error?.toString() ?? e.message ?? '';
+        throw Exception('Sin conexión con ${apiClient.baseUrl}. $detail');
       }
 
       if (serverMessage.isNotEmpty) {
