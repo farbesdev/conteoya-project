@@ -4,7 +4,7 @@ import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
 
 class ApiClient {
-  static const String defaultProductionUrl = 'https://app.unifact.net.pe/api/v1';
+  static const String defaultProductionUrl = 'https://api.unifact.net.pe/api/v1';
 
   final Dio _dio;
   String? _authToken;

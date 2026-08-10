@@ -61,7 +61,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Dirección API del Backend (VPS):',
+              'Dirección API del Backend:',
               style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 12),
@@ -69,7 +69,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               controller: urlController,
               style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
               decoration: InputDecoration(
-                hintText: 'https://app.unifact.net.pe/api/v1',
+                hintText: 'https://api.unifact.net.pe/api/v1',
                 hintStyle: const TextStyle(color: AppColors.textMuted),
                 filled: true,
                 fillColor: AppColors.background,
@@ -80,20 +80,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            const Text(
+              'Preajustes rápidos:',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 6),
             Wrap(
               spacing: 6,
+              runSpacing: 6,
               children: [
                 ActionChip(
-                  label: const Text('VPS Unifact', style: TextStyle(fontSize: 11)),
-                  onPressed: () => urlController.text = 'https://app.unifact.net.pe/api/v1',
+                  label: const Text('VPS (api.unifact.net.pe)', style: TextStyle(fontSize: 11)),
+                  onPressed: () => urlController.text = 'https://api.unifact.net.pe/api/v1',
                 ),
                 ActionChip(
-                  label: const Text('Local (127.0.0.1)', style: TextStyle(fontSize: 11)),
+                  label: const Text('Herd (api_conteoya.test)', style: TextStyle(fontSize: 11)),
+                  onPressed: () => urlController.text = 'http://api_conteoya.test/api/v1',
+                ),
+                ActionChip(
+                  label: const Text('IP Local (172.26.58.101)', style: TextStyle(fontSize: 11)),
+                  onPressed: () => urlController.text = 'http://172.26.58.101/api/v1',
+                ),
+                ActionChip(
+                  label: const Text('Localhost (127.0.0.1:8000)', style: TextStyle(fontSize: 11)),
                   onPressed: () => urlController.text = 'http://127.0.0.1:8000/api/v1',
-                ),
-                ActionChip(
-                  label: const Text('Emulador (10.0.2.2)', style: TextStyle(fontSize: 11)),
-                  onPressed: () => urlController.text = 'http://10.0.2.2:8000/api/v1',
                 ),
               ],
             ),
