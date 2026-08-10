@@ -14,7 +14,22 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(\App\Contracts\StorageProviderInterface::class, function () {
+            if (app()->environment('testing') || empty(env('AWS_ACCESS_KEY_ID'))) {
+                return new \App\Infrastructure\Storage\MockStorageProvider();
+            }
+            return new \App\Infrastructure\Storage\R2StorageProvider();
+        });
+
+        $this->app->singleton(\App\Contracts\ActRecognitionProviderInterface::class, function () {
+            if (!empty(env('GEMINI_API_KEY'))) {
+                return new \App\Infrastructure\Ocr\GeminiVisionProvider();
+            }
+            if (!empty(env('OPENAI_API_KEY'))) {
+                return new \App\Infrastructure\Ocr\OpenAiVisionProvider();
+            }
+            return new \App\Infrastructure\Ocr\MockActRecognitionProvider();
+        });
     }
 
     /**
@@ -47,6 +62,11 @@ class AppServiceProvider extends ServiceProvider
         // Limiter de Ingesta Masiva / Sincronización para Personeros (60 peticiones por minuto por IP)
         RateLimiter::for('ingestion', function (Request $request) {
             return Limit::perMinute(60)->by($request->ip());
+        });
+
+        // Limiter específico para registro de actas y evidencias
+        RateLimiter::for('acts', function (Request $request) {
+            return Limit::perMinute(120)->by($request->user()?->id ?? $request->ip());
         });
     }
 }

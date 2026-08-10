@@ -33,5 +33,26 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::get('/elections', [CatalogController::class, 'elections']);
         Route::get('/political-organizations', [CatalogController::class, 'politicalOrganizations']);
         Route::get('/electoral-lists', [CatalogController::class, 'electoralLists']);
+
+        // Fase 1: Ingesta de Actas Electorales
+        Route::middleware(['throttle:acts', 'idempotent'])->group(function () {
+            Route::post('/acts', [\App\Http\Controllers\Api\V1\ActController::class, 'store']);
+            Route::post('/acts/{act}/confirm', [\App\Http\Controllers\Api\V1\ActController::class, 'confirm']);
+            Route::post('/acts/{act}/evidence/upload-url', [\App\Http\Controllers\Api\V1\EvidenceController::class, 'requestUploadUrl']);
+            Route::post('/acts/{act}/evidence/confirm', [\App\Http\Controllers\Api\V1\EvidenceController::class, 'confirm']);
+        });
+
+        Route::get('/acts/{act}', [\App\Http\Controllers\Api\V1\ActController::class, 'show']);
+        Route::get('/acts/{act}/evidence/{evidence}/download', [\App\Http\Controllers\Api\V1\EvidenceController::class, 'download']);
+
+        // Reconocimiento Asistido OCR / IA (Human-in-the-Loop)
+        Route::post('/acts/recognize', [\App\Http\Controllers\Api\V1\RecognitionController::class, 'recognize']);
+        Route::post('/acts/{act}/recognize', [\App\Http\Controllers\Api\V1\RecognitionController::class, 'recognize']);
+
+        // Motor de Sincronización Offline-First (Sync Engine)
+        Route::middleware('throttle:ingestion')->group(function () {
+            Route::post('/sync', [\App\Http\Controllers\Api\V1\SyncController::class, 'sync'])->middleware('idempotent');
+            Route::get('/sync/status', [\App\Http\Controllers\Api\V1\SyncController::class, 'status']);
+        });
     });
 });

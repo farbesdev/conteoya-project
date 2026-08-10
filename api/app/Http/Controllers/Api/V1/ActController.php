@@ -1,0 +1,105 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Domain\Acts\ActService;
+use App\Domain\Acts\DTOs\ActTotalsDTO;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\ConfirmActRequest;
+use App\Http\Requests\CreateActRequest;
+use App\Http\Resources\ActResource;
+use App\Models\Act;
+use App\Models\Device;
+use App\Models\PollingStation;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+
+/**
+ * @tags Actas Electorales
+ */
+class ActController extends Controller
+{
+    public function __construct(
+        protected ActService $actService
+    ) {}
+
+    /**
+     * Registrar o actualizar Acta Electoral (Ingesta Manual / Offline)
+     *
+     * Registra los resultados y totales de una mesa de votación de forma atómica.
+     * Si la suma de votos difiere del total emitido, la operación no se bloquea;
+     * se devuelve el acta registrada junto con la lista de advertencias (`warnings`).
+     */
+    public function store(CreateActRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $personero = $user->personero;
+
+        if (!$personero && !$user->isAdmin()) {
+            return response()->json(['message' => 'El usuario no tiene perfil de personero.'], 403);
+        }
+
+        $station = PollingStation::where('code', $request->input('polling_station_code'))->firstOrFail();
+
+        $totalsDTO = ActTotalsDTO::fromArray($request->input('totals'));
+        $results   = $request->input('results', []);
+
+        $deviceId = null;
+        if ($request->has('device_uuid')) {
+            $device = Device::where('device_uuid', $request->input('device_uuid'))->first();
+            $deviceId = $device?->id;
+        }
+
+        $created = $this->actService->createOrUpdateAct(
+            electionId: (int)$request->input('election_id'),
+            electoralLevelId: (int)$request->input('electoral_level_id'),
+            station: $station,
+            personero: $personero,
+            totalsDTO: $totalsDTO,
+            results: $results,
+            actCode: $request->input('act_code'),
+            status: $request->input('status', 'DRAFT'),
+            clientOperationId: $request->input('client_operation_id'),
+            deviceId: $deviceId
+        );
+
+        return response()->json([
+            'message'           => 'Acta electoral registrada con éxito.',
+            'data'              => new ActResource($created['act']),
+            'validation_result' => $created['validation_result']->toArray(),
+        ], 201);
+    }
+
+    /**
+     * Ver detalle de un Acta Electoral
+     */
+    public function show(Request $request, Act $act): JsonResponse
+    {
+        Gate::authorize('view', $act);
+
+        $act->load(['totals', 'results.politicalOrganization', 'results.candidate', 'evidences', 'pollingStation', 'capturedByPersonero.user']);
+
+        return response()->json([
+            'data' => new ActResource($act),
+        ]);
+    }
+
+    /**
+     * Confirmar Acta Electoral
+     *
+     * Transiciona el estado del acta a `CONFIRMED` e inserta la marca temporal de confirmación.
+     */
+    public function confirm(ConfirmActRequest $request, Act $act): JsonResponse
+    {
+        Gate::authorize('confirm', $act);
+
+        $personero = $request->user()->personero;
+        $confirmed = $this->actService->confirmAct($act, $personero);
+
+        return response()->json([
+            'message' => 'Acta electoral confirmada exitosamente.',
+            'data'    => new ActResource($confirmed),
+        ]);
+    }
+}

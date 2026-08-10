@@ -17,6 +17,11 @@ class Act extends Model
         'confirmed_at'
     ];
 
+    protected $casts = [
+        'captured_at'  => 'datetime',
+        'confirmed_at' => 'datetime',
+    ];
+
     public function election()
     {
         return $this->belongsTo(Election::class, 'election_id');

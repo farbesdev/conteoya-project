@@ -13,6 +13,7 @@ class Role extends Model
     const PERSONERO = 'PERSONERO';
 
     protected $fillable = [
+        'id',
         'name',
         'display_name',
         'description',
