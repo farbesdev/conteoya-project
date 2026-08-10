@@ -11,8 +11,30 @@ class AuthRepository {
 
   static const String _sessionKey = 'conteoya_user_session';
   static const String _deviceUuidKey = 'conteoya_device_uuid';
+  static const String _serverUrlKey = 'conteoya_server_url';
 
   AuthRepository({required this.apiClient});
+
+  /// Inicializa la URL del servidor desde la configuración guardada
+  Future<void> initServerUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedUrl = prefs.getString(_serverUrlKey);
+    if (savedUrl != null && savedUrl.isNotEmpty) {
+      apiClient.setBaseUrl(savedUrl);
+    }
+  }
+
+  /// Guarda una nueva URL base del servidor
+  Future<void> updateServerUrl(String newUrl) async {
+    apiClient.setBaseUrl(newUrl);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_serverUrlKey, apiClient.baseUrl);
+  }
+
+  /// Obtiene la URL actual configurada
+  String getCurrentServerUrl() {
+    return apiClient.baseUrl;
+  }
 
   /// Obtiene o genera un UUID persistente para este dispositivo móvil
   Future<String> getOrCreateDeviceUuid() async {
@@ -74,15 +96,20 @@ class AuthRepository {
       } else if (e.response?.statusCode == 403) {
         throw Exception('El usuario se encuentra inactivo.');
       } else if (e.type == DioExceptionType.connectionError ||
-                 e.type == DioExceptionType.connectionTimeout) {
-        throw Exception('Sin conexión al servidor. Verifique su red.');
+                 e.type == DioExceptionType.connectionTimeout ||
+                 e.type == DioExceptionType.sendTimeout ||
+                 e.type == DioExceptionType.receiveTimeout) {
+        throw Exception(
+          'Sin conexión al servidor (${apiClient.baseUrl}). Verifique que el VPS esté accesible y su conexión de red.',
+        );
       }
-      throw Exception(e.response?.data?['message'] ?? 'Error al iniciar sesión.');
+      throw Exception(e.response?.data?['message'] ?? 'Error al iniciar sesión: ${e.message}');
     }
   }
 
   /// Restaura la sesión persistida para soporte Offline-First
   Future<UserSession?> restoreSession() async {
+    await initServerUrl();
     final prefs = await SharedPreferences.getInstance();
     final sessionString = prefs.getString(_sessionKey);
     if (sessionString == null) return null;

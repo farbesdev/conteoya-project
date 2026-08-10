@@ -41,11 +41,92 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
   }
 
+  void _showServerConfigDialog() {
+    final currentUrl = ref.read(authNotifierProvider.notifier).getServerUrl();
+    final urlController = TextEditingController(text: currentUrl);
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Row(
+          children: [
+            Icon(Icons.dns_rounded, color: AppColors.accent),
+            SizedBox(width: 8),
+            Text('Configurar Servidor', style: TextStyle(color: AppColors.textPrimary, fontSize: 18)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Dirección API del Backend (VPS):',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: urlController,
+              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'https://app.unifact.net.pe/api/v1',
+                hintStyle: const TextStyle(color: AppColors.textMuted),
+                filled: true,
+                fillColor: AppColors.background,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: AppColors.border),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 6,
+              children: [
+                ActionChip(
+                  label: const Text('VPS Unifact', style: TextStyle(fontSize: 11)),
+                  onPressed: () => urlController.text = 'https://app.unifact.net.pe/api/v1',
+                ),
+                ActionChip(
+                  label: const Text('Local (127.0.0.1)', style: TextStyle(fontSize: 11)),
+                  onPressed: () => urlController.text = 'http://127.0.0.1:8000/api/v1',
+                ),
+                ActionChip(
+                  label: const Text('Emulador (10.0.2.2)', style: TextStyle(fontSize: 11)),
+                  onPressed: () => urlController.text = 'http://10.0.2.2:8000/api/v1',
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            child: const Text('Cancelar', style: TextStyle(color: AppColors.textMuted)),
+            onPressed: () => Navigator.pop(ctx),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent),
+            child: const Text('Guardar', style: TextStyle(color: Colors.white)),
+            onPressed: () {
+              final newUrl = urlController.text.trim();
+              if (newUrl.isNotEmpty) {
+                ref.read(authNotifierProvider.notifier).updateServerUrl(newUrl);
+                setState(() {});
+              }
+              Navigator.pop(ctx);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     final isLoading = authState is AuthLoading;
     final errorMessage = authState is Unauthenticated ? authState.errorMessage : null;
+    final currentServerUrl = ref.read(authNotifierProvider.notifier).getServerUrl();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -74,7 +155,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
                   const Text(
                     'ConteoYA',
                     textAlign: TextAlign.center,
@@ -95,7 +176,41 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       height: 1.4,
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
+
+                  // Badge del Servidor activo (con botón de edición)
+                  Center(
+                    child: InkWell(
+                      onTap: _showServerConfigDialog,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.cloud_done_rounded, color: AppColors.success, size: 16),
+                            const SizedBox(width: 6),
+                            Text(
+                              currentServerUrl.replaceAll('/api/v1', ''),
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.edit, color: AppColors.textMuted, size: 14),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
 
                   // Mensaje de Error
                   if (errorMessage != null) ...[
@@ -107,6 +222,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         border: Border.all(color: AppColors.danger.withValues(alpha: 0.4)),
                       ),
                       child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Icon(Icons.error_outline, color: AppColors.danger, size: 20),
                           const SizedBox(width: 10),

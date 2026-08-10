@@ -30,6 +30,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  String getServerUrl() {
+    return _repository.getCurrentServerUrl();
+  }
+
+  Future<void> updateServerUrl(String url) async {
+    await _repository.updateServerUrl(url);
+  }
+
   Future<void> login({
     required String email,
     required String password,

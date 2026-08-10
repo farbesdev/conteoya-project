@@ -77,5 +77,11 @@ class MockAuthNotifier extends StateNotifier<AuthState> implements AuthNotifier 
   MockAuthNotifier(super.initialState);
 
   @override
+  String getServerUrl() => 'https://app.unifact.net.pe/api/v1';
+
+  @override
+  Future<void> updateServerUrl(String url) async {}
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
