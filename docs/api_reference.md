@@ -280,6 +280,109 @@ GET /api/v1/electoral-lists?electoral_level_id=3&district_code=150101&page=1
 
 ---
 
+## 🗳️ Fase 1 — Ingesta de Actas, Evidencias y Sincronización
+
+### `POST /api/v1/acts`
+Registra o actualiza un acta electoral de manera atómica (`acts`, `act_totals`, `act_results`).
+Soporta `Idempotency-Key` o `client_operation_id` para evitar duplicaciones.
+Si la suma de votos difiere del total emitido declarado, devuelve `201 Created` con `validation_result.is_valid_total = false` y advertencias (`warnings`).
+
+**Headers opcionales:**
+- `Idempotency-Key: {uuid}`
+
+**Request Body**
+```json
+{
+  "client_operation_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "polling_station_code": "030390",
+  "election_id": 1,
+  "electoral_level_id": 2,
+  "act_code": "ACT-030390-MP",
+  "status": "DRAFT",
+  "totals": {
+    "registered_voters": 300,
+    "voters_who_voted": 280,
+    "total_votes": 280,
+    "blank_votes": 10,
+    "null_votes": 5,
+    "challenged_votes": 0
+  },
+  "results": [
+    {
+      "political_organization_id": 1,
+      "votes": 165,
+      "source": "MANUAL",
+      "confidence": null
+    },
+    {
+      "political_organization_id": 2,
+      "votes": 100,
+      "source": "OCR",
+      "confidence": 0.94
+    }
+  ]
+}
+```
+
+---
+
+### `POST /api/v1/acts/{id}/confirm`
+Transiciona el estado del acta a `CONFIRMED` e inserta la marca temporal de confirmación `confirmed_at`.
+
+---
+
+### `POST /api/v1/acts/{id}/evidence/upload-url`
+Genera una Presigned PUT URL privada para Cloudflare R2 con TTL de 15 minutos.
+
+**Request Body**
+```json
+{
+  "sha256_hash": "a1b2c3d4e5f6...64caracteres",
+  "file_mime": "image/jpeg",
+  "file_size_bytes": 1048576
+}
+```
+
+---
+
+### `POST /api/v1/acts/{id}/evidence/confirm`
+Registra la evidencia fotográfica en la base de datos tras la subida exitosa a R2.
+
+---
+
+### `POST /api/v1/acts/recognize`
+Procesa una imagen de acta electoral mediante el adapter OCR/IA (*Human-in-the-Loop*).
+Retorna la extracción estructurada con mapa de confianza (`confidence`). Los campos con confianza < 0.85 son resaltados para revisión obligatoria del personero.
+
+---
+
+### `POST /api/v1/sync`
+Recibe un lote de operaciones offline (`SyncOperation`) generadas por el `SyncEngine` móvil.
+Garantiza procesamiento idempotente por `client_operation_id`.
+
+**Request Body**
+```json
+{
+  "device_uuid": "dev-uuid-1234",
+  "operations": [
+    {
+      "client_operation_id": "7b7a661f-99ab-48d6-95a9-4672bb193635",
+      "entity_type": "acts",
+      "entity_id": "local-uuid-act-1",
+      "operation": "CREATE",
+      "payload": { ... }
+    }
+  ]
+}
+```
+
+---
+
+### `GET /api/v1/sync/status`
+Consulta el estado de sincronización de las operaciones del personero autenticado.
+
+---
+
 ## 👥 Usuarios de Prueba (Desarrollo)
 
 > ⚠️ Cambiar credenciales antes de pasar a producción o staging.

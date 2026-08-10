@@ -16,6 +16,421 @@
         }
     ],
     "paths": {
+        "/v1/acts": {
+            "post": {
+                "operationId": "act.store",
+                "description": "Registra los resultados y totales de una mesa de votaci\u00f3n de forma at\u00f3mica.\nSi la suma de votos difiere del total emitido, la operaci\u00f3n no se bloquea;\nse devuelve el acta registrada junto con la lista de advertencias (`warnings`).",
+                "summary": "Registrar o actualizar Acta Electoral (Ingesta Manual / Offline)",
+                "tags": [
+                    "Actas Electorales",
+                    "Act"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "allOf": [
+                                    {
+                                        "$ref": "#/components/schemas/CreateActRequest"
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "device_uuid": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Acta electoral registrada con \u00e9xito."
+                                        },
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/ActResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "polling_station",
+                                                        "captured_by",
+                                                        "totals",
+                                                        "results",
+                                                        "has_ai_source"
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        "validation_result": {
+                                            "type": "object",
+                                            "properties": {
+                                                "is_valid_total": {
+                                                    "type": "string"
+                                                },
+                                                "warnings": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "code": {
+                                                                        "type": "string",
+                                                                        "const": "TOTAL_MISMATCH"
+                                                                    },
+                                                                    "severity": {
+                                                                        "type": "string",
+                                                                        "const": "WARNING"
+                                                                    },
+                                                                    "message": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "details": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "sum_results": {
+                                                                                "type": "integer"
+                                                                            },
+                                                                            "blank_votes": {
+                                                                                "type": "integer"
+                                                                            },
+                                                                            "null_votes": {
+                                                                                "type": "integer"
+                                                                            },
+                                                                            "challenged_votes": {
+                                                                                "type": "integer"
+                                                                            },
+                                                                            "expected_total": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "declared_total": {
+                                                                                "type": "integer"
+                                                                            },
+                                                                            "difference": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "sum_results",
+                                                                            "blank_votes",
+                                                                            "null_votes",
+                                                                            "challenged_votes",
+                                                                            "expected_total",
+                                                                            "declared_total",
+                                                                            "difference"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "code",
+                                                                    "severity",
+                                                                    "message",
+                                                                    "details"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "code": {
+                                                                        "type": "string",
+                                                                        "const": "VOTERS_EXCEED_REGISTERED"
+                                                                    },
+                                                                    "severity": {
+                                                                        "type": "string",
+                                                                        "const": "WARNING"
+                                                                    },
+                                                                    "message": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "details": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "voters_who_voted": {
+                                                                                "type": "integer"
+                                                                            },
+                                                                            "registered_voters": {
+                                                                                "type": "integer"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "voters_who_voted",
+                                                                            "registered_voters"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "code",
+                                                                    "severity",
+                                                                    "message",
+                                                                    "details"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "code": {
+                                                                        "type": "string",
+                                                                        "const": "VOTES_EXCEED_REGISTERED"
+                                                                    },
+                                                                    "severity": {
+                                                                        "type": "string",
+                                                                        "const": "WARNING"
+                                                                    },
+                                                                    "message": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "details": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "total_votes": {
+                                                                                "type": "integer"
+                                                                            },
+                                                                            "registered_voters": {
+                                                                                "type": "integer"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "total_votes",
+                                                                            "registered_voters"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "code",
+                                                                    "severity",
+                                                                    "message",
+                                                                    "details"
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "code": {
+                                                                        "type": "string",
+                                                                        "const": "VOTES_EXCEED_ATTENDANCE"
+                                                                    },
+                                                                    "severity": {
+                                                                        "type": "string",
+                                                                        "const": "WARNING"
+                                                                    },
+                                                                    "message": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "details": {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "total_votes": {
+                                                                                "type": "integer"
+                                                                            },
+                                                                            "voters_who_voted": {
+                                                                                "type": "integer"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "total_votes",
+                                                                            "voters_who_voted"
+                                                                        ]
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "code",
+                                                                    "severity",
+                                                                    "message",
+                                                                    "details"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "is_valid_total",
+                                                "warnings"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data",
+                                        "validation_result"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/acts/{act}/confirm": {
+            "post": {
+                "operationId": "act.confirm",
+                "description": "Transiciona el estado del acta a `CONFIRMED` e inserta la marca temporal de confirmaci\u00f3n.",
+                "summary": "Confirmar Acta Electoral",
+                "tags": [
+                    "Actas Electorales",
+                    "Act"
+                ],
+                "parameters": [
+                    {
+                        "name": "act",
+                        "in": "path",
+                        "required": true,
+                        "description": "The act ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConfirmActRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Acta electoral confirmada exitosamente."
+                                        },
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/ActResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "polling_station",
+                                                        "totals",
+                                                        "results",
+                                                        "has_ai_source"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/acts/{act}": {
+            "get": {
+                "operationId": "act.show",
+                "summary": "Ver detalle de un Acta Electoral",
+                "tags": [
+                    "Actas Electorales",
+                    "Act"
+                ],
+                "parameters": [
+                    {
+                        "name": "act",
+                        "in": "path",
+                        "required": true,
+                        "description": "The act ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/ActResource"
+                                                },
+                                                {
+                                                    "type": "object",
+                                                    "required": [
+                                                        "polling_station",
+                                                        "captured_by",
+                                                        "totals",
+                                                        "results",
+                                                        "evidences",
+                                                        "evidence_count",
+                                                        "has_ai_source"
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/login": {
             "post": {
                 "operationId": "auth.login",
@@ -453,6 +868,637 @@
                 }
             }
         },
+        "/v1/acts/{act}/evidence/upload-url": {
+            "post": {
+                "operationId": "evidence.requestUploadUrl",
+                "description": "Genera una URL temporal con m\u00e9todo PUT para que el cliente m\u00f3vil suba directamente\nla fotograf\u00eda del acta de manera segura sin exponer credenciales del bucket.",
+                "summary": "Solicitar URL Presignada de Subida a Cloudflare R2",
+                "tags": [
+                    "Evidencias Fotogr\u00e1ficas",
+                    "Evidence"
+                ],
+                "parameters": [
+                    {
+                        "name": "act",
+                        "in": "path",
+                        "required": true,
+                        "description": "The act ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RequestUploadUrlRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "URL de subida generada con \u00e9xito."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "upload_url": {
+                                                    "type": "string"
+                                                },
+                                                "object_key": {
+                                                    "type": "string"
+                                                },
+                                                "storage_provider": {
+                                                    "type": "string",
+                                                    "const": "R2"
+                                                },
+                                                "expires_in_sec": {
+                                                    "type": "integer",
+                                                    "const": 900
+                                                }
+                                            },
+                                            "required": [
+                                                "upload_url",
+                                                "object_key",
+                                                "storage_provider",
+                                                "expires_in_sec"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/acts/{act}/evidence/confirm": {
+            "post": {
+                "operationId": "evidence.confirm",
+                "description": "Registra la evidencia en la base de datos una vez que el cliente m\u00f3vil\ncomplet\u00f3 la subida al bucket Cloudflare R2.",
+                "summary": "Confirmar Subida de Evidencia Fotogr\u00e1fica",
+                "tags": [
+                    "Evidencias Fotogr\u00e1ficas",
+                    "Evidence"
+                ],
+                "parameters": [
+                    {
+                        "name": "act",
+                        "in": "path",
+                        "required": true,
+                        "description": "The act ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConfirmEvidenceRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Evidencia fotogr\u00e1fica registrada y asociada al acta."
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/ActEvidenceResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/acts/{act}/evidence/{evidence}/download": {
+            "get": {
+                "operationId": "evidence.download",
+                "description": "Genera una URL firmada de lectura privada con TTL de 1 hora.",
+                "summary": "Obtener URL Presignada de Descarga/Visualizaci\u00f3n",
+                "tags": [
+                    "Evidencias Fotogr\u00e1ficas",
+                    "Evidence"
+                ],
+                "parameters": [
+                    {
+                        "name": "act",
+                        "in": "path",
+                        "required": true,
+                        "description": "The act ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "evidence",
+                        "in": "path",
+                        "required": true,
+                        "description": "The evidence ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "download_url": {
+                                            "type": "string"
+                                        },
+                                        "expires_in_sec": {
+                                            "type": "integer",
+                                            "const": 3600
+                                        }
+                                    },
+                                    "required": [
+                                        "download_url",
+                                        "expires_in_sec"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/sync": {
+            "post": {
+                "operationId": "sync.sync",
+                "description": "Recibe un lote de operaciones generadas offline por el cliente m\u00f3vil (`SyncOperation`).\nCada operaci\u00f3n posee un `client_operation_id` (UUID) para garantizar idempotencia.\nSi la operaci\u00f3n ya fue procesada anteriormente, se devuelve el estado previo sin duplicar.",
+                "summary": "Sincronizar Operaciones en Lote (Sync Engine Endpoint)",
+                "tags": [
+                    "Motor de Sincronizaci\u00f3n (Offline-First)",
+                    "Sync"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SyncOperationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Lote de operaciones de sincronizaci\u00f3n procesado."
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "anyOf": [
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "client_operation_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "const": "SYNCED"
+                                                            },
+                                                            "replayed": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "processed_at": {
+                                                                "type": "string"
+                                                            },
+                                                            "result": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "act_id": {
+                                                                                "type": "integer"
+                                                                            },
+                                                                            "status": {
+                                                                                "type": "string"
+                                                                            },
+                                                                            "validation_result": {
+                                                                                "type": "object",
+                                                                                "properties": {
+                                                                                    "is_valid_total": {
+                                                                                        "type": "string"
+                                                                                    },
+                                                                                    "warnings": {
+                                                                                        "type": "array",
+                                                                                        "items": {
+                                                                                            "anyOf": [
+                                                                                                {
+                                                                                                    "type": "object",
+                                                                                                    "properties": {
+                                                                                                        "code": {
+                                                                                                            "type": "string",
+                                                                                                            "const": "TOTAL_MISMATCH"
+                                                                                                        },
+                                                                                                        "severity": {
+                                                                                                            "type": "string",
+                                                                                                            "const": "WARNING"
+                                                                                                        },
+                                                                                                        "message": {
+                                                                                                            "type": "string"
+                                                                                                        },
+                                                                                                        "details": {
+                                                                                                            "type": "object",
+                                                                                                            "properties": {
+                                                                                                                "sum_results": {
+                                                                                                                    "type": "integer"
+                                                                                                                },
+                                                                                                                "blank_votes": {
+                                                                                                                    "type": "integer"
+                                                                                                                },
+                                                                                                                "null_votes": {
+                                                                                                                    "type": "integer"
+                                                                                                                },
+                                                                                                                "challenged_votes": {
+                                                                                                                    "type": "integer"
+                                                                                                                },
+                                                                                                                "expected_total": {
+                                                                                                                    "type": "string"
+                                                                                                                },
+                                                                                                                "declared_total": {
+                                                                                                                    "type": "integer"
+                                                                                                                },
+                                                                                                                "difference": {
+                                                                                                                    "type": "string"
+                                                                                                                }
+                                                                                                            },
+                                                                                                            "required": [
+                                                                                                                "sum_results",
+                                                                                                                "blank_votes",
+                                                                                                                "null_votes",
+                                                                                                                "challenged_votes",
+                                                                                                                "expected_total",
+                                                                                                                "declared_total",
+                                                                                                                "difference"
+                                                                                                            ]
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "required": [
+                                                                                                        "code",
+                                                                                                        "severity",
+                                                                                                        "message",
+                                                                                                        "details"
+                                                                                                    ]
+                                                                                                },
+                                                                                                {
+                                                                                                    "type": "object",
+                                                                                                    "properties": {
+                                                                                                        "code": {
+                                                                                                            "type": "string",
+                                                                                                            "const": "VOTERS_EXCEED_REGISTERED"
+                                                                                                        },
+                                                                                                        "severity": {
+                                                                                                            "type": "string",
+                                                                                                            "const": "WARNING"
+                                                                                                        },
+                                                                                                        "message": {
+                                                                                                            "type": "string"
+                                                                                                        },
+                                                                                                        "details": {
+                                                                                                            "type": "object",
+                                                                                                            "properties": {
+                                                                                                                "voters_who_voted": {
+                                                                                                                    "type": "integer"
+                                                                                                                },
+                                                                                                                "registered_voters": {
+                                                                                                                    "type": "integer"
+                                                                                                                }
+                                                                                                            },
+                                                                                                            "required": [
+                                                                                                                "voters_who_voted",
+                                                                                                                "registered_voters"
+                                                                                                            ]
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "required": [
+                                                                                                        "code",
+                                                                                                        "severity",
+                                                                                                        "message",
+                                                                                                        "details"
+                                                                                                    ]
+                                                                                                },
+                                                                                                {
+                                                                                                    "type": "object",
+                                                                                                    "properties": {
+                                                                                                        "code": {
+                                                                                                            "type": "string",
+                                                                                                            "const": "VOTES_EXCEED_REGISTERED"
+                                                                                                        },
+                                                                                                        "severity": {
+                                                                                                            "type": "string",
+                                                                                                            "const": "WARNING"
+                                                                                                        },
+                                                                                                        "message": {
+                                                                                                            "type": "string"
+                                                                                                        },
+                                                                                                        "details": {
+                                                                                                            "type": "object",
+                                                                                                            "properties": {
+                                                                                                                "total_votes": {
+                                                                                                                    "type": "integer"
+                                                                                                                },
+                                                                                                                "registered_voters": {
+                                                                                                                    "type": "integer"
+                                                                                                                }
+                                                                                                            },
+                                                                                                            "required": [
+                                                                                                                "total_votes",
+                                                                                                                "registered_voters"
+                                                                                                            ]
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "required": [
+                                                                                                        "code",
+                                                                                                        "severity",
+                                                                                                        "message",
+                                                                                                        "details"
+                                                                                                    ]
+                                                                                                },
+                                                                                                {
+                                                                                                    "type": "object",
+                                                                                                    "properties": {
+                                                                                                        "code": {
+                                                                                                            "type": "string",
+                                                                                                            "const": "VOTES_EXCEED_ATTENDANCE"
+                                                                                                        },
+                                                                                                        "severity": {
+                                                                                                            "type": "string",
+                                                                                                            "const": "WARNING"
+                                                                                                        },
+                                                                                                        "message": {
+                                                                                                            "type": "string"
+                                                                                                        },
+                                                                                                        "details": {
+                                                                                                            "type": "object",
+                                                                                                            "properties": {
+                                                                                                                "total_votes": {
+                                                                                                                    "type": "integer"
+                                                                                                                },
+                                                                                                                "voters_who_voted": {
+                                                                                                                    "type": "integer"
+                                                                                                                }
+                                                                                                            },
+                                                                                                            "required": [
+                                                                                                                "total_votes",
+                                                                                                                "voters_who_voted"
+                                                                                                            ]
+                                                                                                        }
+                                                                                                    },
+                                                                                                    "required": [
+                                                                                                        "code",
+                                                                                                        "severity",
+                                                                                                        "message",
+                                                                                                        "details"
+                                                                                                    ]
+                                                                                                }
+                                                                                            ]
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                "required": [
+                                                                                    "is_valid_total",
+                                                                                    "warnings"
+                                                                                ]
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "act_id",
+                                                                            "status",
+                                                                            "validation_result"
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "evidence_id": {
+                                                                                "type": "integer"
+                                                                            },
+                                                                            "object_key": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "evidence_id",
+                                                                            "object_key"
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "client_operation_id",
+                                                            "status",
+                                                            "replayed",
+                                                            "processed_at",
+                                                            "result"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "client_operation_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "const": "SYNCED"
+                                                            },
+                                                            "replayed": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "processed_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "entity_id": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "client_operation_id",
+                                                            "status",
+                                                            "replayed",
+                                                            "processed_at",
+                                                            "entity_id"
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "client_operation_id": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "status": {
+                                                                "type": "string",
+                                                                "const": "FAILED"
+                                                            },
+                                                            "error": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "client_operation_id",
+                                                            "status",
+                                                            "error"
+                                                        ]
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/sync/status": {
+            "get": {
+                "operationId": "sync.status",
+                "description": "Devuelve la lista de operaciones registradas para el usuario o dispositivo actual.",
+                "summary": "Consultar Estado de Sincronizaci\u00f3n",
+                "tags": [
+                    "Motor de Sincronizaci\u00f3n (Offline-First)",
+                    "Sync"
+                ],
+                "parameters": [
+                    {
+                        "name": "client_operation_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/SyncOperationResource"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/personero/polling-stations": {
             "get": {
                 "operationId": "personero.pollingStations",
@@ -511,6 +1557,348 @@
                     }
                 }
             }
+        },
+        "/v1/acts/recognize": {
+            "post": {
+                "operationId": "v1.recognition.recognize_0",
+                "description": "Extrae autom\u00e1ticamente los totales y votos por lista a partir de una fotograf\u00eda de acta.\nIMPORTANTE: La IA/OCR nunca confirma el acta; \u00fanicamente sugiere valores acompa\u00f1ados\npor un mapa de confianza (`confidence`). Los campos con confianza < 0.85 requieren revisi\u00f3n humana.",
+                "summary": "Procesar Imagen de Acta con OCR / IA (Human-in-the-Loop)",
+                "tags": [
+                    "Reconocimiento OCR / IA",
+                    "Recognition"
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RecognizeActRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Extracci\u00f3n OCR/IA procesada con \u00e9xito."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "provider_name": {
+                                                    "type": "string"
+                                                },
+                                                "polling_station_code": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "registered_voters": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "voters_who_voted": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "total_votes": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "blank_votes": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "null_votes": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "challenged_votes": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "results": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "political_organization_id": {
+                                                                "type": [
+                                                                    "integer",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "list_id": {
+                                                                "type": [
+                                                                    "integer",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "candidate_id": {
+                                                                "type": [
+                                                                    "integer",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "votes": {
+                                                                "type": "integer"
+                                                            },
+                                                            "confidence": {
+                                                                "type": "number"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "political_organization_id",
+                                                            "list_id",
+                                                            "candidate_id",
+                                                            "votes",
+                                                            "confidence"
+                                                        ]
+                                                    }
+                                                },
+                                                "confidence_map": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "has_low_confidence": {
+                                                    "type": "boolean"
+                                                },
+                                                "processed_at": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "provider_name",
+                                                "polling_station_code",
+                                                "registered_voters",
+                                                "voters_who_voted",
+                                                "total_votes",
+                                                "blank_votes",
+                                                "null_votes",
+                                                "challenged_votes",
+                                                "results",
+                                                "confidence_map",
+                                                "has_low_confidence",
+                                                "processed_at"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            }
+        },
+        "/v1/acts/{act}/recognize": {
+            "post": {
+                "operationId": "v1.recognition.recognize_0",
+                "description": "Extrae autom\u00e1ticamente los totales y votos por lista a partir de una fotograf\u00eda de acta.\nIMPORTANTE: La IA/OCR nunca confirma el acta; \u00fanicamente sugiere valores acompa\u00f1ados\npor un mapa de confianza (`confidence`). Los campos con confianza < 0.85 requieren revisi\u00f3n humana.",
+                "summary": "Procesar Imagen de Acta con OCR / IA (Human-in-the-Loop)",
+                "tags": [
+                    "Reconocimiento OCR / IA",
+                    "Recognition"
+                ],
+                "parameters": [
+                    {
+                        "name": "act",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "default": null
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RecognizeActRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Extracci\u00f3n OCR/IA procesada con \u00e9xito."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "provider_name": {
+                                                    "type": "string"
+                                                },
+                                                "polling_station_code": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "registered_voters": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "voters_who_voted": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "total_votes": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "blank_votes": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "null_votes": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "challenged_votes": {
+                                                    "type": [
+                                                        "integer",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "results": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "political_organization_id": {
+                                                                "type": [
+                                                                    "integer",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "list_id": {
+                                                                "type": [
+                                                                    "integer",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "candidate_id": {
+                                                                "type": [
+                                                                    "integer",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "votes": {
+                                                                "type": "integer"
+                                                            },
+                                                            "confidence": {
+                                                                "type": "number"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "political_organization_id",
+                                                            "list_id",
+                                                            "candidate_id",
+                                                            "votes",
+                                                            "confidence"
+                                                        ]
+                                                    }
+                                                },
+                                                "confidence_map": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                "has_low_confidence": {
+                                                    "type": "boolean"
+                                                },
+                                                "processed_at": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "provider_name",
+                                                "polling_station_code",
+                                                "registered_voters",
+                                                "voters_who_voted",
+                                                "total_votes",
+                                                "blank_votes",
+                                                "null_votes",
+                                                "challenged_votes",
+                                                "results",
+                                                "confidence_map",
+                                                "has_low_confidence",
+                                                "processed_at"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -521,6 +1909,576 @@
             }
         },
         "schemas": {
+            "ActEvidenceResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "act_id": {
+                        "type": "integer"
+                    },
+                    "storage_provider": {
+                        "type": "string"
+                    },
+                    "object_key": {
+                        "type": "string"
+                    },
+                    "file_mime": {
+                        "type": "string"
+                    },
+                    "file_size_bytes": {
+                        "type": "integer"
+                    },
+                    "sha256_hash": {
+                        "type": "string"
+                    },
+                    "width_px": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "height_px": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "captured_at": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "act_id",
+                    "storage_provider",
+                    "object_key",
+                    "file_mime",
+                    "file_size_bytes",
+                    "sha256_hash",
+                    "width_px",
+                    "height_px",
+                    "captured_at",
+                    "created_at"
+                ],
+                "title": "ActEvidenceResource"
+            },
+            "ActResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "act_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "election_id": {
+                        "type": "integer"
+                    },
+                    "electoral_level_id": {
+                        "type": "integer"
+                    },
+                    "polling_station_id": {
+                        "type": "integer"
+                    },
+                    "polling_station": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "code": {
+                                "type": "string"
+                            },
+                            "registered_voters": {
+                                "type": "integer"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "code",
+                            "registered_voters"
+                        ]
+                    },
+                    "captured_by": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "document_number": {
+                                "type": "string"
+                            },
+                            "name": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "document_number",
+                            "name"
+                        ]
+                    },
+                    "captured_at": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "string"
+                            }
+                        ]
+                    },
+                    "confirmed_at": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "type": "string"
+                            }
+                        ]
+                    },
+                    "totals": {
+                        "$ref": "#/components/schemas/ActTotalsResource"
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ActResultResource"
+                        }
+                    },
+                    "evidences": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ActEvidenceResource"
+                        }
+                    },
+                    "evidence_count": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "has_ai_source": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "type": "string"
+                            }
+                        ]
+                    },
+                    "updated_at": {
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "type": "string"
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "act_code",
+                    "status",
+                    "election_id",
+                    "electoral_level_id",
+                    "polling_station_id",
+                    "captured_at",
+                    "confirmed_at",
+                    "created_at",
+                    "updated_at"
+                ],
+                "title": "ActResource"
+            },
+            "ActResultResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "political_organization_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "political_organization": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "short_name": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            },
+                            "logo_url": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "name",
+                            "short_name",
+                            "logo_url"
+                        ]
+                    },
+                    "electoral_list_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "candidate_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "candidate": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                            },
+                            "full_name": {
+                                "type": "string"
+                            },
+                            "photo_url": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "id",
+                            "full_name",
+                            "photo_url"
+                        ]
+                    },
+                    "votes": {
+                        "type": "integer"
+                    },
+                    "source": {
+                        "type": "string"
+                    },
+                    "confidence": {
+                        "type": [
+                            "number",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "political_organization_id",
+                    "electoral_list_id",
+                    "candidate_id",
+                    "votes",
+                    "source",
+                    "confidence"
+                ],
+                "title": "ActResultResource"
+            },
+            "ActTotalsResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "registered_voters": {
+                        "type": "integer"
+                    },
+                    "voters_who_voted": {
+                        "type": "integer"
+                    },
+                    "total_votes": {
+                        "type": "integer"
+                    },
+                    "blank_votes": {
+                        "type": "integer"
+                    },
+                    "null_votes": {
+                        "type": "integer"
+                    },
+                    "challenged_votes": {
+                        "type": "integer"
+                    },
+                    "is_valid_total": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "id",
+                    "registered_voters",
+                    "voters_who_voted",
+                    "total_votes",
+                    "blank_votes",
+                    "null_votes",
+                    "challenged_votes",
+                    "is_valid_total"
+                ],
+                "title": "ActTotalsResource"
+            },
+            "ConfirmActRequest": {
+                "type": "object",
+                "properties": {
+                    "client_operation_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    }
+                },
+                "title": "ConfirmActRequest"
+            },
+            "ConfirmEvidenceRequest": {
+                "type": "object",
+                "properties": {
+                    "object_key": {
+                        "type": "string"
+                    },
+                    "sha256_hash": {
+                        "type": "string",
+                        "minLength": 64,
+                        "maxLength": 64
+                    },
+                    "file_mime": {
+                        "type": "string",
+                        "enum": [
+                            "image/jpeg",
+                            "image/png",
+                            "image/webp"
+                        ]
+                    },
+                    "file_size_bytes": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 20971520
+                    },
+                    "device_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "width_px": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "height_px": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "captured_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "object_key",
+                    "sha256_hash",
+                    "file_mime",
+                    "file_size_bytes"
+                ],
+                "title": "ConfirmEvidenceRequest"
+            },
+            "CreateActRequest": {
+                "type": "object",
+                "properties": {
+                    "client_operation_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "polling_station_code": {
+                        "type": "string"
+                    },
+                    "election_id": {
+                        "type": "integer"
+                    },
+                    "electoral_level_id": {
+                        "type": "integer"
+                    },
+                    "act_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 20
+                    },
+                    "status": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "DRAFT",
+                            "CONFIRMED",
+                            "SYNCED",
+                            null
+                        ]
+                    },
+                    "totals": {
+                        "type": "object",
+                        "properties": {
+                            "registered_voters": {
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "voters_who_voted": {
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "total_votes": {
+                                "type": "integer",
+                                "minimum": 0
+                            },
+                            "blank_votes": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": 0
+                            },
+                            "null_votes": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": 0
+                            },
+                            "challenged_votes": {
+                                "type": [
+                                    "integer",
+                                    "null"
+                                ],
+                                "minimum": 0
+                            }
+                        },
+                        "required": [
+                            "registered_voters",
+                            "voters_who_voted",
+                            "total_votes"
+                        ]
+                    },
+                    "results": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "political_organization_id": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ]
+                                },
+                                "electoral_list_id": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ]
+                                },
+                                "candidate_id": {
+                                    "type": [
+                                        "integer",
+                                        "null"
+                                    ]
+                                },
+                                "votes": {
+                                    "type": "integer",
+                                    "minimum": 0
+                                },
+                                "source": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "enum": [
+                                        "MANUAL",
+                                        "OCR",
+                                        "AI",
+                                        null
+                                    ]
+                                },
+                                "confidence": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ],
+                                    "minimum": 0,
+                                    "maximum": 1
+                                }
+                            },
+                            "required": [
+                                "votes"
+                            ]
+                        },
+                        "minItems": 1
+                    }
+                },
+                "required": [
+                    "polling_station_code",
+                    "election_id",
+                    "electoral_level_id",
+                    "totals",
+                    "results"
+                ],
+                "title": "CreateActRequest"
+            },
             "Department": {
                 "type": "object",
                 "properties": {
@@ -807,6 +2765,199 @@
                     "updated_at"
                 ],
                 "title": "Province"
+            },
+            "RecognizeActRequest": {
+                "type": "object",
+                "properties": {
+                    "image": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "binary",
+                        "contentMediaType": "application/octet-stream",
+                        "description": "Maximum file size: 20480 kilobytes."
+                    },
+                    "image_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uri"
+                    },
+                    "act_evidence_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "polling_station_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "registered_voters": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 0
+                    }
+                },
+                "title": "RecognizeActRequest"
+            },
+            "RequestUploadUrlRequest": {
+                "type": "object",
+                "properties": {
+                    "sha256_hash": {
+                        "type": "string",
+                        "minLength": 64,
+                        "maxLength": 64
+                    },
+                    "file_mime": {
+                        "type": "string",
+                        "enum": [
+                            "image/jpeg",
+                            "image/png",
+                            "image/webp"
+                        ]
+                    },
+                    "file_size_bytes": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 20971520
+                    }
+                },
+                "required": [
+                    "sha256_hash",
+                    "file_mime",
+                    "file_size_bytes"
+                ],
+                "title": "RequestUploadUrlRequest"
+            },
+            "SyncOperationRequest": {
+                "type": "object",
+                "properties": {
+                    "operations": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "client_operation_id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                "entity_type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "acts",
+                                        "act_evidence"
+                                    ]
+                                },
+                                "entity_id": {
+                                    "type": "string"
+                                },
+                                "operation": {
+                                    "type": "string",
+                                    "enum": [
+                                        "CREATE",
+                                        "UPDATE",
+                                        "CONFIRM"
+                                    ]
+                                },
+                                "payload": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "minItems": 1
+                                },
+                                "checksum": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "client_operation_id",
+                                "entity_type",
+                                "entity_id",
+                                "operation",
+                                "payload"
+                            ]
+                        },
+                        "minItems": 1
+                    },
+                    "device_uuid": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "operations"
+                ],
+                "title": "SyncOperationRequest"
+            },
+            "SyncOperationResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "client_operation_id": {
+                        "type": "string"
+                    },
+                    "entity_type": {
+                        "type": "string"
+                    },
+                    "entity_id": {
+                        "type": "string"
+                    },
+                    "operation": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "attempts": {
+                        "type": "integer"
+                    },
+                    "last_error": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "processed_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "client_operation_id",
+                    "entity_type",
+                    "entity_id",
+                    "operation",
+                    "status",
+                    "attempts",
+                    "last_error",
+                    "processed_at",
+                    "created_at"
+                ],
+                "title": "SyncOperationResource"
             }
         },
         "responses": {
@@ -842,6 +2993,44 @@
             },
             "AuthenticationException": {
                 "description": "Unauthenticated",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Error overview."
+                                }
+                            },
+                            "required": [
+                                "message"
+                            ]
+                        }
+                    }
+                }
+            },
+            "AuthorizationException": {
+                "description": "Authorization error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Error overview."
+                                }
+                            },
+                            "required": [
+                                "message"
+                            ]
+                        }
+                    }
+                }
+            },
+            "ModelNotFoundException": {
+                "description": "Not found",
                 "content": {
                     "application/json": {
                         "schema": {
