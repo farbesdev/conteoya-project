@@ -6,6 +6,8 @@ import '../../../core/providers.dart';
 import '../../../core/sync/sync_engine.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../acts/presentation/act_form_screen.dart';
+import '../../auth/domain/auth_state.dart';
+import '../../auth/presentation/auth_notifier.dart';
 
 class SyncDashboardScreen extends ConsumerWidget {
   const SyncDashboardScreen({super.key});
@@ -14,15 +16,27 @@ class SyncDashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final db = ref.watch(appDatabaseProvider);
     final syncState = ref.watch(syncStateStreamProvider);
+    final authState = ref.watch(authNotifierProvider);
+    final user = authState is Authenticated ? authState.session : null;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         elevation: 0,
-        title: const Text(
-          'ConteoYA — Personero',
-          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'ConteoYA',
+              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 18),
+            ),
+            if (user != null)
+              Text(
+                '${user.name} (${user.role})',
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              ),
+          ],
         ),
         actions: [
           IconButton(
@@ -34,6 +48,37 @@ class SyncDashboardScreen extends ConsumerWidget {
                 const SnackBar(
                   content: Text('Iniciando sincronización...'),
                   backgroundColor: AppColors.info,
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout, color: AppColors.textSecondary),
+            tooltip: 'Cerrar Sesión',
+            onPressed: () {
+              showDialog<void>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  backgroundColor: AppColors.surface,
+                  title: const Text('Cerrar Sesión', style: TextStyle(color: AppColors.textPrimary)),
+                  content: const Text(
+                    '¿Está seguro de que desea cerrar la sesión actual?',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                  actions: [
+                    TextButton(
+                      child: const Text('Cancelar', style: TextStyle(color: AppColors.textMuted)),
+                      onPressed: () => Navigator.pop(ctx),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
+                      child: const Text('Cerrar Sesión', style: TextStyle(color: Colors.white)),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        ref.read(authNotifierProvider.notifier).logout();
+                      },
+                    ),
+                  ],
                 ),
               );
             },
