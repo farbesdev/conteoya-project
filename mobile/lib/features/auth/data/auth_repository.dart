@@ -56,7 +56,7 @@ class AuthRepository {
     final deviceUuid = await getOrCreateDeviceUuid();
 
     try {
-      final response = await apiClient.post<Map<String, dynamic>>(
+      final response = await apiClient.post<dynamic>(
         '/login',
         data: {
           'email': email.trim(),
@@ -67,16 +67,28 @@ class AuthRepository {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-        final data = response.data!;
-        final token = data['access_token'] as String;
-        final userData = data['user'] as Map<String, dynamic>;
+        Map<String, dynamic> data;
+        if (response.data is Map<String, dynamic>) {
+          data = response.data as Map<String, dynamic>;
+        } else if (response.data is Map) {
+          data = Map<String, dynamic>.from(response.data as Map);
+        } else if (response.data is String) {
+          data = jsonDecode(response.data as String) as Map<String, dynamic>;
+        } else {
+          throw Exception('Formato de respuesta inesperado del servidor');
+        }
 
-        final session = UserSession(
-          id: userData['id'] as int,
-          name: userData['name'] as String,
-          email: userData['email'] as String,
-          role: userData['role'] as String,
-          personeroId: userData['personero_id'] as int?,
+        final token = data['access_token']?.toString() ?? '';
+        
+        Map<String, dynamic> userData = {};
+        if (data['user'] is Map<String, dynamic>) {
+          userData = data['user'] as Map<String, dynamic>;
+        } else if (data['user'] is Map) {
+          userData = Map<String, dynamic>.from(data['user'] as Map);
+        }
+
+        final session = UserSession.fromBackendResponse(
+          userData: userData,
           token: token,
           deviceUuid: deviceUuid,
         );

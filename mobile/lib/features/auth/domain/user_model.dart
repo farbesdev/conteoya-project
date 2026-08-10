@@ -17,6 +17,22 @@ class UserSession {
     required this.deviceUuid,
   });
 
+  static int _parseInt(dynamic value, {int defaultValue = 0}) {
+    if (value == null) return defaultValue;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? defaultValue;
+    return defaultValue;
+  }
+
+  static int? _parseNullableInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
@@ -28,12 +44,31 @@ class UserSession {
       };
 
   factory UserSession.fromJson(Map<String, dynamic> json) => UserSession(
-        id: json['id'] as int,
-        name: json['name'] as String,
-        email: json['email'] as String,
-        role: json['role'] as String,
-        personeroId: json['personero_id'] as int?,
-        token: json['token'] as String,
-        deviceUuid: json['device_uuid'] as String? ?? 'device-unknown',
+        id: _parseInt(json['id']),
+        name: json['name']?.toString() ?? '',
+        email: json['email']?.toString() ?? '',
+        role: json['role']?.toString() ?? (json['rol'] is Map ? (json['rol'] as Map)['name']?.toString() ?? 'PERSONERO' : 'PERSONERO'),
+        personeroId: _parseNullableInt(json['personero_id']),
+        token: json['token']?.toString() ?? '',
+        deviceUuid: json['device_uuid']?.toString() ?? 'device-unknown',
       );
+
+  factory UserSession.fromBackendResponse({
+    required Map<String, dynamic> userData,
+    required String token,
+    required String deviceUuid,
+  }) {
+    return UserSession(
+      id: _parseInt(userData['id']),
+      name: userData['name']?.toString() ?? '',
+      email: userData['email']?.toString() ?? '',
+      role: userData['role']?.toString() ??
+          (userData['rol'] is Map
+              ? (userData['rol'] as Map)['name']?.toString() ?? 'PERSONERO'
+              : 'PERSONERO'),
+      personeroId: _parseNullableInt(userData['personero_id']),
+      token: token,
+      deviceUuid: deviceUuid,
+    );
+  }
 }
