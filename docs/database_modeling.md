@@ -3,7 +3,8 @@
 **Proyecto:** ConteoYA  
 **Dominio:** Elecciones Regionales y Municipales 2026 (ERM 2026) — Perú  
 **Motor Target:** PostgreSQL 16+  
-**Autor:** Experto e Ingeniero de Software / Arquitecto de Base de Datos  
+**API Backend:** Laravel 12 + Sanctum + Dedoc Scramble  
+**Última actualización:** Fase 0 — v0.1.0  
 
 ---
 
@@ -71,10 +72,11 @@ erDiagram
    - `act_evidence`: Fotografía del acta y metadatos de almacenamiento (Cloudflare R2 / S3, SHA-256).
    - `ocr_ai_extractions`: Registro de propuestas extraídas por OCR/IA con nivel de confianza.
 
-4. **Dominio Usuarios, Personeros, Dispositivos e Idempotencia:**
-   - `users`: Usuarios del sistema backend.
-   - `personeros`: Perfil de personero de mesa/centro de votación.
-   - `devices`: Dispositivos móviles registrados.
+4. **Dominio Usuarios, Roles, Personeros, Dispositivos e Idempotencia:**
+   - `roles`: Roles del sistema (`ADMIN`, `DIRECTOR`, `PERSONERO`) con integridad referencial.
+   - `users`: Usuarios del sistema con FK `role_id` hacia `roles` y columna `role` para acceso rápido.
+   - `personeros`: Perfil de personero de mesa/centro de votación (solo usuarios con rol `PERSONERO`).
+   - `devices`: Dispositivos móviles registrados (asociados a un personero).
    - `personero_polling_station`: Asignación de personeros a mesas.
    - `sync_operations`: Log de sincronización idempotente offline-to-online.
    - `audit_logs`: Trazabilidad de auditoría de todas las acciones.
@@ -89,18 +91,19 @@ El modelo lógico normaliza las entidades a Tercera Forma Normal (3FN), aseguran
 
 | Tabla | Descripción | PK / Clave Primaria | Claves Foráneas (FK) |
 |---|---|---|---|
-| `departments` | Departamentos | `code` (VARCHAR 5) | - |
+| `departments` | Departamentos | `code` (VARCHAR 5) | — |
 | `provinces` | Provincias | `code` (VARCHAR 5) | `department_code` |
 | `districts` | Distritos | `code` (VARCHAR 6) | `department_code`, `province_code` |
 | `electoral_locations` | Locales de votación | `id` (BIGINT) | `district_code` |
 | `polling_stations` | Mesas de votación | `id` (BIGINT) / `code` (VARCHAR 10) | `electoral_location_id` |
-| `elections` | Procesos Electorales | `id` (BIGINT) | - |
+| `elections` | Procesos Electorales | `id` (BIGINT) | — |
 | `electoral_levels` | Niveles Electorales | `id` (BIGINT) | `election_id` |
-| `political_organizations` | Partidos / Movimientos | `id` (BIGINT) | - |
+| `political_organizations` | Partidos / Movimientos | `id` (BIGINT) | — |
 | `electoral_lists` | Listas Electorales | `id` (BIGINT) | `political_organization_id`, `electoral_level_id`, Ubigeo FKs |
-| `candidates` | Candidatos (Personas) | `id` (BIGINT) | - |
+| `candidates` | Candidatos (Personas) | `id` (BIGINT) | — |
 | `candidacies` | Postulación Candidato | `id` (BIGINT) | `electoral_list_id`, `candidate_id` |
-| `users` | Usuarios API | `id` (BIGINT) | - |
+| **`roles`** | **Roles del sistema** | `id` (BIGINT) | — |
+| `users` | Usuarios API | `id` (BIGINT) | **`role_id` → `roles`** |
 | `personeros` | Personeros de Mesa | `id` (BIGINT) | `user_id` |
 | `devices` | Dispositivos Móviles | `id` (BIGINT) | `personero_id` |
 | `personero_polling_station` | Asignación Mesa-Personero | `id` (BIGINT) | `personero_id`, `polling_station_id` |

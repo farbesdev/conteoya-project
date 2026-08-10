@@ -1,59 +1,256 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ConteoYA — Backend API (Laravel 12 + PostgreSQL 16)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+API REST del sistema **ConteoYA** para la captura, validación y consolidación de actas electorales en las Elecciones Regionales y Municipales 2026 (ERM 2026) del Perú.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🛠️ Stack
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Capa | Tecnología |
+|------|-----------|
+| Framework | Laravel 12 (PHP 8.2+) |
+| Autenticación | Laravel Sanctum (Bearer Token) |
+| Base de datos | PostgreSQL 16+ |
+| Cache / Queues | Redis |
+| Documentación API | Dedoc Scramble (OpenAPI 3.1) |
+| Realtime (Fase 2) | Laravel Reverb |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+---
 
-## Learning Laravel
+## ⚙️ Instalación y configuración
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### Requisitos previos
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- PHP 8.2+
+- Composer
+- PostgreSQL 16+
+- Redis
+- El archivo `database/erm2026.db` en la raíz del monorepo (datos maestros JEE)
 
-## Laravel Sponsors
+### Pasos
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+# 1. Instalar dependencias
+cd api/
+composer install
 
-### Premium Partners
+# 2. Configurar variables de entorno
+cp .env.example .env
+php artisan key:generate
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# 3. Configurar .env con tus credenciales
+# DB_CONNECTION=pgsql
+# DB_HOST=127.0.0.1
+# DB_PORT=5432
+# DB_DATABASE=conteoya_bd
+# DB_USERNAME=...
+# DB_PASSWORD=...
 
-## Contributing
+# 4. Ejecutar migraciones
+php artisan migrate
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# 5. Ejecutar seeders (roles + usuarios de prueba + datos JEE)
+php artisan db:seed
 
-## Code of Conduct
+# 6. Iniciar servidor local
+php artisan serve
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## 🗄️ Base de datos
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### Migraciones (orden de ejecución)
 
-## License
+| Migración | Descripción |
+|-----------|-------------|
+| `0001_01_01_000000_create_users_table` | Tabla `users` con columna `role` (string) |
+| `0001_01_01_000001_create_cache_table` | Tablas de cache y sesiones |
+| `0001_01_01_000002_create_jobs_table` | Cola de trabajos |
+| `2026_08_09_165656_create_personal_access_tokens_table` | Tokens Sanctum |
+| `2026_08_09_165708_create_conteoya_tables` | Esquema principal: geography, catálogo electoral, personeros, actas |
+| `2026_08_10_102628_create_roles_table` | Tabla `roles` + FK `role_id` en `users` |
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Seeders
+
+```bash
+# Todos los seeders (orden orquestado)
+php artisan db:seed
+
+# Seeders individuales
+php artisan db:seed --class=RoleSeeder    # Crea roles: ADMIN, DIRECTOR, PERSONERO
+php artisan db:seed --class=UserSeeder    # Crea un usuario de prueba por cada rol
+php artisan db:seed --class=JeeDatabaseSeeder  # Carga datos maestros JEE (requiere erm2026.db)
+```
+
+---
+
+## 👥 Roles del sistema
+
+La tabla `roles` define los tres roles del sistema. Cada `user` tiene una FK `role_id` hacia `roles`, además de mantener la columna `role` (string) para compatibilidad y acceso rápido sin JOIN.
+
+| Rol | `name` | Descripción |
+|-----|--------|-------------|
+| Administrador | `ADMIN` | Acceso total. Gestiona elecciones, usuarios y configuración. |
+| Director | `DIRECTOR` | Supervisor de sede. Gestiona personeros y consulta resultados. |
+| Personero | `PERSONERO` | Captura actas desde la app móvil. Accede a sus mesas asignadas. |
+
+---
+
+## 🔐 Autenticación (Sanctum)
+
+Todas las rutas protegidas requieren el header:
+
+```
+Authorization: Bearer {token}
+```
+
+El token se obtiene desde `POST /api/v1/login`.
+
+### Flujo de autenticación
+
+```
+POST /api/v1/login
+  → Valida credenciales (email + password)
+  → Si es Personero + device_uuid → registra/actualiza dispositivo
+  → Devuelve: access_token + usuario + objeto rol completo
+```
+
+### Respuesta de login
+
+```json
+{
+  "access_token": "1|XyZ...",
+  "token_type": "Bearer",
+  "user": {
+    "id": 3,
+    "name": "Juan Pérez Demo",
+    "email": "personero@conteoya.pe",
+    "role": "PERSONERO",
+    "role_id": 3,
+    "is_active": true,
+    "rol": {
+      "id": 3,
+      "name": "PERSONERO",
+      "display_name": "Personero"
+    },
+    "personero_id": 1
+  }
+}
+```
+
+### Usuarios de prueba (solo desarrollo)
+
+> ⚠️ **Cambiar contraseñas antes de pasar a producción.**
+
+| Email | Password | Rol |
+|-------|----------|-----|
+| `admin@conteoya.pe` | `Admin123!` | `ADMIN` |
+| `director@conteoya.pe` | `Director123!` | `DIRECTOR` |
+| `personero@conteoya.pe` | `Personero123!` | `PERSONERO` |
+
+---
+
+## 📡 Endpoints disponibles (v0.1.0 — Fase 0)
+
+Base URL: `http://localhost:8000/api/v1`
+
+### Autenticación
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| `POST` | `/login` | Pública | Iniciar sesión → devuelve Bearer token + rol |
+| `GET` | `/me` | 🔒 Bearer | Perfil del usuario autenticado |
+| `POST` | `/logout` | 🔒 Bearer | Revocar token actual |
+
+### Personero
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| `GET` | `/personero/polling-stations` | 🔒 Bearer | Mesas asignadas al personero autenticado |
+
+### Catálogos electorales _(caché Redis 24h)_
+
+| Método | Ruta | Auth | Parámetros | Descripción |
+|--------|------|------|------------|-------------|
+| `GET` | `/departments` | 🔒 Bearer | — | Listado de departamentos |
+| `GET` | `/provinces` | 🔒 Bearer | `?department_code=` | Provincias (filtrable) |
+| `GET` | `/districts` | 🔒 Bearer | `?province_code=` | Distritos (filtrable) |
+| `GET` | `/elections` | 🔒 Bearer | — | Elecciones con niveles electorales |
+| `GET` | `/political-organizations` | 🔒 Bearer | — | Organizaciones políticas |
+| `GET` | `/electoral-lists` | 🔒 Bearer | `?electoral_level_id=&district_code=&page=` | Listas electorales paginadas |
+
+---
+
+## 📖 Documentación API (Scramble)
+
+La documentación OpenAPI interactiva se genera automáticamente con **Dedoc Scramble**.
+
+```bash
+# Acceder en el navegador (servidor local corriendo)
+http://localhost:8000/docs/api
+
+# Exportar spec OpenAPI a archivo JSON
+php artisan scramble:export   # → genera api/api.json
+```
+
+**Características:**
+- Rutas públicas (`/login`) → `security: []`
+- Rutas protegidas → `security: Bearer` (detectado automáticamente por `auth:sanctum`)
+- Anotaciones `@tags`, `@bodyParam`, `@response` en todos los controladores
+
+---
+
+## 📁 Estructura del proyecto
+
+```text
+api/
+├── app/
+│   ├── Http/Controllers/Api/V1/
+│   │   ├── AuthController.php      # Login, /me, Logout
+│   │   ├── CatalogController.php   # Catálogos electorales (geog. + electoral)
+│   │   └── PersoneroController.php # Mesas asignadas al personero
+│   ├── Models/
+│   │   ├── Role.php                # Roles del sistema (ADMIN, DIRECTOR, PERSONERO)
+│   │   ├── User.php                # Usuario con role_id FK + hasRole()
+│   │   ├── Personero.php           # Perfil personero de mesa
+│   │   ├── Device.php              # Dispositivo móvil registrado
+│   │   └── ...                     # Modelos electorales (Act, Election, etc.)
+│   └── Traits/
+│       └── MigrationSeedingMethod.php
+├── config/
+│   └── scramble.php                # Configuración OpenAPI (Bearer auth, título, descripción)
+├── database/
+│   ├── migrations/                 # 6 migraciones (ver tabla arriba)
+│   └── seeders/
+│       ├── DatabaseSeeder.php      # Orquestador principal
+│       ├── RoleSeeder.php          # Roles del sistema
+│       ├── UserSeeder.php          # Usuarios de prueba por rol
+│       └── JeeDatabaseSeeder.php   # Datos maestros JEE
+└── routes/
+    └── api.php                     # Rutas API v1 con throttle y auth:sanctum
+```
+
+---
+
+## 🔧 Comandos útiles
+
+```bash
+# Limpiar caché de config y rutas
+php artisan config:clear && php artisan route:clear
+
+# Ver todas las rutas registradas
+php artisan route:list --path=api
+
+# Refrescar BD completa (⚠️ destruye datos)
+php artisan migrate:fresh --seed
+
+# Ejecutar tests
+php artisan test
+```
+
+---
+
+## 📄 Licencia
+
+Proyecto privado — Plataforma ConteoYA para ERM 2026.
