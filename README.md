@@ -58,12 +58,20 @@ Permite a los personeros registrar resultados de actas electorales mediante una 
 
 ```text
 conteoya-project/
-├── .agents/                    # Customizations y Skills para Antigravity / Gemini
+├── GEMINI.md                   # Reglas del proyecto para Antigravity / Gemini
+├── CLAUDE.md                   # Reglas del proyecto para Claude AI
+├── .agents/                    # Customizations y Skills para Agentes IA
 │   └── skills/
-│       ├── git-conventional-commits/
-│       ├── postgresql-16-best-practices/
-│       └── software-engineering-best-practices/
-├── api/                        # 🟠 Backend Laravel 12 (esta es la app principal activa)
+│       ├── cloudflare-r2-s3-storage/    # Skill subida segura de evidencias
+│       ├── flutter-dart-best-practices/ # Skill desarrollo mobile Flutter 3.44+
+│       ├── git-conventional-commits/   # Skill estrategia de commits y ramas
+│       ├── laravel-api-fase1-ingesta/   # Skill endpoints de ingesta en Laravel
+│       ├── ocr-ia-adapter-pattern/      # Skill patrón Adapter OCR/IA
+│       ├── offline-first-sync-engine/   # Skill motor de sincronización offline
+│       ├── postgresql-16-best-practices/# Skill diseño BD en PostgreSQL 16
+│       ├── software-engineering-best-practices/# Skill arquitectura e ingeniería
+│       └── sqlite-drift-offline-first/  # Skill persistencia móvil Drift
+├── api/                        # 🟠 Backend Laravel 12 (app principal activa)
 │   ├── app/
 │   │   ├── Http/Controllers/Api/V1/
 │   │   │   ├── AuthController.php      # Login, /me, Logout (Sanctum)
@@ -172,10 +180,10 @@ Ver [docs/api_reference.md](docs/api_reference.md) para la referencia completa d
 
 | Fase | Estado | Descripción |
 |------|--------|-------------|
-| **Fase 0 — Foundation** | ✅ En progreso | API base, PostgreSQL, Sanctum, Roles, Catálogo JEE, Auth |
-| **Fase 1 — Ingesta** | 🔜 Pendiente | Flutter offline-first, captura manual/OCR, evidencia en R2 |
-| **Fase 2 — Resultados** | 🔜 Pendiente | Dashboard Vue 3, consolidados, Laravel Reverb realtime |
-| **Fase 3 — Hardening** | 🔜 Pendiente | E2E, carga masiva, auditoría, disaster recovery |
+| **Fase 0 — Foundation** | ✅ Completada | API base, PostgreSQL, Sanctum, Roles, Catálogo JEE, Auth |
+| **Fase 1 — Ingesta** | 🔜 Próxima | Flutter offline-first, captura manual/OCR, evidencia en R2 |
+| **Fase 2 — Resultados** | ⏳ Pendiente | Dashboard Vue 3, consolidados, Laravel Reverb realtime |
+| **Fase 3 — Hardening** | ⏳ Pendiente | E2E, carga masiva, auditoría, disaster recovery |
 
 ---
 
