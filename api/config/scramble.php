@@ -45,16 +45,31 @@ return [
         /*
          * API version.
          */
-        'version' => env('API_VERSION', '0.0.1'),
+        'version' => env('API_VERSION', '0.1.0'),
 
         /*
          * Description rendered on the home page of the API documentation (`/docs/api`).
          */
-        'description' => '',
+        'description' => '## ConteoYA API — Fase 0
+
+API REST del sistema **ConteoYA** para la captura y consolidación de actas electorales en tiempo real.
+
+### Autenticación
+Usa **Bearer Token** (Laravel Sanctum). Obtén el token desde `POST /api/v1/login` y envíalo en la cabecera:
+```
+Authorization: Bearer {token}
+```
+
+### Roles del sistema
+| Rol | Descripción |
+|-----|-------------|
+| `ADMIN` | Acceso total al sistema |
+| `DIRECTOR` | Supervisor electoral |
+| `PERSONERO` | Captura actas desde app móvil |',
     ],
 
     'ui' => [
-        'title' => null,
+        'title' => 'ConteoYA API Docs',
     ],
 
     'renderer' => 'elements',
@@ -169,6 +184,12 @@ return [
      *     ],
      * ],
      */
-    // 'security_strategy' => \Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy::class,
-    'security_strategy' => null,
+    // Habilitar detección automática de rutas públicas vs protegidas por auth:sanctum
+    'security_strategy' => [
+        \Dedoc\Scramble\SecurityDocumentation\MiddlewareAuthSecurityStrategy::class,
+        [
+            'middleware' => ['auth', 'auth:*'],
+            'scheme'     => \Dedoc\Scramble\Support\Generator\SecurityScheme::http('bearer'),
+        ],
+    ],
 ];
