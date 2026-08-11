@@ -117,10 +117,13 @@ class PersoneroActasScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           final personeros = personerosAsync.asData?.value;
-          final myPersonero = personeros?.cast<dynamic>().firstWhere(
-                (p) => p.email == user?.email || (user?.personeroId != null && p.id == user?.personeroId),
-                orElse: () => personeros != null && personeros.isNotEmpty ? personeros.first : null,
-              );
+          dynamic myPersonero;
+          if (personeros != null && personeros.isNotEmpty) {
+            myPersonero = personeros.firstWhere(
+              (p) => p.email == user?.email || (user?.personeroId != null && p.id == user?.personeroId),
+              orElse: () => personeros.first,
+            );
+          }
           final code = myPersonero?.pollingStationCode ?? '030390';
 
           SelectActTypeModal.show(
