@@ -696,37 +696,57 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             const SizedBox(height: 24),
 
             // Botones de Acción
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.textSecondary,
-                      side: const BorderSide(color: AppColors.border),
-                      minimumSize: const Size.fromHeight(48),
+            Container(
+              padding: const EdgeInsets.all(4),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.textPrimary,
+                        side: const BorderSide(color: AppColors.border, width: 1.5),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        backgroundColor: AppColors.surfaceElevated,
+                      ),
+                      icon: const Icon(Icons.bookmark_border_rounded, size: 18),
+                      label: const Text(
+                        'Guardar\nBorrador',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, height: 1.1),
+                      ),
+                      onPressed: _isSaving ? null : () => _saveAct(isConfirmation: false),
                     ),
-                    onPressed: _isSaving ? null : () => _saveAct(isConfirmation: false),
-                    child: const Text('Guardar Borrador'),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.accent,
-                      minimumSize: const Size.fromHeight(48),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 3,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 4,
+                      ),
+                      icon: _isSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            )
+                          : const Icon(Icons.check_circle_rounded, size: 20),
+                      label: Text(
+                        _isSaving ? 'Guardando...' : 'Confirmar y\nSincronizar',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, height: 1.1),
+                      ),
+                      onPressed: _isSaving ? null : () => _saveAct(isConfirmation: true),
                     ),
-                    onPressed: _isSaving ? null : () => _saveAct(isConfirmation: true),
-                    child: _isSaving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                          )
-                        : const Text('Confirmar y Sincronizar', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
