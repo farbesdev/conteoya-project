@@ -9,6 +9,7 @@ import '../features/auth/presentation/auth_notifier.dart';
 import '../features/dashboard/presentation/admin_dashboard_screen.dart';
 import '../features/dashboard/presentation/personero_dashboard_screen.dart';
 import '../features/personeros/presentation/personeros_screen.dart';
+import '../features/users/presentation/users_screen.dart';
 
 class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
@@ -72,6 +73,7 @@ class _AppShellState extends ConsumerState<AppShell> {
         ? [
             AdminDashboardScreen(onNavigateTab: _onTabTapped),
             const PersonerosScreen(),
+            const UsersScreen(),
             const AdminActasScreen(),
           ]
         : [
@@ -89,6 +91,10 @@ class _AppShellState extends ConsumerState<AppShell> {
             BottomNavigationBarItem(
               icon: Icon(Icons.people_alt_rounded),
               label: 'Personeros',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.manage_accounts_rounded),
+              label: 'Usuarios',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.description_rounded),
@@ -117,6 +123,8 @@ class _AppShellState extends ConsumerState<AppShell> {
           case 1:
             return 'Gestión de Personeros';
           case 2:
+            return 'Gestión de Usuarios';
+          case 3:
             return 'Mesas y Actas';
           default:
             return 'ConteoYA';

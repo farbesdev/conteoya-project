@@ -249,6 +249,48 @@ class _AddMesaModalState extends ConsumerState<AddMesaModal> {
                   return null;
                 },
               ),
+              const SizedBox(height: 12),
+
+              // Asignación de Personero (Rol Personero)
+              Consumer(
+                builder: (context, ref, _) {
+                  final personerosAsync = ref.watch(personerosStreamProvider);
+                  return personerosAsync.when(
+                    data: (personeros) {
+                      return DropdownButtonFormField<String>(
+                        dropdownColor: AppColors.surface,
+                        style: const TextStyle(color: AppColors.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: 'Personero Asignado (Opcional)',
+                          labelStyle: const TextStyle(color: AppColors.textSecondary),
+                          prefixIcon: const Icon(Icons.person_pin_outlined, color: AppColors.accent),
+                          filled: true,
+                          fillColor: AppColors.background,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: AppColors.border),
+                          ),
+                        ),
+                        items: [
+                          const DropdownMenuItem(
+                            value: '',
+                            child: Text('-- Ninguno (Sin Asignar) --', style: TextStyle(color: AppColors.textMuted)),
+                          ),
+                          ...personeros.map((p) => DropdownMenuItem(
+                                value: p.dni,
+                                child: Text('${p.fullName} (DNI: ${p.dni})'),
+                              )),
+                        ],
+                        onChanged: (val) {
+                          // Al seleccionar, se vinculará con este personero
+                        },
+                      );
+                    },
+                    loading: () => const SizedBox.shrink(),
+                    error: (_, __) => const SizedBox.shrink(),
+                  );
+                },
+              ),
               const SizedBox(height: 24),
 
               // Botón Guardar

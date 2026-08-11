@@ -37,7 +37,7 @@ void main() {
     await memoryDb.close();
   });
 
-  testWidgets('ConteoYaApp muestra AppShell con 3 tabs para ADMIN', (WidgetTester tester) async {
+  testWidgets('ConteoYaApp muestra AppShell con 4 tabs para ADMIN', (WidgetTester tester) async {
     final memoryDb = AppDatabase(NativeDatabase.memory());
     await memoryDb.seedInitialDataIfEmpty();
     final testEngine = SyncEngine(db: memoryDb, apiClient: ApiClient());
@@ -64,10 +64,12 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // Debe mostrar los 3 tabs de navegación y métricas
+    // Debe mostrar los 4 tabs de navegación
     expect(find.byType(BottomNavigationBar), findsOneWidget);
-    expect(find.text('Personeros'), findsNWidgets(2)); // Tarjeta de métrica + Tab de navegación
-    expect(find.text('Actas'), findsNWidgets(2)); // Tarjeta de métrica + Tab de navegación
+    expect(find.text('Dashboard'), findsOneWidget);
+    expect(find.text('Personeros'), findsNWidgets(2)); // Metric card + Tab
+    expect(find.text('Usuarios'), findsOneWidget);
+    expect(find.text('Actas'), findsNWidgets(2)); // Metric card + Tab
     expect(find.text('Admin Demo • ADMIN'), findsOneWidget);
 
     testEngine.stop();

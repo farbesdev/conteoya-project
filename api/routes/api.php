@@ -23,8 +23,9 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
 
-        // Personero & Mesas
+        // Personero, Users & Mesas
         Route::get('/personero/polling-stations', [PersoneroController::class, 'pollingStations']);
+        Route::apiResource('users', \App\Http\Controllers\Api\V1\UserController::class);
 
         // Catálogos Electorales y Ubigeos (Alto Rendimiento & Caching)
         Route::get('/departments', [CatalogController::class, 'departments']);
