@@ -124,6 +124,15 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       'source': 'MANUAL',
       'confidence': null,
     },
+    {
+      'id': 2980,
+      'name': 'AHORA NACION - AN',
+      'shortName': 'AN',
+      'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2980.png',
+      'votesController': TextEditingController(text: '0'),
+      'source': 'MANUAL',
+      'confidence': null,
+    },
   ];
 
   File? _capturedPhoto;

@@ -490,6 +490,12 @@ class AppDatabase extends _$AppDatabase {
           shortName: const Value('RP'),
           logoUrl: const Value('https://stovotoinformadodev.blob.core.windows.net/contenedor-2/3040.png'),
         ),
+        LocalPoliticalOrganizationsTableCompanion.insert(
+          id: const Value(2980),
+          name: 'AHORA NACION - AN',
+          shortName: const Value('AN'),
+          logoUrl: const Value('https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2980.png'),
+        ),
       ]);
     });
   }
