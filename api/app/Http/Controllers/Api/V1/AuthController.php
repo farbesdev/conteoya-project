@@ -62,7 +62,7 @@ class AuthController extends Controller
         ]);
 
         /** @var User|null $user */
-        $user = User::with('roleModel')->where('email', $request->email)->first();
+        $user = User::with(['roleModel', 'personero.pollingStations'])->where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
@@ -108,6 +108,7 @@ class AuthController extends Controller
                     'display_name' => $user->roleModel->display_name,
                 ] : null,
                 'personero_id' => $user->personero?->id,
+                'polling_station_code' => $user->personero?->pollingStations->first()?->code,
             ],
         ]);
     }

@@ -38,7 +38,7 @@ class PersoneroActasScreen extends ConsumerWidget {
                 );
                 final myPersonero = matches.isNotEmpty ? matches.first : null;
 
-                final assignedMesaCode = myPersonero?.pollingStationCode;
+                final assignedMesaCode = user?.pollingStationCode ?? myPersonero?.pollingStationCode;
                 final assignedMesa = assignedMesaCode != null
                     ? mesas.where((m) => m.code == assignedMesaCode).firstOrNull
                     : null;

@@ -32,6 +32,7 @@ class UserSession {
   final String email;
   final String role;
   final int? personeroId;
+  final String? pollingStationCode;
   final String token;
   final String deviceUuid;
 
@@ -41,6 +42,7 @@ class UserSession {
     required this.email,
     required this.role,
     this.personeroId,
+    this.pollingStationCode,
     required this.token,
     required this.deviceUuid,
   });
@@ -71,6 +73,7 @@ class UserSession {
         'email': email,
         'role': role,
         'personero_id': personeroId,
+        'polling_station_code': pollingStationCode,
         'token': token,
         'device_uuid': deviceUuid,
       };
@@ -84,6 +87,7 @@ class UserSession {
                 ? (json['rol'] as Map)['name']?.toString() ?? 'PERSONERO'
                 : 'PERSONERO'),
         personeroId: _parseNullableInt(json['personero_id']),
+        pollingStationCode: json['polling_station_code']?.toString(),
         token: json['token']?.toString() ?? '',
         deviceUuid: json['device_uuid']?.toString() ?? 'device-unknown',
       );
@@ -102,6 +106,7 @@ class UserSession {
               ? (userData['rol'] as Map)['name']?.toString() ?? 'PERSONERO'
               : 'PERSONERO'),
       personeroId: _parseNullableInt(userData['personero_id']),
+      pollingStationCode: userData['polling_station_code']?.toString(),
       token: token,
       deviceUuid: deviceUuid,
     );

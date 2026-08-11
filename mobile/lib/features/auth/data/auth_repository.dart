@@ -140,6 +140,7 @@ class AuthRepository {
           email: localPersonero.email ?? '${localPersonero.dni}@conteoya.pe',
           role: 'PERSONERO',
           personeroId: localPersonero.id,
+          pollingStationCode: localPersonero.pollingStationCode,
           token: 'offline-token-${localPersonero.dni}',
           deviceUuid: deviceUuid,
         );
