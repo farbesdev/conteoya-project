@@ -22,7 +22,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -30,19 +30,11 @@ class AppDatabase extends _$AppDatabase {
           await m.createAll();
         },
         onUpgrade: (m, from, to) async {
-          if (from < 2) {
-            await m.createTable(localPersonerosTable);
+          if (from < 3) {
+            final personeroMigrator = createMigrator();
             try {
-              await m.addColumn(localPollingStationsTable, localPollingStationsTable.districtName);
-            } catch (_) {}
-            try {
-              await m.addColumn(localPollingStationsTable, localPollingStationsTable.provinceName);
-            } catch (_) {}
-            try {
-              await m.addColumn(localPollingStationsTable, localPollingStationsTable.departmentName);
-            } catch (_) {}
-            try {
-              await m.addColumn(localPollingStationsTable, localPollingStationsTable.status);
+              await personeroMigrator.drop(localPersonerosTable);
+              await personeroMigrator.createTable(localPersonerosTable);
             } catch (_) {}
           }
         },
@@ -50,17 +42,29 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('PRAGMA foreign_keys = ON');
           await customStatement('PRAGMA journal_mode = WAL');
 
-          // Garantizar que la tabla local_personeros_table y demás existan en caso de migración parcial
           final m = createMigrator();
           try {
-            await m.createTable(localPersonerosTable);
-          } catch (_) {}
+            // Verificar si la tabla personeros tiene la columna last_name
+            final result = await customSelect("PRAGMA table_info('local_personeros_table')").get();
+            final hasLastName = result.any((row) => row.read<String>('name') == 'last_name');
+            if (!hasLastName) {
+              await m.drop(localPersonerosTable);
+              await m.createTable(localPersonerosTable);
+            }
+          } catch (_) {
+            try {
+              await m.createTable(localPersonerosTable);
+            } catch (_) {}
+          }
+
           try {
             await m.createTable(localPollingStationsTable);
           } catch (_) {}
           try {
             await m.createTable(localPoliticalOrganizationsTable);
           } catch (_) {}
+
+          await seedInitialDataIfEmpty();
         },
       );
 
@@ -143,13 +147,36 @@ class AppDatabase extends _$AppDatabase {
   Stream<List<LocalPersonero>> watchAllPersoneros() {
     return (select(localPersonerosTable)
           ..orderBy([(t) => OrderingTerm.asc(t.lastName), (t) => OrderingTerm.asc(t.firstName)]))
-        .watch();
+        .watch()
+        .handleError((error) async {
+      try {
+        final m = createMigrator();
+        await m.drop(localPersonerosTable);
+        await m.createTable(localPersonerosTable);
+        await seedInitialDataIfEmpty();
+      } catch (_) {}
+      return <LocalPersonero>[];
+    });
   }
 
-  Future<List<LocalPersonero>> getAllPersoneros() {
-    return (select(localPersonerosTable)
-          ..orderBy([(t) => OrderingTerm.asc(t.lastName), (t) => OrderingTerm.asc(t.firstName)]))
-        .get();
+  Future<List<LocalPersonero>> getAllPersoneros() async {
+    try {
+      return await (select(localPersonerosTable)
+            ..orderBy([(t) => OrderingTerm.asc(t.lastName), (t) => OrderingTerm.asc(t.firstName)]))
+          .get();
+    } catch (_) {
+      try {
+        final m = createMigrator();
+        await m.drop(localPersonerosTable);
+        await m.createTable(localPersonerosTable);
+        await seedInitialDataIfEmpty();
+        return await (select(localPersonerosTable)
+              ..orderBy([(t) => OrderingTerm.asc(t.lastName), (t) => OrderingTerm.asc(t.firstName)]))
+            .get();
+      } catch (_) {
+        return [];
+      }
+    }
   }
 
   Future<LocalPersonero?> getPersoneroByDni(String dni) {
