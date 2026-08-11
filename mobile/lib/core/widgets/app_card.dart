@@ -24,7 +24,7 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final border = Border.all(
-      color: borderColor ?? AppColors.border,
+      color: borderColor ?? AppColors.border.withValues(alpha: 0.8),
       width: 1,
     );
 
@@ -36,9 +36,9 @@ class AppCard extends StatelessWidget {
         border: border,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.18),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
