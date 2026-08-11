@@ -32,18 +32,18 @@ class PersoneroDashboardScreen extends ConsumerWidget {
           data: (mesas) {
             return personerosAsync.when(
               data: (personeros) {
-                final myPersonero = personeros.cast<dynamic>().firstWhere(
-                      (p) =>
-                          p.email == user?.email ||
-                          (user?.personeroId != null && p.id == user?.personeroId),
-                      orElse: () => personeros.isNotEmpty ? personeros.first : null,
-                    );
+                final userEmail = user?.email.trim().toLowerCase();
+                final matches = personeros.where(
+                  (p) =>
+                      (userEmail != null && p.email?.trim().toLowerCase() == userEmail) ||
+                      (user?.personeroId != null && p.id == user?.personeroId),
+                );
+                final myPersonero = matches.isNotEmpty ? matches.first : null;
 
-                final assignedMesaCode = myPersonero?.pollingStationCode ?? '030390';
-                final assignedMesa = mesas.cast<MesaModel?>().firstWhere(
-                      (m) => m?.code == assignedMesaCode,
-                      orElse: () => mesas.isNotEmpty ? mesas.first : null,
-                    );
+                final assignedMesaCode = myPersonero?.pollingStationCode;
+                final assignedMesa = assignedMesaCode != null
+                    ? mesas.where((m) => m.code == assignedMesaCode).firstOrNull
+                    : null;
 
                 if (assignedMesa == null) {
                   return const Center(

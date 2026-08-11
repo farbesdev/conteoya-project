@@ -30,19 +30,18 @@ class PersoneroActasScreen extends ConsumerWidget {
             // Obtener la mesa asignada a este personero
             return personerosAsync.when(
               data: (personeros) {
-                // Intentar encontrar el personero por email o ID o dni
-                final myPersonero = personeros.cast<dynamic>().firstWhere(
-                      (p) =>
-                          p.email == user?.email ||
-                          (user?.personeroId != null && p.id == user?.personeroId),
-                      orElse: () => personeros.isNotEmpty ? personeros.first : null,
-                    );
+                final userEmail = user?.email.trim().toLowerCase();
+                final matches = personeros.where(
+                  (p) =>
+                      (userEmail != null && p.email?.trim().toLowerCase() == userEmail) ||
+                      (user?.personeroId != null && p.id == user?.personeroId),
+                );
+                final myPersonero = matches.isNotEmpty ? matches.first : null;
 
-                final assignedMesaCode = myPersonero?.pollingStationCode ?? '030390';
-                final assignedMesa = mesas.cast<MesaModel?>().firstWhere(
-                      (m) => m?.code == assignedMesaCode,
-                      orElse: () => mesas.isNotEmpty ? mesas.first : null,
-                    );
+                final assignedMesaCode = myPersonero?.pollingStationCode;
+                final assignedMesa = assignedMesaCode != null
+                    ? mesas.where((m) => m.code == assignedMesaCode).firstOrNull
+                    : null;
 
                 if (assignedMesa == null) {
                   return const Center(
@@ -117,14 +116,19 @@ class PersoneroActasScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           final personeros = personerosAsync.asData?.value;
+          final userEmail = user?.email.trim().toLowerCase();
           dynamic myPersonero;
           if (personeros != null && personeros.isNotEmpty) {
-            myPersonero = personeros.firstWhere(
-              (p) => p.email == user?.email || (user?.personeroId != null && p.id == user?.personeroId),
-              orElse: () => personeros.first,
+            final matches = personeros.where(
+              (p) =>
+                  (userEmail != null && p.email?.trim().toLowerCase() == userEmail) ||
+                  (user?.personeroId != null && p.id == user?.personeroId),
             );
+            if (matches.isNotEmpty) {
+              myPersonero = matches.first;
+            }
           }
-          final code = myPersonero?.pollingStationCode ?? '030390';
+          final code = myPersonero?.pollingStationCode ?? '040104';
 
           SelectActTypeModal.show(
             context,
