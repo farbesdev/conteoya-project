@@ -12,6 +12,8 @@ import '../../../core/providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/hash_utils.dart';
 import '../domain/act_validator.dart';
+import '../domain/electoral_level.dart';
+import 'party_logo_widget.dart';
 import '../../ocr_ai/presentation/ocr_preview_modal.dart';
 
 class ActFormScreen extends ConsumerStatefulWidget {
@@ -32,6 +34,7 @@ class ActFormScreen extends ConsumerStatefulWidget {
 
 class _ActFormScreenState extends ConsumerState<ActFormScreen> {
   final String _clientActUuid = const Uuid().v4();
+  late int _selectedLevelId;
 
   // Controllers de Totales
   final TextEditingController _registeredVotersController = TextEditingController(text: '300');
@@ -41,19 +44,50 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
   final TextEditingController _nullVotesController = TextEditingController(text: '5');
   final TextEditingController _challengedVotesController = TextEditingController(text: '0');
 
-  // Listas electorales simuladas / locales
+  // Listas electorales de prueba con logos oficiales JEE de Organizaciones Políticas
   final List<Map<String, Object?>> _parties = [
     {
       'id': 1,
-      'name': 'PARTIDO DEMÓCRATA',
-      'votesController': TextEditingController(text: '145'),
+      'name': 'ACCIÓN POPULAR',
+      'shortName': 'AP',
+      'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/org_1.png',
+      'votesController': TextEditingController(text: '85'),
       'source': 'MANUAL',
       'confidence': null,
     },
     {
       'id': 2,
-      'name': 'MOVIMIENTO REGIONAL FUTURO',
-      'votesController': TextEditingController(text: '120'),
+      'name': 'PARTIDO DEMOCRÁTICO SOMOS PERÚ',
+      'shortName': 'SOMOS PERU',
+      'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/org_2.png',
+      'votesController': TextEditingController(text: '70'),
+      'source': 'MANUAL',
+      'confidence': null,
+    },
+    {
+      'id': 5,
+      'name': 'ALIANZA PARA EL PROGRESO',
+      'shortName': 'APP',
+      'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/org_5.png',
+      'votesController': TextEditingController(text: '55'),
+      'source': 'MANUAL',
+      'confidence': null,
+    },
+    {
+      'id': 7,
+      'name': 'JUNTOS POR EL PERÚ',
+      'shortName': 'JP',
+      'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/org_7.png',
+      'votesController': TextEditingController(text: '30'),
+      'source': 'MANUAL',
+      'confidence': null,
+    },
+    {
+      'id': 8,
+      'name': 'FUERZA POPULAR',
+      'shortName': 'FP',
+      'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/org_8.png',
+      'votesController': TextEditingController(text: '25'),
       'source': 'MANUAL',
       'confidence': null,
     },
@@ -68,6 +102,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedLevelId = widget.electoralLevelId;
     _recalculateValidation();
   }
 
@@ -98,59 +133,54 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
 
   Future<void> _takePhoto() async {
     final picker = ImagePicker();
-    final photo = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
-    if (photo != null) {
-      final file = File(photo.path);
-      final sha256 = await HashUtils.calculateFileSha256(file);
+    final image = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+
+    if (image != null) {
+      final file = File(image.path);
+      final hash = await HashUtils.calculateFileSha256(file);
       setState(() {
         _capturedPhoto = file;
-        _photoSha256 = sha256;
+        _photoSha256 = hash;
       });
     }
   }
 
-  Future<void> _triggerOcrAssist() async {
-    // Simulación de respuesta OCR estructurada para Human-in-the-Loop
-    final mockExtraction = {
-      'polling_station_code': widget.pollingStationCode,
-      'confidence_map': [
-        {'field': 'Mesa de Votación', 'value': widget.pollingStationCode, 'confidence': 0.99},
-        {'field': 'Electores Hábiles', 'value': 300, 'confidence': 0.98},
-        {'field': 'Ciudadanos que Votaron', 'value': 280, 'confidence': 0.94},
-        {'field': 'Votos en Blanco', 'value': 10, 'confidence': 0.92},
-        {'field': 'Votos Nulos', 'value': 5, 'confidence': 0.88},
-        {'field': 'Votos Impugnados', 'value': 0, 'confidence': 0.72}, // Baja confianza
-        {'field': 'Total de Votos Emitidos', 'value': 280, 'confidence': 0.96},
-      ],
-      'results': [
-        {'political_organization_id': 1, 'votes': 145, 'confidence': 0.96},
-        {'political_organization_id': 2, 'votes': 120, 'confidence': 0.92},
-      ],
-    };
-
-    if (!mounted) return;
+  void _triggerOcrAssist() {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => OcrPreviewModal(
-        extractionData: mockExtraction,
+        extractionData: const {
+          'confidence_map': [
+            {'field': 'electores_habiles', 'confidence': 0.98},
+            {'field': 'votantes', 'confidence': 0.95},
+            {'field': 'total_votos', 'confidence': 0.96},
+            {'field': 'votos_blancos', 'confidence': 0.90},
+            {'field': 'votos_nulos', 'confidence': 0.88},
+            {'field': 'partido_1_votos', 'confidence': 0.94},
+            {'field': 'partido_2_votos', 'confidence': 0.82},
+          ],
+          'results': [
+            {'party_id': 1, 'votes': 85},
+            {'party_id': 2, 'votes': 70},
+          ]
+        },
         onApply: () {
           setState(() {
             _registeredVotersController.text = '300';
             _votersWhoVotedController.text = '280';
+            _totalVotesController.text = '280';
             _blankVotesController.text = '10';
             _nullVotesController.text = '5';
-            _challengedVotesController.text = '0';
-            _totalVotesController.text = '280';
 
-            (_parties[0]['votesController'] as TextEditingController).text = '145';
+            (_parties[0]['votesController'] as TextEditingController).text = '85';
             _parties[0]['source'] = 'OCR';
-            _parties[0]['confidence'] = 0.96;
+            _parties[0]['confidence'] = 0.94;
 
-            (_parties[1]['votesController'] as TextEditingController).text = '120';
+            (_parties[1]['votesController'] as TextEditingController).text = '70';
             _parties[1]['source'] = 'OCR';
-            _parties[1]['confidence'] = 0.92;
+            _parties[1]['confidence'] = 0.82;
           });
           _recalculateValidation();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -176,16 +206,6 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
     final nullVotes = int.tryParse(_nullVotesController.text) ?? 0;
     final challenged = int.tryParse(_challengedVotesController.text) ?? 0;
 
-    final resultsList = _parties.map((p) {
-      final votes = int.tryParse((p['votesController'] as TextEditingController).text) ?? 0;
-      return {
-        'political_organization_id': p['id'],
-        'votes': votes,
-        'source': p['source'],
-        'confidence': p['confidence'],
-      };
-    }).toList();
-
     final status = isConfirmation ? 'READY_TO_SYNC' : 'DRAFT';
 
     // 1. Guardar en SQLite local (Drift)
@@ -193,7 +213,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       act: LocalActsTableCompanion(
         clientActUuid: drift.Value(_clientActUuid),
         electionId: drift.Value(widget.electionId),
-        electoralLevelId: drift.Value(widget.electoralLevelId),
+        electoralLevelId: drift.Value(_selectedLevelId),
         pollingStationCode: drift.Value(widget.pollingStationCode),
         status: drift.Value(status),
         capturedAt: drift.Value(DateTime.now()),
@@ -240,7 +260,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       final payload = {
         'polling_station_code': widget.pollingStationCode,
         'election_id': widget.electionId,
-        'electoral_level_id': widget.electoralLevelId,
+        'electoral_level_id': _selectedLevelId,
         'status': 'CONFIRMED',
         'totals': {
           'registered_voters': registered,
@@ -250,51 +270,57 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
           'null_votes': nullVotes,
           'challenged_votes': challenged,
         },
-        'results': resultsList,
+        'results': _parties.map((p) {
+          final votes = int.tryParse((p['votesController'] as TextEditingController).text) ?? 0;
+          return {
+            'political_organization_id': p['id'],
+            'votes': votes,
+            'source': p['source'],
+            'confidence': p['confidence'],
+          };
+        }).toList(),
       };
 
       await db.enqueueSyncOperation(
-        LocalSyncOperationsTableCompanion(
-          clientOperationId: drift.Value(clientOpId),
-          entityType: const drift.Value('acts'),
-          entityId: drift.Value(_clientActUuid),
-          operation: const drift.Value('CREATE'),
-          payloadJson: drift.Value(jsonEncode(payload)),
-          checksum: drift.Value(HashUtils.calculateStringSha256(jsonEncode(payload))),
+        LocalSyncOperationsTableCompanion.insert(
+          clientOperationId: clientOpId,
+          entityType: 'acts',
+          entityId: _clientActUuid,
+          payloadJson: jsonEncode(payload),
+          checksum: drift.Value(_photoSha256 ?? ''),
           status: const drift.Value('PENDING'),
-          createdAt: drift.Value(DateTime.now()),
         ),
       );
-
-      // Disparar sincronización si hay red
-      ref.read(syncEngineProvider).syncPendingOperations();
     }
 
     setState(() => _isSaving = false);
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(isConfirmation
-            ? 'Acta confirmada y encolada para sincronización.'
-            : 'Borrador guardado localmente en SQLite.'),
-        backgroundColor: AppColors.success,
-      ),
-    );
-
-    Navigator.pop(context);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isConfirmation
+                ? 'Acta confirmada y encolada para sincronización.'
+                : 'Borrador guardado localmente.',
+          ),
+          backgroundColor: isConfirmation ? AppColors.success : AppColors.info,
+        ),
+      );
+      Navigator.pop(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentLevel = getElectoralLevelById(_selectedLevelId);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        elevation: 0,
         title: Text(
-          'Mesa ${widget.pollingStationCode}',
-          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+          'Registro de Acta — Mesa ${widget.pollingStationCode}',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
@@ -309,6 +335,65 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Selector del Tipo de Acta / Nivel Electoral (Gobernador, Provincial, Distrital)
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: currentLevel.color.withValues(alpha: 0.4)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Tipo de Acta Electoral:',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: kElectoralLevels.map((level) {
+                        final isSelected = level.id == _selectedLevelId;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            avatar: Icon(
+                              level.icon,
+                              size: 16,
+                              color: isSelected ? Colors.white : level.color,
+                            ),
+                            label: Text(level.shortTitle),
+                            selected: isSelected,
+                            selectedColor: level.color,
+                            backgroundColor: AppColors.surfaceElevated,
+                            labelStyle: TextStyle(
+                              color: isSelected ? Colors.white : AppColors.textPrimary,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              fontSize: 12,
+                            ),
+                            onSelected: (selected) {
+                              if (selected) {
+                                setState(() {
+                                  _selectedLevelId = level.id;
+                                });
+                              }
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
             // Banner de Advertencias de Validación en Tiempo Real
             if (!_validationResult.isValid)
               Container(
@@ -352,7 +437,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
 
             // Sección 1: Totales del Acta
             _buildSectionCard(
-              title: 'Totales del Acta',
+              title: 'Totales del Acta (${currentLevel.shortTitle})',
               icon: Icons.calculate_outlined,
               child: Column(
                 children: [
@@ -369,13 +454,15 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
 
             const SizedBox(height: 16),
 
-            // Sección 2: Votos por Lista Electoral
+            // Sección 2: Votos por Organización Política con Logos Oficiales
             _buildSectionCard(
               title: 'Votos por Organización Política',
               icon: Icons.how_to_vote_outlined,
               child: Column(
                 children: _parties.map((party) {
                   final name = party['name'] as String;
+                  final shortName = party['shortName'] as String?;
+                  final logoUrl = party['logoUrl'] as String?;
                   final controller = party['votesController'] as TextEditingController;
                   final source = party['source'] as String;
 
@@ -384,11 +471,19 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: AppColors.surfaceElevated,
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: AppColors.border),
                     ),
                     child: Row(
                       children: [
+                        // Logo oficial de la Organización Política
+                        PartyLogoWidget(
+                          logoUrl: logoUrl,
+                          name: name,
+                          shortName: shortName,
+                          size: 44,
+                        ),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -398,7 +493,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                                 style: const TextStyle(
                                   color: AppColors.textPrimary,
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 14,
+                                  fontSize: 13,
                                 ),
                               ),
                               if (source != 'MANUAL')
@@ -417,6 +512,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                             ],
                           ),
                         ),
+                        const SizedBox(width: 8),
                         SizedBox(
                           width: 80,
                           child: TextField(
@@ -451,13 +547,13 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
 
             // Sección 3: Evidencia Fotográfica
             _buildSectionCard(
-              title: 'Fotografía del Acta (Evidencia)',
+              title: 'Fotografía del Acta',
               icon: Icons.camera_alt_outlined,
               child: Column(
                 children: [
                   if (_capturedPhoto != null) ...[
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(8),
                       child: Image.file(_capturedPhoto!, height: 180, width: double.infinity, fit: BoxFit.cover),
                     ),
                     const SizedBox(height: 8),
@@ -467,19 +563,15 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.info,
-                        side: const BorderSide(color: AppColors.info),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                      icon: const Icon(Icons.photo_camera),
-                      label: Text(_capturedPhoto != null ? 'Tomar Otra Fotografía' : 'Capturar Fotografía del Acta'),
-                      onPressed: _takePhoto,
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.accent,
+                      side: const BorderSide(color: AppColors.accent),
+                      minimumSize: const Size.fromHeight(44),
                     ),
+                    icon: const Icon(Icons.camera_alt),
+                    label: Text(_capturedPhoto == null ? 'Capturar Foto del Acta' : 'Tomar Otra Foto'),
+                    onPressed: _takePhoto,
                   ),
                 ],
               ),
@@ -495,8 +587,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.textSecondary,
                       side: const BorderSide(color: AppColors.border),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      minimumSize: const Size.fromHeight(48),
                     ),
                     onPressed: _isSaving ? null : () => _saveAct(isConfirmation: false),
                     child: const Text('Guardar Borrador'),
@@ -507,8 +598,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.accent,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      minimumSize: const Size.fromHeight(48),
                     ),
                     onPressed: _isSaving ? null : () => _saveAct(isConfirmation: true),
                     child: _isSaving
@@ -517,10 +607,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                             height: 20,
                             child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                           )
-                        : const Text(
-                            'Confirmar Acta',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                          ),
+                        : const Text('Confirmar y Sincronizar', style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -531,12 +618,16 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
     );
   }
 
-  Widget _buildSectionCard({required String title, required IconData icon, required Widget child}) {
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
@@ -565,11 +656,15 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
 
   Widget _buildNumberField(String label, TextEditingController controller) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
-            child: Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+            child: Text(
+              label,
+              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            ),
           ),
           SizedBox(
             width: 80,
@@ -577,13 +672,13 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
               controller: controller,
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.bold),
+              style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(vertical: 6),
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
                 filled: true,
-                fillColor: AppColors.surfaceElevated,
+                fillColor: AppColors.background,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                   borderSide: const BorderSide(color: AppColors.border),
                 ),
               ),

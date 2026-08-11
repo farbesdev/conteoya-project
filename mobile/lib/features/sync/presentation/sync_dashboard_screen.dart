@@ -5,6 +5,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/providers.dart';
 import '../../../core/sync/sync_engine.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../acts/domain/electoral_level.dart';
 import '../../acts/presentation/act_form_screen.dart';
 import '../../auth/domain/auth_state.dart';
 import '../../auth/presentation/auth_notifier.dart';
@@ -304,27 +305,56 @@ class SyncDashboardScreen extends ConsumerWidget {
             style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
           ),
           const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-              icon: const Icon(Icons.edit_note, color: Colors.white),
-              label: const Text(
-                'Registrar Resultados',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                    builder: (ctx) => ActFormScreen(pollingStationCode: code),
+          const Text(
+            'Seleccione Tipo de Acta a Registrar:',
+            style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: kElectoralLevels.map((level) {
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: level.color.withValues(alpha: 0.15),
+                      foregroundColor: level.color,
+                      side: BorderSide(color: level.color.withValues(alpha: 0.4)),
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      elevation: 0,
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (ctx) => ActFormScreen(
+                            pollingStationCode: code,
+                            electoralLevelId: level.id,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(level.icon, size: 18, color: level.color),
+                        const SizedBox(height: 4),
+                        Text(
+                          level.shortTitle,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: level.color,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            }).toList(),
           ),
         ],
       ),
