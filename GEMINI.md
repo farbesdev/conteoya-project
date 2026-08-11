@@ -65,6 +65,7 @@ Antes de escribir código en cualquier área, **leer el skill correspondiente**.
 | Skill | Activar cuando... |
 |-------|-------------------|
 | `git-conventional-commits` | Antes de cualquier `git commit` o crear una rama |
+| `direct-to-trunk-sync` | Flujo de sincronización `git pull --rebase` y `git push` en `main` para 2 devs |
 | `postgresql-16-best-practices` | Diseño de tablas, índices, constraints, migraciones |
 | `software-engineering-best-practices` | Arquitectura, patrones, offline-first, idempotencia |
 | `flutter-dart-best-practices` | Cualquier código Flutter/Dart |
