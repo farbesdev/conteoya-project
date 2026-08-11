@@ -31,7 +31,7 @@ void main() {
 
     expect(find.text('ConteoYA'), findsOneWidget);
     expect(find.text('Iniciar Sesión'), findsOneWidget);
-    expect(find.text('Correo Electrónico'), findsOneWidget);
+    expect(find.textContaining('Correo Electrónico'), findsOneWidget);
 
     testEngine.stop();
     await memoryDb.close();

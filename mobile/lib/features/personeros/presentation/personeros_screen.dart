@@ -189,6 +189,8 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                   children: [
                     Text(
                       personero.fullName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 16,

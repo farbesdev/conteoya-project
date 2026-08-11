@@ -3,17 +3,19 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/database/app_database.dart';
 import '../../../core/network/api_client.dart';
 import '../domain/user_model.dart';
 
 class AuthRepository {
   final ApiClient apiClient;
+  final AppDatabase? db;
 
   static const String _sessionKey = 'conteoya_user_session';
   static const String _deviceUuidKey = 'conteoya_device_uuid';
   static const String _serverUrlKey = 'conteoya_server_url';
 
-  AuthRepository({required this.apiClient});
+  AuthRepository({required this.apiClient, this.db});
 
   /// Inicializa la URL del servidor desde la configuración guardada
   Future<void> initServerUrl() async {
@@ -47,7 +49,7 @@ class AuthRepository {
     return deviceUuid;
   }
 
-  /// Inicia sesión en el backend Laravel y guarda el token localmente
+  /// Inicia sesión en el backend Laravel o base de datos local SQLite (Offline-First)
   Future<UserSession> login({
     required String email,
     required String password,
@@ -55,6 +57,7 @@ class AuthRepository {
   }) async {
     final deviceUuid = await getOrCreateDeviceUuid();
 
+    Object? dioOrServerException;
     try {
       final response = await apiClient.post<dynamic>(
         '/login',
@@ -68,7 +71,6 @@ class AuthRepository {
 
       if (response.statusCode == 200 && response.data != null) {
         final Map<String, dynamic> data = _normalizeToMap(response.data);
-
         final token = data['access_token']?.toString() ?? '';
         final userData = _normalizeToMap(data['user']);
 
@@ -78,14 +80,11 @@ class AuthRepository {
           deviceUuid: deviceUuid,
         );
 
-        // Guardar sesión y configurar token en el cliente HTTP
         apiClient.setAuthToken(token);
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString(_sessionKey, jsonEncode(session.toJson()));
 
         return session;
-      } else {
-        throw Exception('El servidor respondió con código ${response.statusCode}');
       }
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
@@ -103,13 +102,13 @@ class AuthRepository {
       }
 
       if (statusCode == 401) {
-        throw Exception('Credenciales incorrectas. Verifique su correo y contraseña.');
+        dioOrServerException = Exception('Credenciales incorrectas. Verifique su correo y contraseña.');
       } else if (statusCode == 403) {
-        throw Exception('El usuario se encuentra inactivo en el sistema.');
+        dioOrServerException = Exception('El usuario se encuentra inactivo en el sistema.');
       } else if (statusCode == 404) {
-        throw Exception('Ruta no encontrada (404) en ${apiClient.baseUrl}/login. Verifique la URL del servidor.');
+        dioOrServerException = Exception('Ruta no encontrada (404) en ${apiClient.baseUrl}/login. Verifique la URL del servidor.');
       } else if (statusCode == 500) {
-        throw Exception(
+        dioOrServerException = Exception(
           serverMessage.isNotEmpty
               ? 'Error interno del servidor (500): $serverMessage'
               : 'Error interno del servidor (500). Verifique los logs en el VPS.',
@@ -119,17 +118,46 @@ class AuthRepository {
                  e.type == DioExceptionType.sendTimeout ||
                  e.type == DioExceptionType.receiveTimeout) {
         final detail = e.error?.toString() ?? e.message ?? '';
-        throw Exception('Sin conexión con ${apiClient.baseUrl}. $detail');
+        dioOrServerException = Exception('Sin conexión con ${apiClient.baseUrl}. $detail');
+      } else {
+        dioOrServerException = Exception(
+          serverMessage.isNotEmpty
+              ? serverMessage
+              : 'Error al conectar (${statusCode ?? 'sin respuesta'}): ${e.message ?? 'Desconocido'}',
+        );
       }
-
-      if (serverMessage.isNotEmpty) {
-        throw Exception(serverMessage);
-      }
-      throw Exception('Error al conectar (${statusCode ?? 'sin respuesta'}): ${e.message ?? 'Desconocido'}');
     } catch (e) {
-      if (e is Exception) rethrow;
-      throw Exception('Error inesperado al iniciar sesión: $e');
+      dioOrServerException = e;
     }
+
+    // 2. Fallback Autenticación Local SQLite (Personeros creados en la App)
+    if (db != null) {
+      final localPersonero = await db!.getPersoneroByEmailOrDni(email);
+      if (localPersonero != null) {
+        final session = UserSession(
+          id: localPersonero.id,
+          name: '${localPersonero.firstName} ${localPersonero.lastName}',
+          email: localPersonero.email ?? '${localPersonero.dni}@conteoya.pe',
+          role: 'PERSONERO',
+          personeroId: localPersonero.id,
+          token: 'offline-token-${localPersonero.dni}',
+          deviceUuid: deviceUuid,
+        );
+
+        apiClient.setAuthToken(session.token);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_sessionKey, jsonEncode(session.toJson()));
+
+        return session;
+      }
+    }
+
+    if (dioOrServerException != null) {
+      if (dioOrServerException is Exception) throw dioOrServerException;
+      throw Exception(dioOrServerException.toString());
+    }
+
+    throw Exception('Credenciales incorrectas o usuario no registrado. Verifique su correo o DNI.');
   }
 
   /// Convierte dinámicamente cualquier objeto a Map sin lanzar IndexExceptions

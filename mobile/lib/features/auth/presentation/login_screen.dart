@@ -254,9 +254,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     keyboardType: TextInputType.emailAddress,
                     style: const TextStyle(color: AppColors.textPrimary),
                     decoration: InputDecoration(
-                      labelText: 'Correo Electrónico',
+                      labelText: 'Correo Electrónico o DNI',
                       labelStyle: const TextStyle(color: AppColors.textSecondary),
-                      prefixIcon: const Icon(Icons.email_outlined, color: AppColors.textMuted),
+                      prefixIcon: const Icon(Icons.person_outline, color: AppColors.textMuted),
                       filled: true,
                       fillColor: AppColors.surface,
                       border: OutlineInputBorder(
@@ -274,10 +274,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Ingrese su correo electrónico';
+                        return 'Ingrese su correo electrónico o DNI';
                       }
-                      if (!value.contains('@')) {
-                        return 'Ingrese un correo electrónico válido';
+                      final clean = value.trim();
+                      if (!clean.contains('@') && !RegExp(r'^\d{8}$').hasMatch(clean)) {
+                        return 'Ingrese un correo válido o DNI de 8 dígitos';
                       }
                       return null;
                     },

@@ -6,7 +6,8 @@ import '../domain/auth_state.dart';
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final apiClient = ref.watch(apiClientProvider);
-  return AuthRepository(apiClient: apiClient);
+  final db = ref.watch(appDatabaseProvider);
+  return AuthRepository(apiClient: apiClient, db: db);
 });
 
 final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {

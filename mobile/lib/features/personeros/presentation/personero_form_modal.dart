@@ -286,6 +286,7 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
               mesasAsync.when(
                 data: (mesas) {
                   return DropdownButtonFormField<String>(
+                    isExpanded: true,
                     initialValue: _selectedMesaCode,
                     dropdownColor: AppColors.surface,
                     style: const TextStyle(color: AppColors.textPrimary),
@@ -308,6 +309,7 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
                         value: mesa.code,
                         enabled: !isAssignedToOther,
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               'Mesa ${mesa.code}',
@@ -317,11 +319,15 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              isAssignedToOther ? '(${mesa.assignedPersoneroName})' : '(${mesa.districtName})',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isAssignedToOther ? AppColors.danger : AppColors.textSecondary,
+                            Flexible(
+                              child: Text(
+                                isAssignedToOther ? '(${mesa.assignedPersoneroName})' : '(${mesa.districtName})',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: isAssignedToOther ? AppColors.danger : AppColors.textSecondary,
+                                ),
                               ),
                             ),
                           ],

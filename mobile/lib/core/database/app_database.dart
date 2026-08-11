@@ -199,6 +199,20 @@ class AppDatabase extends _$AppDatabase {
     return (select(localPersonerosTable)..where((t) => t.dni.equals(dni))).getSingleOrNull();
   }
 
+  Future<LocalPersonero?> getPersoneroByEmailOrDni(String queryStr) async {
+    final clean = queryStr.trim();
+    if (clean.isEmpty) return null;
+    final byDni = await (select(localPersonerosTable)..where((t) => t.dni.equals(clean))).getSingleOrNull();
+    if (byDni != null) return byDni;
+    final byEmail = await (select(localPersonerosTable)..where((t) => t.email.equals(clean))).getSingleOrNull();
+    if (byEmail != null) return byEmail;
+    final digits = RegExp(r'\d{8}').firstMatch(clean)?.group(0);
+    if (digits != null) {
+      return (select(localPersonerosTable)..where((t) => t.dni.equals(digits))).getSingleOrNull();
+    }
+    return null;
+  }
+
   Future<LocalPersonero?> getPersoneroByStation(String pollingStationCode) {
     return (select(localPersonerosTable)
           ..where((t) => t.pollingStationCode.equals(pollingStationCode)))
