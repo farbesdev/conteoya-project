@@ -36,13 +36,25 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
   final String _clientActUuid = const Uuid().v4();
   late int _selectedLevelId;
 
-  // Controllers de Totales
+  // Controllers de Totales Regional
   final TextEditingController _registeredVotersController = TextEditingController(text: '300');
   final TextEditingController _votersWhoVotedController = TextEditingController(text: '280');
   final TextEditingController _totalVotesController = TextEditingController(text: '280');
   final TextEditingController _blankVotesController = TextEditingController(text: '10');
   final TextEditingController _nullVotesController = TextEditingController(text: '5');
   final TextEditingController _challengedVotesController = TextEditingController(text: '0');
+
+  // Controllers de Totales Municipal Provincial
+  final TextEditingController _provTotalVotesController = TextEditingController(text: '574');
+  final TextEditingController _provBlankVotesController = TextEditingController(text: '8');
+  final TextEditingController _provNullVotesController = TextEditingController(text: '12');
+  final TextEditingController _provChallengedVotesController = TextEditingController(text: '0');
+
+  // Controllers de Totales Municipal Distrital
+  final TextEditingController _distTotalVotesController = TextEditingController(text: '577');
+  final TextEditingController _distBlankVotesController = TextEditingController(text: '8');
+  final TextEditingController _distNullVotesController = TextEditingController(text: '12');
+  final TextEditingController _distChallengedVotesController = TextEditingController(text: '0');
 
   // Listas electorales oficiales JEE de Organizaciones Políticas con sus logos
   final List<Map<String, Object?>> _parties = [
@@ -52,6 +64,8 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       'shortName': 'AP',
       'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/4.png',
       'votesController': TextEditingController(text: '85'),
+      'votesProvincialController': TextEditingController(text: '85'),
+      'votesDistritalController': TextEditingController(text: '80'),
       'source': 'MANUAL',
       'confidence': null,
     },
@@ -61,6 +75,8 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       'shortName': 'SOMOS PERU',
       'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/14.png',
       'votesController': TextEditingController(text: '70'),
+      'votesProvincialController': TextEditingController(text: '70'),
+      'votesDistritalController': TextEditingController(text: '75'),
       'source': 'MANUAL',
       'confidence': null,
     },
@@ -70,6 +86,8 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       'shortName': 'APP',
       'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/1257.png',
       'votesController': TextEditingController(text: '55'),
+      'votesProvincialController': TextEditingController(text: '55'),
+      'votesDistritalController': TextEditingController(text: '50'),
       'source': 'MANUAL',
       'confidence': null,
     },
@@ -79,6 +97,8 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       'shortName': 'JP',
       'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/1264.png',
       'votesController': TextEditingController(text: '30'),
+      'votesProvincialController': TextEditingController(text: '30'),
+      'votesDistritalController': TextEditingController(text: '32'),
       'source': 'MANUAL',
       'confidence': null,
     },
@@ -88,6 +108,8 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       'shortName': 'FP',
       'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/1366.png',
       'votesController': TextEditingController(text: '25'),
+      'votesProvincialController': TextEditingController(text: '25'),
+      'votesDistritalController': TextEditingController(text: '28'),
       'source': 'MANUAL',
       'confidence': null,
     },
@@ -97,6 +119,8 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       'shortName': 'AVANZA PAIS',
       'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2173.png',
       'votesController': TextEditingController(text: '15'),
+      'votesProvincialController': TextEditingController(text: '15'),
+      'votesDistritalController': TextEditingController(text: '15'),
       'source': 'MANUAL',
       'confidence': null,
     },
@@ -328,7 +352,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         title: Text(
-          'Registro de Acta — Mesa ${widget.pollingStationCode}',
+          'Acta ${currentLevel.shortTitle} — Mesa ${widget.pollingStationCode}',
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         actions: [
@@ -345,64 +369,6 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Selector del Tipo de Acta / Nivel Electoral (Gobernador, Provincial, Distrital)
-            Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: currentLevel.color.withValues(alpha: 0.4)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Tipo de Acta Electoral:',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: kElectoralLevels.map((level) {
-                        final isSelected = level.id == _selectedLevelId;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            avatar: Icon(
-                              level.icon,
-                              size: 16,
-                              color: isSelected ? Colors.white : level.color,
-                            ),
-                            label: Text(level.shortTitle),
-                            selected: isSelected,
-                            selectedColor: level.color,
-                            backgroundColor: AppColors.surfaceElevated,
-                            labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : AppColors.textPrimary,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              fontSize: 12,
-                            ),
-                            onSelected: (selected) {
-                              if (selected) {
-                                setState(() {
-                                  _selectedLevelId = level.id;
-                                });
-                              }
-                            },
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
             // Banner de Advertencias de Validación en Tiempo Real
             if (!_validationResult.isValid)
               Container(
@@ -445,21 +411,65 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
               ),
 
             // Sección 1: Totales del Acta
-            _buildSectionCard(
-              title: 'Totales del Acta (${currentLevel.shortTitle})',
-              icon: Icons.calculate_outlined,
-              child: Column(
-                children: [
-                  _buildNumberField('Electores Hábiles', _registeredVotersController),
-                  _buildNumberField('Ciudadanos que Votaron', _votersWhoVotedController),
-                  _buildNumberField('Total de Votos Emitidos', _totalVotesController),
-                  const Divider(color: AppColors.border, height: 24),
-                  _buildNumberField('Votos en Blanco', _blankVotesController),
-                  _buildNumberField('Votos Nulos', _nullVotesController),
-                  _buildNumberField('Votos Impugnados', _challengedVotesController),
-                ],
+            if (_selectedLevelId == 2) ...[
+              // 3 Cards separadas para Acta Municipal Provincial - Distrital (Requerimiento Imagen 4)
+              _buildSectionCard(
+                title: 'Totales Votos Municipal Provincial',
+                icon: Icons.location_city_rounded,
+                child: Column(
+                  children: [
+                    _buildNumberField('Votos en Blanco', _provBlankVotesController),
+                    _buildNumberField('Votos Nulos', _provNullVotesController),
+                    _buildNumberField('Votos Impugnados', _provChallengedVotesController),
+                    const Divider(color: AppColors.border, height: 24),
+                    _buildNumberField('Total Votos Emitidos (Provincial)', _provTotalVotesController),
+                  ],
+                ),
               ),
-            ),
+              const SizedBox(height: 14),
+
+              _buildSectionCard(
+                title: 'Totales Votos Municipal Distrital',
+                icon: Icons.holiday_village_rounded,
+                child: Column(
+                  children: [
+                    _buildNumberField('Votos en Blanco', _distBlankVotesController),
+                    _buildNumberField('Votos Nulos', _distNullVotesController),
+                    _buildNumberField('Votos Impugnados', _distChallengedVotesController),
+                    const Divider(color: AppColors.border, height: 24),
+                    _buildNumberField('Total Votos Emitidos (Distrital)', _distTotalVotesController),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              _buildSectionCard(
+                title: 'Totales del Acta (Electores y Asistencia)',
+                icon: Icons.calculate_outlined,
+                child: Column(
+                  children: [
+                    _buildNumberField('Electores Hábiles', _registeredVotersController),
+                    _buildNumberField('Ciudadanos que Votaron', _votersWhoVotedController),
+                  ],
+                ),
+              ),
+            ] else ...[
+              _buildSectionCard(
+                title: 'Totales del Acta (Gobernador Regional)',
+                icon: Icons.calculate_outlined,
+                child: Column(
+                  children: [
+                    _buildNumberField('Electores Hábiles', _registeredVotersController),
+                    _buildNumberField('Ciudadanos que Votaron', _votersWhoVotedController),
+                    _buildNumberField('Total de Votos Emitidos', _totalVotesController),
+                    const Divider(color: AppColors.border, height: 24),
+                    _buildNumberField('Votos en Blanco', _blankVotesController),
+                    _buildNumberField('Votos Nulos', _nullVotesController),
+                    _buildNumberField('Votos Impugnados', _challengedVotesController),
+                  ],
+                ),
+              ),
+            ],
 
             const SizedBox(height: 16),
 
@@ -468,87 +478,175 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
               title: 'Votos por Organización Política',
               icon: Icons.how_to_vote_outlined,
               child: Column(
-                children: _parties.map((party) {
-                  final name = party['name'] as String;
-                  final shortName = party['shortName'] as String?;
-                  final logoUrl = party['logoUrl'] as String?;
-                  final controller = party['votesController'] as TextEditingController;
-                  final source = party['source'] as String;
-
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceElevated,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.border),
+                children: [
+                  if (_selectedLevelId == 2)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Row(
+                        children: [
+                          const Expanded(child: SizedBox()),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            width: 65,
+                            child: Text(
+                              'Municipal\nProvincial',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: AppColors.accent,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            width: 65,
+                            child: Text(
+                              'Municipal\nDistrital',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: AppColors.info,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    child: Row(
-                      children: [
-                        // Logo oficial de la Organización Política
-                        PartyLogoWidget(
-                          logoUrl: logoUrl,
-                          name: name,
-                          shortName: shortName,
-                          size: 44,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                name,
+                  ..._parties.map((party) {
+                    final name = party['name'] as String;
+                    final shortName = party['shortName'] as String?;
+                    final logoUrl = party['logoUrl'] as String?;
+                    final controller = party['votesController'] as TextEditingController;
+                    final provController = party['votesProvincialController'] as TextEditingController?;
+                    final distController = party['votesDistritalController'] as TextEditingController?;
+                    final source = party['source'] as String;
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceElevated,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          // Logo oficial de la Organización Política
+                          PartyLogoWidget(
+                            logoUrl: logoUrl,
+                            name: name,
+                            shortName: shortName,
+                            size: 44,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name,
+                                  style: const TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                if (source != 'MANUAL')
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 4),
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.info.withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      'Fuente: $source',
+                                      style: const TextStyle(color: AppColors.info, fontSize: 10),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          if (_selectedLevelId == 2 && provController != null && distController != null) ...[
+                            SizedBox(
+                              width: 65,
+                              child: TextField(
+                                controller: provController,
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
                                 style: const TextStyle(
                                   color: AppColors.textPrimary,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                              ),
-                              if (source != 'MANUAL')
-                                Container(
-                                  margin: const EdgeInsets.only(top: 4),
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.info.withValues(alpha: 0.2),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    'Fuente: $source',
-                                    style: const TextStyle(color: AppColors.info, fontSize: 10),
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                                  filled: true,
+                                  fillColor: AppColors.background,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(color: AppColors.border),
                                   ),
                                 ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          width: 80,
-                          child: TextField(
-                            controller: controller,
-                            keyboardType: TextInputType.number,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            decoration: InputDecoration(
-                              contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                              filled: true,
-                              fillColor: AppColors.background,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(color: AppColors.border),
+                                onChanged: (_) => _recalculateValidation(),
                               ),
                             ),
-                            onChanged: (_) => _recalculateValidation(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 65,
+                              child: TextField(
+                                controller: distController,
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                                  filled: true,
+                                  fillColor: AppColors.background,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(color: AppColors.border),
+                                  ),
+                                ),
+                                onChanged: (_) => _recalculateValidation(),
+                              ),
+                            ),
+                          ] else
+                            SizedBox(
+                              width: 80,
+                              child: TextField(
+                                controller: controller,
+                                keyboardType: TextInputType.number,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                decoration: InputDecoration(
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                                  filled: true,
+                                  fillColor: AppColors.background,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                    borderSide: const BorderSide(color: AppColors.border),
+                                  ),
+                                ),
+                                onChanged: (_) => _recalculateValidation(),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  }),
+                ],
               ),
             ),
 

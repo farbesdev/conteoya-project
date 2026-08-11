@@ -8,6 +8,7 @@ import '../../auth/presentation/auth_notifier.dart';
 import '../../mesas/domain/mesa_model.dart';
 import 'act_form_screen.dart';
 import 'act_detail_screen.dart';
+import 'select_act_type_modal.dart';
 
 class PersoneroActasScreen extends ConsumerWidget {
   const PersoneroActasScreen({super.key});
@@ -101,6 +102,7 @@ class PersoneroActasScreen extends ConsumerWidget {
                       status: assignedMesa.municipalStatus,
                       primaryColor: AppColors.info,
                     ),
+                    const SizedBox(height: 80),
                   ],
                 );
               },
@@ -110,6 +112,28 @@ class PersoneroActasScreen extends ConsumerWidget {
           },
           loading: () => const Center(child: CircularProgressIndicator(color: AppColors.accent)),
           error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: AppColors.danger))),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          final personeros = personerosAsync.asData?.value;
+          final myPersonero = personeros?.cast<dynamic>().firstWhere(
+                (p) => p.email == user?.email || (user?.personeroId != null && p.id == user?.personeroId),
+                orElse: () => personeros != null && personeros.isNotEmpty ? personeros.first : null,
+              );
+          final code = myPersonero?.pollingStationCode ?? '030390';
+
+          SelectActTypeModal.show(
+            context,
+            pollingStationCode: code,
+          );
+        },
+        backgroundColor: AppColors.accent,
+        elevation: 4,
+        icon: const Icon(Icons.add_task_rounded, color: Colors.white),
+        label: const Text(
+          '+ Registrar Acta',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
     );
