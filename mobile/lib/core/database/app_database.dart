@@ -22,7 +22,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -30,11 +30,15 @@ class AppDatabase extends _$AppDatabase {
           await m.createAll();
         },
         onUpgrade: (m, from, to) async {
-          if (from < 3) {
-            final personeroMigrator = createMigrator();
+          final migrator = createMigrator();
+          if (from < 4) {
             try {
-              await personeroMigrator.drop(localPersonerosTable);
-              await personeroMigrator.createTable(localPersonerosTable);
+              await migrator.drop(localPersonerosTable);
+              await migrator.createTable(localPersonerosTable);
+            } catch (_) {}
+            try {
+              await migrator.drop(localPollingStationsTable);
+              await migrator.createTable(localPollingStationsTable);
             } catch (_) {}
           }
         },
@@ -43,10 +47,25 @@ class AppDatabase extends _$AppDatabase {
           await customStatement('PRAGMA journal_mode = WAL');
 
           final m = createMigrator();
+
+          // 1. Validar y autorreparar local_polling_stations_table
           try {
-            // Verificar si la tabla personeros tiene la columna last_name
-            final result = await customSelect("PRAGMA table_info('local_personeros_table')").get();
-            final hasLastName = result.any((row) => row.read<String>('name') == 'last_name');
+            final stationColumns = await customSelect("PRAGMA table_info('local_polling_stations_table')").get();
+            final hasDistrictName = stationColumns.any((row) => row.read<String>('name') == 'district_name');
+            if (!hasDistrictName) {
+              await m.drop(localPollingStationsTable);
+              await m.createTable(localPollingStationsTable);
+            }
+          } catch (_) {
+            try {
+              await m.createTable(localPollingStationsTable);
+            } catch (_) {}
+          }
+
+          // 2. Validar y autorreparar local_personeros_table
+          try {
+            final personeroColumns = await customSelect("PRAGMA table_info('local_personeros_table')").get();
+            final hasLastName = personeroColumns.any((row) => row.read<String>('name') == 'last_name');
             if (!hasLastName) {
               await m.drop(localPersonerosTable);
               await m.createTable(localPersonerosTable);
@@ -57,9 +76,6 @@ class AppDatabase extends _$AppDatabase {
             } catch (_) {}
           }
 
-          try {
-            await m.createTable(localPollingStationsTable);
-          } catch (_) {}
           try {
             await m.createTable(localPoliticalOrganizationsTable);
           } catch (_) {}
@@ -268,75 +284,91 @@ class AppDatabase extends _$AppDatabase {
 
   // ─── Seeder Inicial Local (Mesas, Personeros y Organizaciones) ──────────────
   Future<void> seedInitialDataIfEmpty() async {
-    final stationCount = await (select(localPollingStationsTable)..limit(1)).get();
-    if (stationCount.isEmpty) {
-      // Sembrar Mesas Iniciales
-      await batch((b) {
-        b.insertAll(localPollingStationsTable, [
-          LocalPollingStationsTableCompanion.insert(
-            code: '030390',
-            locationName: 'I.E. NUESTRA SEÑORA DE GUADALUPE',
-            districtCode: const Value('150101'),
-            districtName: const Value('LIMA - CERCADO'),
-            provinceName: const Value('LIMA'),
-            departmentName: const Value('LIMA'),
-            registeredVoters: const Value(300),
-          ),
-          LocalPollingStationsTableCompanion.insert(
-            code: '030391',
-            locationName: 'I.E. NUESTRA SEÑORA DE GUADALUPE',
-            districtCode: const Value('150101'),
-            districtName: const Value('LIMA - CERCADO'),
-            provinceName: const Value('LIMA'),
-            departmentName: const Value('LIMA'),
-            registeredVoters: const Value(300),
-          ),
-          LocalPollingStationsTableCompanion.insert(
-            code: '030392',
-            locationName: 'I.E. PEDRO A. LABARTHE',
-            districtCode: const Value('150115'),
-            districtName: const Value('LA VICTORIA'),
-            provinceName: const Value('LIMA'),
-            departmentName: const Value('LIMA'),
-            registeredVoters: const Value(295),
-          ),
-          LocalPollingStationsTableCompanion.insert(
-            code: '030393',
-            locationName: 'I.E. ALFONSO UGARTE',
-            districtCode: const Value('150131'),
-            districtName: const Value('SAN ISIDRO'),
-            provinceName: const Value('LIMA'),
-            departmentName: const Value('LIMA'),
-            registeredVoters: const Value(310),
-          ),
-        ]);
-      });
+    try {
+      final stationCount = await (select(localPollingStationsTable)..limit(1)).get();
+      if (stationCount.isEmpty) {
+        // Sembrar Mesas Iniciales
+        await batch((b) {
+          b.insertAll(localPollingStationsTable, [
+            LocalPollingStationsTableCompanion.insert(
+              code: '030390',
+              locationName: 'I.E. NUESTRA SEÑORA DE GUADALUPE',
+              districtCode: const Value('150101'),
+              districtName: const Value('LIMA - CERCADO'),
+              provinceName: const Value('LIMA'),
+              departmentName: const Value('LIMA'),
+              registeredVoters: const Value(300),
+            ),
+            LocalPollingStationsTableCompanion.insert(
+              code: '030391',
+              locationName: 'I.E. NUESTRA SEÑORA DE GUADALUPE',
+              districtCode: const Value('150101'),
+              districtName: const Value('LIMA - CERCADO'),
+              provinceName: const Value('LIMA'),
+              departmentName: const Value('LIMA'),
+              registeredVoters: const Value(300),
+            ),
+            LocalPollingStationsTableCompanion.insert(
+              code: '030392',
+              locationName: 'I.E. PEDRO A. LABARTHE',
+              districtCode: const Value('150115'),
+              districtName: const Value('LA VICTORIA'),
+              provinceName: const Value('LIMA'),
+              departmentName: const Value('LIMA'),
+              registeredVoters: const Value(295),
+            ),
+            LocalPollingStationsTableCompanion.insert(
+              code: '030393',
+              locationName: 'I.E. ALFONSO UGARTE',
+              districtCode: const Value('150131'),
+              districtName: const Value('SAN ISIDRO'),
+              provinceName: const Value('LIMA'),
+              departmentName: const Value('LIMA'),
+              registeredVoters: const Value(310),
+            ),
+          ]);
+        });
+      }
+    } catch (_) {
+      try {
+        final m = createMigrator();
+        await m.drop(localPollingStationsTable);
+        await m.createTable(localPollingStationsTable);
+      } catch (_) {}
     }
 
-    final personeroCount = await (select(localPersonerosTable)..limit(1)).get();
-    if (personeroCount.isEmpty) {
-      // Sembrar Personero demo asignado a mesa 030390
-      await into(localPersonerosTable).insert(
-        LocalPersonerosTableCompanion.insert(
-          dni: '12345678',
-          firstName: 'Juan',
-          lastName: 'Pérez Demo',
-          pollingStationCode: '030390',
-          phoneNumber: const Value('+51 987 654 321'),
-          email: const Value('personero@conteoya.pe'),
-        ),
-      );
+    try {
+      final personeroCount = await (select(localPersonerosTable)..limit(1)).get();
+      if (personeroCount.isEmpty) {
+        // Sembrar Personero demo asignado a mesa 030390
+        await into(localPersonerosTable).insert(
+          LocalPersonerosTableCompanion.insert(
+            dni: '12345678',
+            firstName: 'Juan',
+            lastName: 'Pérez Demo',
+            pollingStationCode: '030390',
+            phoneNumber: const Value('+51 987 654 321'),
+            email: const Value('personero@conteoya.pe'),
+          ),
+        );
 
-      await into(localPersonerosTable).insert(
-        LocalPersonerosTableCompanion.insert(
-          dni: '87654321',
-          firstName: 'María Elena',
-          lastName: 'Rojas Quispe',
-          pollingStationCode: '030391',
-          phoneNumber: const Value('+51 912 345 678'),
-          email: const Value('mrojas@conteoya.pe'),
-        ),
-      );
+        await into(localPersonerosTable).insert(
+          LocalPersonerosTableCompanion.insert(
+            dni: '87654321',
+            firstName: 'María Elena',
+            lastName: 'Rojas Quispe',
+            pollingStationCode: '030391',
+            phoneNumber: const Value('+51 912 345 678'),
+            email: const Value('mrojas@conteoya.pe'),
+          ),
+        );
+      }
+    } catch (_) {
+      try {
+        final m = createMigrator();
+        await m.drop(localPersonerosTable);
+        await m.createTable(localPersonerosTable);
+      } catch (_) {}
     }
 
     // Actualizar o sembrar Organizaciones Políticas con sus logos oficiales reales de Azure Blob
