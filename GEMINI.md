@@ -171,11 +171,12 @@ Estas restricciones NO tienen excepciones:
 
 ## ✅ Obligaciones / Deberes del Agente
 
-Antes de entregar cualquier cambio:
+Antes de entregar cualquier cambio, o cuando el usuario solicite un **commit** o **push**:
 
+- [ ] **Verificación Automática UI/UX (`ui-ux-pro-max`)**: Inspeccionar la interfaz móvil/web para verificar estándares visuales, contraste WCAG AAA, touch targets ≥ 44pt y micro-interacciones.
+- [ ] **Code Review & Quality Gate (`code-review-and-quality`)**: Ejecutar la suite completa de pruebas y analizadores en todos los módulos (`php artisan test` en `api/` y `flutter analyze` + `flutter test` en `mobile/`). No realizar commit si hay fallas.
 - [ ] Leer el skill correspondiente a la tecnología modificada.
-- [ ] Verificar que los tests pasan: `php artisan test` (backend) o `flutter test` (mobile).
-- [ ] Actualizar anotaciones Scramble y exportar `api.json` si se modifican rutas/controladores.
+- [ ] Actualizar anotaciones Scramble y exportar `api.json` si se modifican rutas/controladores en `api/`.
 - [ ] Actualizar `docs/api_reference.md` si se agregan, modifican o eliminan endpoints.
 - [ ] Actualizar `docs/database_modeling.md` si se agregan nuevas tablas o relaciones.
 - [ ] Crear o actualizar `README.md` de cada subproyecto si cambia la forma de instalación/uso.
