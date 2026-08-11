@@ -79,7 +79,33 @@ class UserSeeder extends Seeder
             ]
         );
 
-        $this->command->info('✅  Usuario PERSONERO creado: personero@conteoya.pe / Personero123!');
+        // ─── PERSONERO PUERTO INCA (YUYAPICHIS) ──────────────────────────────
+        $puertoIncaUser = User::updateOrCreate(
+            ['email' => 'personero.puertoinca@conteoya.pe'],
+            [
+                'name'      => 'Personero Puerto Inca - Yuyapichis',
+                'password'  => Hash::make('Puertoinca123!'),
+                'role'      => Role::PERSONERO,
+                'role_id'   => $personeroRole->id,
+                'is_active' => true,
+            ]
+        );
+
+        $puertoIncaPersonero = Personero::updateOrCreate(
+            ['user_id' => $puertoIncaUser->id],
+            [
+                'document_number' => '44001122',
+                'phone_number'    => '+51 962 111 222',
+            ]
+        );
+
+        // Asignar Mesa 040104 (Yuyapichis) si la mesa existe en la BD
+        $mesaYuyapichis = \App\Models\PollingStation::where('code', '040104')->first();
+        if ($mesaYuyapichis) {
+            $puertoIncaPersonero->pollingStations()->sync([$mesaYuyapichis->id]);
+        }
+
+        $this->command->info('✅  Usuario PERSONERO PUERTO INCA creado: personero.puertoinca@conteoya.pe / Puertoinca123!');
         $this->command->newLine();
         $this->command->warn('⚠️   Cambiar contraseñas antes de pasar a producción.');
     }

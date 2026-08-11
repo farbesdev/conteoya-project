@@ -14,8 +14,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'personero@conteoya.pe');
-  final _passwordController = TextEditingController(text: 'Personero123!');
+  final _emailController = TextEditingController(text: 'personero.puertoinca@conteoya.pe');
+  final _passwordController = TextEditingController(text: 'Puertoinca123!');
   bool _obscurePassword = true;
 
   @override
@@ -384,6 +384,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           spacing: 8,
                           runSpacing: 8,
                           children: [
+                            _buildRoleChip(
+                              label: 'Puerto Inca',
+                              email: 'personero.puertoinca@conteoya.pe',
+                              pass: 'Puertoinca123!',
+                              color: AppColors.accent,
+                            ),
                             _buildRoleChip(
                               label: 'Personero',
                               email: 'personero@conteoya.pe',

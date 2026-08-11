@@ -396,7 +396,17 @@ class AppDatabase extends _$AppDatabase {
     try {
       final personeroCount = await (select(localPersonerosTable)..limit(1)).get();
       if (personeroCount.isEmpty) {
-        // Sembrar Personero demo asignado a mesa 030390
+        await into(localPersonerosTable).insert(
+          LocalPersonerosTableCompanion.insert(
+            dni: '44001122',
+            firstName: 'Personero',
+            lastName: 'Puerto Inca (Yuyapichis)',
+            pollingStationCode: '040104',
+            phoneNumber: const Value('+51 962 111 222'),
+            email: const Value('personero.puertoinca@conteoya.pe'),
+          ),
+        );
+
         await into(localPersonerosTable).insert(
           LocalPersonerosTableCompanion.insert(
             dni: '12345678',
@@ -405,17 +415,6 @@ class AppDatabase extends _$AppDatabase {
             pollingStationCode: '030390',
             phoneNumber: const Value('+51 987 654 321'),
             email: const Value('personero@conteoya.pe'),
-          ),
-        );
-
-        await into(localPersonerosTable).insert(
-          LocalPersonerosTableCompanion.insert(
-            dni: '87654321',
-            firstName: 'María Elena',
-            lastName: 'Rojas Quispe',
-            pollingStationCode: '030391',
-            phoneNumber: const Value('+51 912 345 678'),
-            email: const Value('mrojas@conteoya.pe'),
           ),
         );
       }
