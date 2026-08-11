@@ -201,7 +201,6 @@ class SyncDashboardScreen extends ConsumerWidget {
         icon = Icons.error_outline;
         break;
       case SyncEngineState.idle:
-      default:
         badgeColor = AppColors.success;
         statusText = 'Motor listo — Base de datos sincronizada';
         icon = Icons.cloud_done;

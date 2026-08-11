@@ -3373,8 +3373,12 @@ class $LocalPollingStationsTableTable extends LocalPollingStationsTable
     'id',
     aliasedName,
     false,
+    hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
   );
   static const VerificationMeta _codeMeta = const VerificationMeta('code');
   @override
@@ -3406,7 +3410,44 @@ class $LocalPollingStationsTableTable extends LocalPollingStationsTable
     aliasedName,
     false,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('150101'),
+  );
+  static const VerificationMeta _districtNameMeta = const VerificationMeta(
+    'districtName',
+  );
+  @override
+  late final GeneratedColumn<String> districtName = GeneratedColumn<String>(
+    'district_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('LIMA - CERCADO'),
+  );
+  static const VerificationMeta _provinceNameMeta = const VerificationMeta(
+    'provinceName',
+  );
+  @override
+  late final GeneratedColumn<String> provinceName = GeneratedColumn<String>(
+    'province_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('LIMA'),
+  );
+  static const VerificationMeta _departmentNameMeta = const VerificationMeta(
+    'departmentName',
+  );
+  @override
+  late final GeneratedColumn<String> departmentName = GeneratedColumn<String>(
+    'department_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('LIMA'),
   );
   static const VerificationMeta _registeredVotersMeta = const VerificationMeta(
     'registeredVoters',
@@ -3417,7 +3458,18 @@ class $LocalPollingStationsTableTable extends LocalPollingStationsTable
     aliasedName,
     false,
     type: DriftSqlType.int,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(300),
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('ACTIVA'),
   );
   @override
   List<GeneratedColumn> get $columns => [
@@ -3425,7 +3477,11 @@ class $LocalPollingStationsTableTable extends LocalPollingStationsTable
     code,
     locationName,
     districtCode,
+    districtName,
+    provinceName,
+    departmentName,
     registeredVoters,
+    status,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3469,8 +3525,33 @@ class $LocalPollingStationsTableTable extends LocalPollingStationsTable
           _districtCodeMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_districtCodeMeta);
+    }
+    if (data.containsKey('district_name')) {
+      context.handle(
+        _districtNameMeta,
+        districtName.isAcceptableOrUnknown(
+          data['district_name']!,
+          _districtNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('province_name')) {
+      context.handle(
+        _provinceNameMeta,
+        provinceName.isAcceptableOrUnknown(
+          data['province_name']!,
+          _provinceNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('department_name')) {
+      context.handle(
+        _departmentNameMeta,
+        departmentName.isAcceptableOrUnknown(
+          data['department_name']!,
+          _departmentNameMeta,
+        ),
+      );
     }
     if (data.containsKey('registered_voters')) {
       context.handle(
@@ -3480,8 +3561,12 @@ class $LocalPollingStationsTableTable extends LocalPollingStationsTable
           _registeredVotersMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_registeredVotersMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
     }
     return context;
   }
@@ -3508,9 +3593,25 @@ class $LocalPollingStationsTableTable extends LocalPollingStationsTable
         DriftSqlType.string,
         data['${effectivePrefix}district_code'],
       )!,
+      districtName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}district_name'],
+      )!,
+      provinceName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}province_name'],
+      )!,
+      departmentName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}department_name'],
+      )!,
       registeredVoters: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}registered_voters'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
       )!,
     );
   }
@@ -3527,13 +3628,21 @@ class LocalPollingStation extends DataClass
   final String code;
   final String locationName;
   final String districtCode;
+  final String districtName;
+  final String provinceName;
+  final String departmentName;
   final int registeredVoters;
+  final String status;
   const LocalPollingStation({
     required this.id,
     required this.code,
     required this.locationName,
     required this.districtCode,
+    required this.districtName,
+    required this.provinceName,
+    required this.departmentName,
     required this.registeredVoters,
+    required this.status,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3542,7 +3651,11 @@ class LocalPollingStation extends DataClass
     map['code'] = Variable<String>(code);
     map['location_name'] = Variable<String>(locationName);
     map['district_code'] = Variable<String>(districtCode);
+    map['district_name'] = Variable<String>(districtName);
+    map['province_name'] = Variable<String>(provinceName);
+    map['department_name'] = Variable<String>(departmentName);
     map['registered_voters'] = Variable<int>(registeredVoters);
+    map['status'] = Variable<String>(status);
     return map;
   }
 
@@ -3552,7 +3665,11 @@ class LocalPollingStation extends DataClass
       code: Value(code),
       locationName: Value(locationName),
       districtCode: Value(districtCode),
+      districtName: Value(districtName),
+      provinceName: Value(provinceName),
+      departmentName: Value(departmentName),
       registeredVoters: Value(registeredVoters),
+      status: Value(status),
     );
   }
 
@@ -3566,7 +3683,11 @@ class LocalPollingStation extends DataClass
       code: serializer.fromJson<String>(json['code']),
       locationName: serializer.fromJson<String>(json['locationName']),
       districtCode: serializer.fromJson<String>(json['districtCode']),
+      districtName: serializer.fromJson<String>(json['districtName']),
+      provinceName: serializer.fromJson<String>(json['provinceName']),
+      departmentName: serializer.fromJson<String>(json['departmentName']),
       registeredVoters: serializer.fromJson<int>(json['registeredVoters']),
+      status: serializer.fromJson<String>(json['status']),
     );
   }
   @override
@@ -3577,7 +3698,11 @@ class LocalPollingStation extends DataClass
       'code': serializer.toJson<String>(code),
       'locationName': serializer.toJson<String>(locationName),
       'districtCode': serializer.toJson<String>(districtCode),
+      'districtName': serializer.toJson<String>(districtName),
+      'provinceName': serializer.toJson<String>(provinceName),
+      'departmentName': serializer.toJson<String>(departmentName),
       'registeredVoters': serializer.toJson<int>(registeredVoters),
+      'status': serializer.toJson<String>(status),
     };
   }
 
@@ -3586,13 +3711,21 @@ class LocalPollingStation extends DataClass
     String? code,
     String? locationName,
     String? districtCode,
+    String? districtName,
+    String? provinceName,
+    String? departmentName,
     int? registeredVoters,
+    String? status,
   }) => LocalPollingStation(
     id: id ?? this.id,
     code: code ?? this.code,
     locationName: locationName ?? this.locationName,
     districtCode: districtCode ?? this.districtCode,
+    districtName: districtName ?? this.districtName,
+    provinceName: provinceName ?? this.provinceName,
+    departmentName: departmentName ?? this.departmentName,
     registeredVoters: registeredVoters ?? this.registeredVoters,
+    status: status ?? this.status,
   );
   LocalPollingStation copyWithCompanion(
     LocalPollingStationsTableCompanion data,
@@ -3606,9 +3739,19 @@ class LocalPollingStation extends DataClass
       districtCode: data.districtCode.present
           ? data.districtCode.value
           : this.districtCode,
+      districtName: data.districtName.present
+          ? data.districtName.value
+          : this.districtName,
+      provinceName: data.provinceName.present
+          ? data.provinceName.value
+          : this.provinceName,
+      departmentName: data.departmentName.present
+          ? data.departmentName.value
+          : this.departmentName,
       registeredVoters: data.registeredVoters.present
           ? data.registeredVoters.value
           : this.registeredVoters,
+      status: data.status.present ? data.status.value : this.status,
     );
   }
 
@@ -3619,14 +3762,27 @@ class LocalPollingStation extends DataClass
           ..write('code: $code, ')
           ..write('locationName: $locationName, ')
           ..write('districtCode: $districtCode, ')
-          ..write('registeredVoters: $registeredVoters')
+          ..write('districtName: $districtName, ')
+          ..write('provinceName: $provinceName, ')
+          ..write('departmentName: $departmentName, ')
+          ..write('registeredVoters: $registeredVoters, ')
+          ..write('status: $status')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, code, locationName, districtCode, registeredVoters);
+  int get hashCode => Object.hash(
+    id,
+    code,
+    locationName,
+    districtCode,
+    districtName,
+    provinceName,
+    departmentName,
+    registeredVoters,
+    status,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -3635,7 +3791,11 @@ class LocalPollingStation extends DataClass
           other.code == this.code &&
           other.locationName == this.locationName &&
           other.districtCode == this.districtCode &&
-          other.registeredVoters == this.registeredVoters);
+          other.districtName == this.districtName &&
+          other.provinceName == this.provinceName &&
+          other.departmentName == this.departmentName &&
+          other.registeredVoters == this.registeredVoters &&
+          other.status == this.status);
 }
 
 class LocalPollingStationsTableCompanion
@@ -3644,37 +3804,55 @@ class LocalPollingStationsTableCompanion
   final Value<String> code;
   final Value<String> locationName;
   final Value<String> districtCode;
+  final Value<String> districtName;
+  final Value<String> provinceName;
+  final Value<String> departmentName;
   final Value<int> registeredVoters;
+  final Value<String> status;
   const LocalPollingStationsTableCompanion({
     this.id = const Value.absent(),
     this.code = const Value.absent(),
     this.locationName = const Value.absent(),
     this.districtCode = const Value.absent(),
+    this.districtName = const Value.absent(),
+    this.provinceName = const Value.absent(),
+    this.departmentName = const Value.absent(),
     this.registeredVoters = const Value.absent(),
+    this.status = const Value.absent(),
   });
   LocalPollingStationsTableCompanion.insert({
     this.id = const Value.absent(),
     required String code,
     required String locationName,
-    required String districtCode,
-    required int registeredVoters,
+    this.districtCode = const Value.absent(),
+    this.districtName = const Value.absent(),
+    this.provinceName = const Value.absent(),
+    this.departmentName = const Value.absent(),
+    this.registeredVoters = const Value.absent(),
+    this.status = const Value.absent(),
   }) : code = Value(code),
-       locationName = Value(locationName),
-       districtCode = Value(districtCode),
-       registeredVoters = Value(registeredVoters);
+       locationName = Value(locationName);
   static Insertable<LocalPollingStation> custom({
     Expression<int>? id,
     Expression<String>? code,
     Expression<String>? locationName,
     Expression<String>? districtCode,
+    Expression<String>? districtName,
+    Expression<String>? provinceName,
+    Expression<String>? departmentName,
     Expression<int>? registeredVoters,
+    Expression<String>? status,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (code != null) 'code': code,
       if (locationName != null) 'location_name': locationName,
       if (districtCode != null) 'district_code': districtCode,
+      if (districtName != null) 'district_name': districtName,
+      if (provinceName != null) 'province_name': provinceName,
+      if (departmentName != null) 'department_name': departmentName,
       if (registeredVoters != null) 'registered_voters': registeredVoters,
+      if (status != null) 'status': status,
     });
   }
 
@@ -3683,14 +3861,22 @@ class LocalPollingStationsTableCompanion
     Value<String>? code,
     Value<String>? locationName,
     Value<String>? districtCode,
+    Value<String>? districtName,
+    Value<String>? provinceName,
+    Value<String>? departmentName,
     Value<int>? registeredVoters,
+    Value<String>? status,
   }) {
     return LocalPollingStationsTableCompanion(
       id: id ?? this.id,
       code: code ?? this.code,
       locationName: locationName ?? this.locationName,
       districtCode: districtCode ?? this.districtCode,
+      districtName: districtName ?? this.districtName,
+      provinceName: provinceName ?? this.provinceName,
+      departmentName: departmentName ?? this.departmentName,
       registeredVoters: registeredVoters ?? this.registeredVoters,
+      status: status ?? this.status,
     );
   }
 
@@ -3709,8 +3895,20 @@ class LocalPollingStationsTableCompanion
     if (districtCode.present) {
       map['district_code'] = Variable<String>(districtCode.value);
     }
+    if (districtName.present) {
+      map['district_name'] = Variable<String>(districtName.value);
+    }
+    if (provinceName.present) {
+      map['province_name'] = Variable<String>(provinceName.value);
+    }
+    if (departmentName.present) {
+      map['department_name'] = Variable<String>(departmentName.value);
+    }
     if (registeredVoters.present) {
       map['registered_voters'] = Variable<int>(registeredVoters.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
     }
     return map;
   }
@@ -3722,7 +3920,11 @@ class LocalPollingStationsTableCompanion
           ..write('code: $code, ')
           ..write('locationName: $locationName, ')
           ..write('districtCode: $districtCode, ')
-          ..write('registeredVoters: $registeredVoters')
+          ..write('districtName: $districtName, ')
+          ..write('provinceName: $provinceName, ')
+          ..write('departmentName: $departmentName, ')
+          ..write('registeredVoters: $registeredVoters, ')
+          ..write('status: $status')
           ..write(')'))
         .toString();
   }
@@ -4036,6 +4238,519 @@ class LocalPoliticalOrganizationsTableCompanion
   }
 }
 
+class $LocalPersonerosTableTable extends LocalPersonerosTable
+    with TableInfo<$LocalPersonerosTableTable, LocalPersonero> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalPersonerosTableTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _dniMeta = const VerificationMeta('dni');
+  @override
+  late final GeneratedColumn<String> dni = GeneratedColumn<String>(
+    'dni',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+  );
+  static const VerificationMeta _firstNameMeta = const VerificationMeta(
+    'firstName',
+  );
+  @override
+  late final GeneratedColumn<String> firstName = GeneratedColumn<String>(
+    'first_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastNameMeta = const VerificationMeta(
+    'lastName',
+  );
+  @override
+  late final GeneratedColumn<String> lastName = GeneratedColumn<String>(
+    'last_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pollingStationCodeMeta =
+      const VerificationMeta('pollingStationCode');
+  @override
+  late final GeneratedColumn<String> pollingStationCode =
+      GeneratedColumn<String>(
+        'polling_station_code',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+        defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
+      );
+  static const VerificationMeta _phoneNumberMeta = const VerificationMeta(
+    'phoneNumber',
+  );
+  @override
+  late final GeneratedColumn<String> phoneNumber = GeneratedColumn<String>(
+    'phone_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  @override
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+    'email',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    dni,
+    firstName,
+    lastName,
+    pollingStationCode,
+    phoneNumber,
+    email,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_personeros_table';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalPersonero> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('dni')) {
+      context.handle(
+        _dniMeta,
+        dni.isAcceptableOrUnknown(data['dni']!, _dniMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dniMeta);
+    }
+    if (data.containsKey('first_name')) {
+      context.handle(
+        _firstNameMeta,
+        firstName.isAcceptableOrUnknown(data['first_name']!, _firstNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_firstNameMeta);
+    }
+    if (data.containsKey('last_name')) {
+      context.handle(
+        _lastNameMeta,
+        lastName.isAcceptableOrUnknown(data['last_name']!, _lastNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lastNameMeta);
+    }
+    if (data.containsKey('polling_station_code')) {
+      context.handle(
+        _pollingStationCodeMeta,
+        pollingStationCode.isAcceptableOrUnknown(
+          data['polling_station_code']!,
+          _pollingStationCodeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_pollingStationCodeMeta);
+    }
+    if (data.containsKey('phone_number')) {
+      context.handle(
+        _phoneNumberMeta,
+        phoneNumber.isAcceptableOrUnknown(
+          data['phone_number']!,
+          _phoneNumberMeta,
+        ),
+      );
+    }
+    if (data.containsKey('email')) {
+      context.handle(
+        _emailMeta,
+        email.isAcceptableOrUnknown(data['email']!, _emailMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalPersonero map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalPersonero(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      dni: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dni'],
+      )!,
+      firstName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}first_name'],
+      )!,
+      lastName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_name'],
+      )!,
+      pollingStationCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}polling_station_code'],
+      )!,
+      phoneNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}phone_number'],
+      ),
+      email: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}email'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalPersonerosTableTable createAlias(String alias) {
+    return $LocalPersonerosTableTable(attachedDatabase, alias);
+  }
+}
+
+class LocalPersonero extends DataClass implements Insertable<LocalPersonero> {
+  final int id;
+  final String dni;
+  final String firstName;
+  final String lastName;
+  final String pollingStationCode;
+  final String? phoneNumber;
+  final String? email;
+  final DateTime createdAt;
+  const LocalPersonero({
+    required this.id,
+    required this.dni,
+    required this.firstName,
+    required this.lastName,
+    required this.pollingStationCode,
+    this.phoneNumber,
+    this.email,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['dni'] = Variable<String>(dni);
+    map['first_name'] = Variable<String>(firstName);
+    map['last_name'] = Variable<String>(lastName);
+    map['polling_station_code'] = Variable<String>(pollingStationCode);
+    if (!nullToAbsent || phoneNumber != null) {
+      map['phone_number'] = Variable<String>(phoneNumber);
+    }
+    if (!nullToAbsent || email != null) {
+      map['email'] = Variable<String>(email);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    return map;
+  }
+
+  LocalPersonerosTableCompanion toCompanion(bool nullToAbsent) {
+    return LocalPersonerosTableCompanion(
+      id: Value(id),
+      dni: Value(dni),
+      firstName: Value(firstName),
+      lastName: Value(lastName),
+      pollingStationCode: Value(pollingStationCode),
+      phoneNumber: phoneNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(phoneNumber),
+      email: email == null && nullToAbsent
+          ? const Value.absent()
+          : Value(email),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory LocalPersonero.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalPersonero(
+      id: serializer.fromJson<int>(json['id']),
+      dni: serializer.fromJson<String>(json['dni']),
+      firstName: serializer.fromJson<String>(json['firstName']),
+      lastName: serializer.fromJson<String>(json['lastName']),
+      pollingStationCode: serializer.fromJson<String>(
+        json['pollingStationCode'],
+      ),
+      phoneNumber: serializer.fromJson<String?>(json['phoneNumber']),
+      email: serializer.fromJson<String?>(json['email']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'dni': serializer.toJson<String>(dni),
+      'firstName': serializer.toJson<String>(firstName),
+      'lastName': serializer.toJson<String>(lastName),
+      'pollingStationCode': serializer.toJson<String>(pollingStationCode),
+      'phoneNumber': serializer.toJson<String?>(phoneNumber),
+      'email': serializer.toJson<String?>(email),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+    };
+  }
+
+  LocalPersonero copyWith({
+    int? id,
+    String? dni,
+    String? firstName,
+    String? lastName,
+    String? pollingStationCode,
+    Value<String?> phoneNumber = const Value.absent(),
+    Value<String?> email = const Value.absent(),
+    DateTime? createdAt,
+  }) => LocalPersonero(
+    id: id ?? this.id,
+    dni: dni ?? this.dni,
+    firstName: firstName ?? this.firstName,
+    lastName: lastName ?? this.lastName,
+    pollingStationCode: pollingStationCode ?? this.pollingStationCode,
+    phoneNumber: phoneNumber.present ? phoneNumber.value : this.phoneNumber,
+    email: email.present ? email.value : this.email,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  LocalPersonero copyWithCompanion(LocalPersonerosTableCompanion data) {
+    return LocalPersonero(
+      id: data.id.present ? data.id.value : this.id,
+      dni: data.dni.present ? data.dni.value : this.dni,
+      firstName: data.firstName.present ? data.firstName.value : this.firstName,
+      lastName: data.lastName.present ? data.lastName.value : this.lastName,
+      pollingStationCode: data.pollingStationCode.present
+          ? data.pollingStationCode.value
+          : this.pollingStationCode,
+      phoneNumber: data.phoneNumber.present
+          ? data.phoneNumber.value
+          : this.phoneNumber,
+      email: data.email.present ? data.email.value : this.email,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalPersonero(')
+          ..write('id: $id, ')
+          ..write('dni: $dni, ')
+          ..write('firstName: $firstName, ')
+          ..write('lastName: $lastName, ')
+          ..write('pollingStationCode: $pollingStationCode, ')
+          ..write('phoneNumber: $phoneNumber, ')
+          ..write('email: $email, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    dni,
+    firstName,
+    lastName,
+    pollingStationCode,
+    phoneNumber,
+    email,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalPersonero &&
+          other.id == this.id &&
+          other.dni == this.dni &&
+          other.firstName == this.firstName &&
+          other.lastName == this.lastName &&
+          other.pollingStationCode == this.pollingStationCode &&
+          other.phoneNumber == this.phoneNumber &&
+          other.email == this.email &&
+          other.createdAt == this.createdAt);
+}
+
+class LocalPersonerosTableCompanion extends UpdateCompanion<LocalPersonero> {
+  final Value<int> id;
+  final Value<String> dni;
+  final Value<String> firstName;
+  final Value<String> lastName;
+  final Value<String> pollingStationCode;
+  final Value<String?> phoneNumber;
+  final Value<String?> email;
+  final Value<DateTime> createdAt;
+  const LocalPersonerosTableCompanion({
+    this.id = const Value.absent(),
+    this.dni = const Value.absent(),
+    this.firstName = const Value.absent(),
+    this.lastName = const Value.absent(),
+    this.pollingStationCode = const Value.absent(),
+    this.phoneNumber = const Value.absent(),
+    this.email = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  LocalPersonerosTableCompanion.insert({
+    this.id = const Value.absent(),
+    required String dni,
+    required String firstName,
+    required String lastName,
+    required String pollingStationCode,
+    this.phoneNumber = const Value.absent(),
+    this.email = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  }) : dni = Value(dni),
+       firstName = Value(firstName),
+       lastName = Value(lastName),
+       pollingStationCode = Value(pollingStationCode);
+  static Insertable<LocalPersonero> custom({
+    Expression<int>? id,
+    Expression<String>? dni,
+    Expression<String>? firstName,
+    Expression<String>? lastName,
+    Expression<String>? pollingStationCode,
+    Expression<String>? phoneNumber,
+    Expression<String>? email,
+    Expression<DateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (dni != null) 'dni': dni,
+      if (firstName != null) 'first_name': firstName,
+      if (lastName != null) 'last_name': lastName,
+      if (pollingStationCode != null)
+        'polling_station_code': pollingStationCode,
+      if (phoneNumber != null) 'phone_number': phoneNumber,
+      if (email != null) 'email': email,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  LocalPersonerosTableCompanion copyWith({
+    Value<int>? id,
+    Value<String>? dni,
+    Value<String>? firstName,
+    Value<String>? lastName,
+    Value<String>? pollingStationCode,
+    Value<String?>? phoneNumber,
+    Value<String?>? email,
+    Value<DateTime>? createdAt,
+  }) {
+    return LocalPersonerosTableCompanion(
+      id: id ?? this.id,
+      dni: dni ?? this.dni,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
+      pollingStationCode: pollingStationCode ?? this.pollingStationCode,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      email: email ?? this.email,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (dni.present) {
+      map['dni'] = Variable<String>(dni.value);
+    }
+    if (firstName.present) {
+      map['first_name'] = Variable<String>(firstName.value);
+    }
+    if (lastName.present) {
+      map['last_name'] = Variable<String>(lastName.value);
+    }
+    if (pollingStationCode.present) {
+      map['polling_station_code'] = Variable<String>(pollingStationCode.value);
+    }
+    if (phoneNumber.present) {
+      map['phone_number'] = Variable<String>(phoneNumber.value);
+    }
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalPersonerosTableCompanion(')
+          ..write('id: $id, ')
+          ..write('dni: $dni, ')
+          ..write('firstName: $firstName, ')
+          ..write('lastName: $lastName, ')
+          ..write('pollingStationCode: $pollingStationCode, ')
+          ..write('phoneNumber: $phoneNumber, ')
+          ..write('email: $email, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4054,6 +4769,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   localPoliticalOrganizationsTable = $LocalPoliticalOrganizationsTableTable(
     this,
   );
+  late final $LocalPersonerosTableTable localPersonerosTable =
+      $LocalPersonerosTableTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4066,6 +4783,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     localSyncOperationsTable,
     localPollingStationsTable,
     localPoliticalOrganizationsTable,
+    localPersonerosTable,
   ];
 }
 
@@ -5736,8 +6454,12 @@ typedef $$LocalPollingStationsTableTableCreateCompanionBuilder =
       Value<int> id,
       required String code,
       required String locationName,
-      required String districtCode,
-      required int registeredVoters,
+      Value<String> districtCode,
+      Value<String> districtName,
+      Value<String> provinceName,
+      Value<String> departmentName,
+      Value<int> registeredVoters,
+      Value<String> status,
     });
 typedef $$LocalPollingStationsTableTableUpdateCompanionBuilder =
     LocalPollingStationsTableCompanion Function({
@@ -5745,7 +6467,11 @@ typedef $$LocalPollingStationsTableTableUpdateCompanionBuilder =
       Value<String> code,
       Value<String> locationName,
       Value<String> districtCode,
+      Value<String> districtName,
+      Value<String> provinceName,
+      Value<String> departmentName,
       Value<int> registeredVoters,
+      Value<String> status,
     });
 
 class $$LocalPollingStationsTableTableFilterComposer
@@ -5777,8 +6503,28 @@ class $$LocalPollingStationsTableTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get districtName => $composableBuilder(
+    column: $table.districtName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get provinceName => $composableBuilder(
+    column: $table.provinceName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get departmentName => $composableBuilder(
+    column: $table.departmentName,
+    builder: (column) => ColumnFilters(column),
+  );
+
   ColumnFilters<int> get registeredVoters => $composableBuilder(
     column: $table.registeredVoters,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5812,8 +6558,28 @@ class $$LocalPollingStationsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get districtName => $composableBuilder(
+    column: $table.districtName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get provinceName => $composableBuilder(
+    column: $table.provinceName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get departmentName => $composableBuilder(
+    column: $table.departmentName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get registeredVoters => $composableBuilder(
     column: $table.registeredVoters,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -5843,10 +6609,28 @@ class $$LocalPollingStationsTableTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get districtName => $composableBuilder(
+    column: $table.districtName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get provinceName => $composableBuilder(
+    column: $table.provinceName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get departmentName => $composableBuilder(
+    column: $table.departmentName,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get registeredVoters => $composableBuilder(
     column: $table.registeredVoters,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
 }
 
 class $$LocalPollingStationsTableTableTableManager
@@ -5899,27 +6683,43 @@ class $$LocalPollingStationsTableTableTableManager
                 Value<String> code = const Value.absent(),
                 Value<String> locationName = const Value.absent(),
                 Value<String> districtCode = const Value.absent(),
+                Value<String> districtName = const Value.absent(),
+                Value<String> provinceName = const Value.absent(),
+                Value<String> departmentName = const Value.absent(),
                 Value<int> registeredVoters = const Value.absent(),
+                Value<String> status = const Value.absent(),
               }) => LocalPollingStationsTableCompanion(
                 id: id,
                 code: code,
                 locationName: locationName,
                 districtCode: districtCode,
+                districtName: districtName,
+                provinceName: provinceName,
+                departmentName: departmentName,
                 registeredVoters: registeredVoters,
+                status: status,
               ),
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 required String code,
                 required String locationName,
-                required String districtCode,
-                required int registeredVoters,
+                Value<String> districtCode = const Value.absent(),
+                Value<String> districtName = const Value.absent(),
+                Value<String> provinceName = const Value.absent(),
+                Value<String> departmentName = const Value.absent(),
+                Value<int> registeredVoters = const Value.absent(),
+                Value<String> status = const Value.absent(),
               }) => LocalPollingStationsTableCompanion.insert(
                 id: id,
                 code: code,
                 locationName: locationName,
                 districtCode: districtCode,
+                districtName: districtName,
+                provinceName: provinceName,
+                departmentName: departmentName,
                 registeredVoters: registeredVoters,
+                status: status,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -6144,6 +6944,277 @@ typedef $$LocalPoliticalOrganizationsTableTableProcessedTableManager =
       LocalPoliticalOrganization,
       PrefetchHooks Function()
     >;
+typedef $$LocalPersonerosTableTableCreateCompanionBuilder =
+    LocalPersonerosTableCompanion Function({
+      Value<int> id,
+      required String dni,
+      required String firstName,
+      required String lastName,
+      required String pollingStationCode,
+      Value<String?> phoneNumber,
+      Value<String?> email,
+      Value<DateTime> createdAt,
+    });
+typedef $$LocalPersonerosTableTableUpdateCompanionBuilder =
+    LocalPersonerosTableCompanion Function({
+      Value<int> id,
+      Value<String> dni,
+      Value<String> firstName,
+      Value<String> lastName,
+      Value<String> pollingStationCode,
+      Value<String?> phoneNumber,
+      Value<String?> email,
+      Value<DateTime> createdAt,
+    });
+
+class $$LocalPersonerosTableTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalPersonerosTableTable> {
+  $$LocalPersonerosTableTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dni => $composableBuilder(
+    column: $table.dni,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get firstName => $composableBuilder(
+    column: $table.firstName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastName => $composableBuilder(
+    column: $table.lastName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pollingStationCode => $composableBuilder(
+    column: $table.pollingStationCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get phoneNumber => $composableBuilder(
+    column: $table.phoneNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalPersonerosTableTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalPersonerosTableTable> {
+  $$LocalPersonerosTableTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dni => $composableBuilder(
+    column: $table.dni,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get firstName => $composableBuilder(
+    column: $table.firstName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastName => $composableBuilder(
+    column: $table.lastName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pollingStationCode => $composableBuilder(
+    column: $table.pollingStationCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get phoneNumber => $composableBuilder(
+    column: $table.phoneNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get email => $composableBuilder(
+    column: $table.email,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalPersonerosTableTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalPersonerosTableTable> {
+  $$LocalPersonerosTableTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get dni =>
+      $composableBuilder(column: $table.dni, builder: (column) => column);
+
+  GeneratedColumn<String> get firstName =>
+      $composableBuilder(column: $table.firstName, builder: (column) => column);
+
+  GeneratedColumn<String> get lastName =>
+      $composableBuilder(column: $table.lastName, builder: (column) => column);
+
+  GeneratedColumn<String> get pollingStationCode => $composableBuilder(
+    column: $table.pollingStationCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get phoneNumber => $composableBuilder(
+    column: $table.phoneNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$LocalPersonerosTableTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalPersonerosTableTable,
+          LocalPersonero,
+          $$LocalPersonerosTableTableFilterComposer,
+          $$LocalPersonerosTableTableOrderingComposer,
+          $$LocalPersonerosTableTableAnnotationComposer,
+          $$LocalPersonerosTableTableCreateCompanionBuilder,
+          $$LocalPersonerosTableTableUpdateCompanionBuilder,
+          (
+            LocalPersonero,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalPersonerosTableTable,
+              LocalPersonero
+            >,
+          ),
+          LocalPersonero,
+          PrefetchHooks Function()
+        > {
+  $$LocalPersonerosTableTableTableManager(
+    _$AppDatabase db,
+    $LocalPersonerosTableTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalPersonerosTableTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocalPersonerosTableTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LocalPersonerosTableTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> dni = const Value.absent(),
+                Value<String> firstName = const Value.absent(),
+                Value<String> lastName = const Value.absent(),
+                Value<String> pollingStationCode = const Value.absent(),
+                Value<String?> phoneNumber = const Value.absent(),
+                Value<String?> email = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => LocalPersonerosTableCompanion(
+                id: id,
+                dni: dni,
+                firstName: firstName,
+                lastName: lastName,
+                pollingStationCode: pollingStationCode,
+                phoneNumber: phoneNumber,
+                email: email,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String dni,
+                required String firstName,
+                required String lastName,
+                required String pollingStationCode,
+                Value<String?> phoneNumber = const Value.absent(),
+                Value<String?> email = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+              }) => LocalPersonerosTableCompanion.insert(
+                id: id,
+                dni: dni,
+                firstName: firstName,
+                lastName: lastName,
+                pollingStationCode: pollingStationCode,
+                phoneNumber: phoneNumber,
+                email: email,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalPersonerosTableTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalPersonerosTableTable,
+      LocalPersonero,
+      $$LocalPersonerosTableTableFilterComposer,
+      $$LocalPersonerosTableTableOrderingComposer,
+      $$LocalPersonerosTableTableAnnotationComposer,
+      $$LocalPersonerosTableTableCreateCompanionBuilder,
+      $$LocalPersonerosTableTableUpdateCompanionBuilder,
+      (
+        LocalPersonero,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalPersonerosTableTable,
+          LocalPersonero
+        >,
+      ),
+      LocalPersonero,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6172,4 +7243,6 @@ class $AppDatabaseManager {
         _db,
         _db.localPoliticalOrganizationsTable,
       );
+  $$LocalPersonerosTableTableTableManager get localPersonerosTable =>
+      $$LocalPersonerosTableTableTableManager(_db, _db.localPersonerosTable);
 }

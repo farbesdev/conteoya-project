@@ -79,14 +79,15 @@ class LocalSyncOperationsTable extends Table {
 
 @DataClassName('LocalPollingStation')
 class LocalPollingStationsTable extends Table {
-  IntColumn get id => integer()();
+  IntColumn get id => integer().autoIncrement()();
   TextColumn get code => text().unique()();
   TextColumn get locationName => text()();
-  TextColumn get districtCode => text()();
-  IntColumn get registeredVoters => integer()();
-
-  @override
-  Set<Column> get primaryKey => {id};
+  TextColumn get districtCode => text().withDefault(const Constant('150101'))();
+  TextColumn get districtName => text().withDefault(const Constant('LIMA - CERCADO'))();
+  TextColumn get provinceName => text().withDefault(const Constant('LIMA'))();
+  TextColumn get departmentName => text().withDefault(const Constant('LIMA'))();
+  IntColumn get registeredVoters => integer().withDefault(const Constant(300))();
+  TextColumn get status => text().withDefault(const Constant('ACTIVA'))();
 }
 
 @DataClassName('LocalPoliticalOrganization')
@@ -99,3 +100,16 @@ class LocalPoliticalOrganizationsTable extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+@DataClassName('LocalPersonero')
+class LocalPersonerosTable extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get dni => text().unique()();
+  TextColumn get firstName => text()();
+  TextColumn get lastName => text()();
+  TextColumn get pollingStationCode => text().unique()(); // 1 personero = 1 mesa asignada obligatoria
+  TextColumn get phoneNumber => text().nullable()();
+  TextColumn get email => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+

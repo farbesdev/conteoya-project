@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'app/app_shell.dart';
 import 'core/theme/app_colors.dart';
 import 'features/auth/domain/auth_state.dart';
 import 'features/auth/presentation/auth_notifier.dart';
 import 'features/auth/presentation/login_screen.dart';
-import 'features/sync/presentation/sync_dashboard_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,7 +49,7 @@ class AuthGate extends ConsumerWidget {
     final authState = ref.watch(authNotifierProvider);
 
     return switch (authState) {
-      Authenticated() => const SyncDashboardScreen(),
+      Authenticated() => const AppShell(),
       Unauthenticated() => const LoginScreen(),
       AuthLoading() || AuthInitial() => const Scaffold(
           backgroundColor: AppColors.background,

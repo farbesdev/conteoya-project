@@ -1,3 +1,31 @@
+enum UserRole {
+  admin,
+  director,
+  personero;
+
+  static UserRole fromString(String? roleStr) {
+    if (roleStr == null) return UserRole.personero;
+    final upper = roleStr.toUpperCase().trim();
+    if (upper == 'ADMIN' || upper == 'ADMINISTRADOR') return UserRole.admin;
+    if (upper == 'DIRECTOR') return UserRole.director;
+    return UserRole.personero;
+  }
+
+  bool get isAdminOrDirector => this == UserRole.admin || this == UserRole.director;
+  bool get isPersonero => this == UserRole.personero;
+
+  String get displayName {
+    switch (this) {
+      case UserRole.admin:
+        return 'Administrador';
+      case UserRole.director:
+        return 'Director Electoral';
+      case UserRole.personero:
+        return 'Personero de Mesa';
+    }
+  }
+}
+
 class UserSession {
   final int id;
   final String name;
@@ -16,6 +44,10 @@ class UserSession {
     required this.token,
     required this.deviceUuid,
   });
+
+  UserRole get userRole => UserRole.fromString(role);
+  bool get isAdminOrDirector => userRole.isAdminOrDirector;
+  bool get isPersonero => userRole.isPersonero;
 
   static int _parseInt(dynamic value, {int defaultValue = 0}) {
     if (value == null) return defaultValue;
@@ -47,7 +79,10 @@ class UserSession {
         id: _parseInt(json['id']),
         name: json['name']?.toString() ?? '',
         email: json['email']?.toString() ?? '',
-        role: json['role']?.toString() ?? (json['rol'] is Map ? (json['rol'] as Map)['name']?.toString() ?? 'PERSONERO' : 'PERSONERO'),
+        role: json['role']?.toString() ??
+            (json['rol'] is Map
+                ? (json['rol'] as Map)['name']?.toString() ?? 'PERSONERO'
+                : 'PERSONERO'),
         personeroId: _parseNullableInt(json['personero_id']),
         token: json['token']?.toString() ?? '',
         deviceUuid: json['device_uuid']?.toString() ?? 'device-unknown',
