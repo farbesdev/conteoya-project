@@ -285,12 +285,11 @@ class AppDatabase extends _$AppDatabase {
   // ─── Seeder Inicial Local (Mesas, Personeros y Organizaciones) ──────────────
   Future<void> seedInitialDataIfEmpty() async {
     try {
-      final stationCount = await (select(localPollingStationsTable)..limit(1)).get();
-      if (stationCount.isEmpty) {
-        // Sembrar Mesas Iniciales
-        await batch((b) {
-          b.insertAll(localPollingStationsTable, [
+      // Sembrar/Actualizar Mesas Iniciales (Lima y Puerto Inca, Huánuco)
+      await batch((b) {
+          b.insertAllOnConflictUpdate(localPollingStationsTable, [
             LocalPollingStationsTableCompanion.insert(
+              id: const Value(1),
               code: '030390',
               locationName: 'I.E. NUESTRA SEÑORA DE GUADALUPE',
               districtCode: const Value('150101'),
@@ -300,6 +299,7 @@ class AppDatabase extends _$AppDatabase {
               registeredVoters: const Value(300),
             ),
             LocalPollingStationsTableCompanion.insert(
+              id: const Value(2),
               code: '030391',
               locationName: 'I.E. NUESTRA SEÑORA DE GUADALUPE',
               districtCode: const Value('150101'),
@@ -309,6 +309,7 @@ class AppDatabase extends _$AppDatabase {
               registeredVoters: const Value(300),
             ),
             LocalPollingStationsTableCompanion.insert(
+              id: const Value(3),
               code: '030392',
               locationName: 'I.E. PEDRO A. LABARTHE',
               districtCode: const Value('150115'),
@@ -318,6 +319,7 @@ class AppDatabase extends _$AppDatabase {
               registeredVoters: const Value(295),
             ),
             LocalPollingStationsTableCompanion.insert(
+              id: const Value(4),
               code: '030393',
               locationName: 'I.E. ALFONSO UGARTE',
               districtCode: const Value('150131'),
@@ -326,9 +328,49 @@ class AppDatabase extends _$AppDatabase {
               departmentName: const Value('LIMA'),
               registeredVoters: const Value(310),
             ),
+            // Mesas de Puerto Inca - Huánuco
+            LocalPollingStationsTableCompanion.insert(
+              id: const Value(5),
+              code: '040101',
+              locationName: 'I.E. AGROPECUARIO PUERTO INCA',
+              districtCode: const Value('001272'),
+              districtName: const Value('PUERTO INCA'),
+              provinceName: const Value('PUERTO INCA'),
+              departmentName: const Value('HUÁNUCO'),
+              registeredVoters: const Value(280),
+            ),
+            LocalPollingStationsTableCompanion.insert(
+              id: const Value(6),
+              code: '040102',
+              locationName: 'I.E. 32223 CODO DEL POZUZO',
+              districtCode: const Value('001274'),
+              districtName: const Value('CODO DEL POZUZO'),
+              provinceName: const Value('PUERTO INCA'),
+              departmentName: const Value('HUÁNUCO'),
+              registeredVoters: const Value(290),
+            ),
+            LocalPollingStationsTableCompanion.insert(
+              id: const Value(7),
+              code: '040103',
+              locationName: 'I.E. TOURNAVISTA',
+              districtCode: const Value('001272'),
+              districtName: const Value('TOURNAVISTA'),
+              provinceName: const Value('PUERTO INCA'),
+              departmentName: const Value('HUÁNUCO'),
+              registeredVoters: const Value(275),
+            ),
+            LocalPollingStationsTableCompanion.insert(
+              id: const Value(8),
+              code: '040104',
+              locationName: 'I.E. YUYAPICHIS',
+              districtCode: const Value('001275'),
+              districtName: const Value('YUYAPICHIS'),
+              provinceName: const Value('PUERTO INCA'),
+              departmentName: const Value('HUÁNUCO'),
+              registeredVoters: const Value(305),
+            ),
           ]);
         });
-      }
     } catch (_) {
       try {
         final m = createMigrator();
