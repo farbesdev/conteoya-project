@@ -99,11 +99,19 @@ class UserSeeder extends Seeder
             ]
         );
 
-        // Asignar Mesa 040104 (Yuyapichis) si la mesa existe en la BD
-        $mesaYuyapichis = \App\Models\PollingStation::where('code', '040104')->first();
-        if ($mesaYuyapichis) {
-            $puertoIncaPersonero->pollingStations()->sync([$mesaYuyapichis->id]);
-        }
+        // Asignar Mesa 040104 (Yuyapichis) si la mesa existe en la BD o crearla
+        $firstLocation = \Illuminate\Support\Facades\DB::table('electoral_locations')->first();
+        $locationId = $firstLocation ? $firstLocation->id : 1;
+
+        $mesaYuyapichis = \App\Models\PollingStation::firstOrCreate(
+            ['code' => '040104'],
+            [
+                'electoral_location_id' => $locationId,
+                'registered_voters' => 305,
+                'status' => 'ACTIVE',
+            ]
+        );
+        $puertoIncaPersonero->pollingStations()->sync([$mesaYuyapichis->id]);
 
         $this->command->info('✅  Usuario PERSONERO PUERTO INCA creado: personero.puertoinca@conteoya.pe / Puertoinca123!');
         $this->command->newLine();
