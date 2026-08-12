@@ -130,7 +130,7 @@ class AuthRepository {
       dioOrServerException = e;
     }
 
-    // 2. Fallback Autenticación Local SQLite (Personeros creados en la App)
+    // 1. Si existe base de datos local SQLite, intentar primero autenticar localmente (Offline-First)
     if (db != null) {
       final localPersonero = await db!.getPersoneroByEmailOrDni(email);
       if (localPersonero != null) {
@@ -144,6 +144,33 @@ class AuthRepository {
           token: 'offline-token-${localPersonero.dni}',
           deviceUuid: deviceUuid,
         );
+
+        // Si hay red, sincronizar en segundo plano con el backend
+        try {
+          final response = await apiClient.post<dynamic>(
+            '/login',
+            data: {
+              'email': email.trim(),
+              'password': password,
+              'device_uuid': deviceUuid,
+              'device_model': deviceModel ?? 'Flutter Mobile Device',
+            },
+          );
+          if (response.statusCode == 200 && response.data != null) {
+            final Map<String, dynamic> data = _normalizeToMap(response.data);
+            final token = data['access_token']?.toString() ?? session.token;
+            final userData = _normalizeToMap(data['user']);
+            final backendSession = UserSession.fromBackendResponse(
+              userData: userData,
+              token: token,
+              deviceUuid: deviceUuid,
+            );
+            apiClient.setAuthToken(backendSession.token);
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setString(_sessionKey, jsonEncode(backendSession.toJson()));
+            return backendSession;
+          }
+        } catch (_) {}
 
         apiClient.setAuthToken(session.token);
         final prefs = await SharedPreferences.getInstance();
