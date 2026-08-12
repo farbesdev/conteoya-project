@@ -40,15 +40,19 @@ flowchart TD
 
 ## 🛠️ Detalle de Comandos
 
-### Paso 1: Commit Local Semántico (`git-conventional-commits`)
-Formatear el mensaje obligatoriamente en 3 partes (título, cuerpo y pie) según el skill `git-conventional-commits`:
+### Paso 1: Commit Local Semántico (Llamada Obligatoria a `git-conventional-commits`)
+> ⚠️ **REGLA OBLIGATORIA DE SKILLS**:
+> Al ejecutar este paso, el agente DEBE invocar y aplicar primero el skill **`git-conventional-commits`**.
+> Queda estrictamente prohibido generar mensajes de una sola línea sin cuerpo explicativo ni pie de commit.
+
+Formatear el mensaje según la estructura estricta de 3 partes del skill `git-conventional-commits`:
 ```bash
 git add .
-git commit -m "<emoji> <tipo>(<scope>): <resumen en español>" \
-           -m "<cuerpo detallado explicando las razones y cambios de la implementación>" \
-           -m "<pie de commit: Closes #issue o módulo afectado>"
+git commit -m "<emoji> <tipo>(<scope>): <resumen conciso en español>" \
+           -m "<cuerpo explicativo detallado en español sobre el motivo y cambios de la implementación>" \
+           -m "<pie de commit: Closes #issue, Co-authored-by o módulo afectado>"
 ```
-*Scopes del Proyecto*: `api`, `mobile`, `database`, `docs`, `specs`, `config`.
+*Scopes del Monorepo*: `api`, `mobile`, `database`, `docs`, `specs`, `config`.
 
 ### Paso 2: Sincronización Estricta vía Rebase
 Traer y rebasar commits del remoto **sin modificar la configuración global**:
