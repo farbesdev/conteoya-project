@@ -147,12 +147,10 @@ class SyncEngine {
       final stationCompanions = <LocalPollingStationsTableCompanion>[];
       for (final item in stationsList) {
         if (item is Map<String, Object?>) {
-          final id = item['id'] as int?;
           final code = item['code'] as String?;
           if (code != null) {
             stationCompanions.add(
               LocalPollingStationsTableCompanion.insert(
-                id: id != null ? Value(id) : const Value.absent(),
                 code: code,
                 locationName: item['location_name']?.toString() ?? 'LOCAL DE VOTACIÓN',
                 districtCode: Value(item['district_code']?.toString() ?? '000000'),
@@ -175,7 +173,6 @@ class SyncEngine {
       final personeroCompanions = <LocalPersonerosTableCompanion>[];
       for (final item in personerosList) {
         if (item is Map<String, Object?>) {
-          final id = item['id'] as int?;
           final dni = item['dni'] as String?;
           final firstName = item['first_name'] as String?;
           final lastName = item['last_name'] as String?;
@@ -183,7 +180,6 @@ class SyncEngine {
           if (dni != null && firstName != null && lastName != null && stationCode != null) {
             personeroCompanions.add(
               LocalPersonerosTableCompanion.insert(
-                id: id != null ? Value(id) : const Value.absent(),
                 dni: dni,
                 firstName: firstName,
                 lastName: lastName,
