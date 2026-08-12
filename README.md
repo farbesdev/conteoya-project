@@ -150,13 +150,14 @@ php artisan serve
 
 ### Usuarios de prueba
 
-> ⚠️ Solo para desarrollo. Cambiar credenciales antes de producción.
+> ⚠️ Solo para desarrollo. Cambiar credenciales antes de pasar a producción.
 
-| Email | Password | Rol |
-|-------|----------|-----|
-| `admin@conteoya.pe` | `Admin123!` | `ADMIN` |
-| `director@conteoya.pe` | `Director123!` | `DIRECTOR` |
-| `personero@conteoya.pe` | `Personero123!` | `PERSONERO` |
+| Email | Password | Rol | Mesa Asignada |
+|-------|----------|-----|---------------|
+| `admin@conteoya.pe` | `Admin123!` | `ADMIN` | — |
+| `director@conteoya.pe` | `Director123!` | `DIRECTOR` | — |
+| `personero@conteoya.pe` | `Personero123!` | `PERSONERO` | Mesa `030390` (Lima Cercado) |
+| `personero.puertoinca@conteoya.pe` | `Puertoinca123!` | `PERSONERO` | Mesa `040104` (Yuyapichis) |
 
 ---
 
@@ -172,6 +173,15 @@ http://localhost:8000/docs/api
 php artisan scramble:export
 ```
 
+### Endpoints Principales v1
+
+- **Autenticación:** `/api/v1/login`, `/api/v1/me`, `/api/v1/logout` (Devuelve `polling_station_code` cuando es personero)
+- **Gestión de Usuarios (CRUD):** `/api/v1/users` (ADMIN / DIRECTOR)
+- **Personeros (CRUD):** `/api/v1/personeros` (ADMIN / DIRECTOR)
+- **Mesas Electorales (CRUD):** `/api/v1/mesas` (ADMIN / DIRECTOR)
+- **Ingesta de Actas & Evidencias:** `/api/v1/acts`, `/api/v1/acts/{id}/confirm`, `/api/v1/acts/{id}/evidence/upload-url`, `/api/v1/acts/{id}/evidence/confirm`
+- **OCR/IA & Sync Offline:** `/api/v1/acts/recognize`, `/api/v1/sync`
+
 Ver [docs/api_reference.md](docs/api_reference.md) para la referencia completa de endpoints.
 
 ---
@@ -181,7 +191,7 @@ Ver [docs/api_reference.md](docs/api_reference.md) para la referencia completa d
 | Fase | Estado | Descripción |
 |------|--------|-------------|
 | **Fase 0 — Foundation** | ✅ Completada | API base, PostgreSQL, Sanctum, Roles, Catálogo JEE, Auth |
-| **Fase 1 — Ingesta** | 🔜 Próxima | Flutter offline-first, captura manual/OCR, evidencia en R2 |
+| **Fase 1 — Ingesta** | 🟡 En progreso | App Flutter 3.44 offline-first, Drift SQLite, CRUD usuarios/mesas, captura de actas, evidenciador R2 |
 | **Fase 2 — Resultados** | ⏳ Pendiente | Dashboard Vue 3, consolidados, Laravel Reverb realtime |
 | **Fase 3 — Hardening** | ⏳ Pendiente | E2E, carga masiva, auditoría, disaster recovery |
 

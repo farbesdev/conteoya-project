@@ -143,11 +143,12 @@ POST /api/v1/login
 
 > ⚠️ **Cambiar contraseñas antes de pasar a producción.**
 
-| Email | Password | Rol |
-|-------|----------|-----|
-| `admin@conteoya.pe` | `Admin123!` | `ADMIN` |
-| `director@conteoya.pe` | `Director123!` | `DIRECTOR` |
-| `personero@conteoya.pe` | `Personero123!` | `PERSONERO` |
+| Email | Password | Rol | Mesa Asignada |
+|-------|----------|-----|---------------|
+| `admin@conteoya.pe` | `Admin123!` | `ADMIN` | — |
+| `director@conteoya.pe` | `Director123!` | `DIRECTOR` | — |
+| `personero@conteoya.pe` | `Personero123!` | `PERSONERO` | Mesa `030390` (Lima) |
+| `personero.puertoinca@conteoya.pe` | `Puertoinca123!` | `PERSONERO` | Mesa `040104` (Yuyapichis) |
 
 ---
 

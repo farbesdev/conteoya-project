@@ -71,7 +71,8 @@ Autentica al usuario y devuelve un Bearer token junto con el perfil completo (in
       "name": "PERSONERO",
       "display_name": "Personero"
     },
-    "personero_id": 1
+    "personero_id": 1,
+    "polling_station_code": "030390"
   }
 }
 ```
@@ -387,11 +388,12 @@ Consulta el estado de sincronización de las operaciones del personero autentica
 
 > ⚠️ Cambiar credenciales antes de pasar a producción o staging.
 
-| Email | Password | Rol | `role_id` |
-|-------|----------|-----|-----------|
-| `admin@conteoya.pe` | `Admin123!` | `ADMIN` | `1` |
-| `director@conteoya.pe` | `Director123!` | `DIRECTOR` | `2` |
-| `personero@conteoya.pe` | `Personero123!` | `PERSONERO` | `3` |
+| Email | Password | Rol | `role_id` | Mesa Asignada |
+|-------|----------|-----|-----------|---------------|
+| `admin@conteoya.pe` | `Admin123!` | `ADMIN` | `1` | — |
+| `director@conteoya.pe` | `Director123!` | `DIRECTOR` | `2` | — |
+| `personero@conteoya.pe` | `Personero123!` | `PERSONERO` | `3` | Mesa `030390` (Lima) |
+| `personero.puertoinca@conteoya.pe` | `Puertoinca123!` | `PERSONERO` | `3` | Mesa `040104` (Yuyapichis) |
 
 ---
 
