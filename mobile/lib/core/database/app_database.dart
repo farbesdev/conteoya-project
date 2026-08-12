@@ -253,6 +253,18 @@ class AppDatabase extends _$AppDatabase {
     return into(localPollingStationsTable).insertOnConflictUpdate(station);
   }
 
+  Future<void> savePollingStations(List<LocalPollingStationsTableCompanion> stations) {
+    return batch((b) {
+      b.insertAllOnConflictUpdate(localPollingStationsTable, stations);
+    });
+  }
+
+  Future<void> savePersoneros(List<LocalPersonerosTableCompanion> personeros) {
+    return batch((b) {
+      b.insertAllOnConflictUpdate(localPersonerosTable, personeros);
+    });
+  }
+
   // ─── DAOs para Organizaciones Políticas ────────────────────────────────────
   Future<List<LocalPoliticalOrganization>> getAllPoliticalOrganizations() {
     return (select(localPoliticalOrganizationsTable)..orderBy([(t) => OrderingTerm.asc(t.name)]))

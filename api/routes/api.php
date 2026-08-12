@@ -53,6 +53,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         // Motor de Sincronización Offline-First (Sync Engine)
         Route::middleware('throttle:ingestion')->group(function () {
             Route::post('/sync', [\App\Http\Controllers\Api\V1\SyncController::class, 'sync'])->middleware('idempotent');
+            Route::get('/sync/pull', [\App\Http\Controllers\Api\V1\SyncController::class, 'pull']);
             Route::get('/sync/status', [\App\Http\Controllers\Api\V1\SyncController::class, 'status']);
         });
     });

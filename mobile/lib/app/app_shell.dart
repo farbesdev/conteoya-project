@@ -164,15 +164,41 @@ class _AppShellState extends ConsumerState<AppShell> {
           IconButton(
             icon: const Icon(Icons.sync_rounded, color: AppColors.info),
             tooltip: 'Sincronizar Datos',
-            onPressed: () {
-              ref.read(syncEngineProvider).syncPendingOperations();
+            onPressed: () async {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Sincronizando operaciones pendientes...'),
+                  content: Text('Iniciando sincronización bidireccional...'),
                   backgroundColor: AppColors.info,
-                  duration: Duration(seconds: 2),
+                  duration: Duration(seconds: 1),
                 ),
               );
+
+              try {
+                final metrics = await ref.read(syncEngineProvider).syncPendingOperations();
+                if (context.mounted) {
+                  final stations = metrics['polling_stations'] ?? 0;
+                  final personeros = metrics['personeros'] ?? 0;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '✓ Sincronización completada. Mesas: $stations, Personeros: $personeros actualizados.',
+                      ),
+                      backgroundColor: AppColors.success,
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('⚠️ Error al sincronizar con el servidor: $e'),
+                      backgroundColor: AppColors.danger,
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
+                }
+              }
             },
           ),
           IconButton(
