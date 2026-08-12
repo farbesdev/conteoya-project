@@ -90,19 +90,25 @@ class SyncController extends Controller
             ];
         });
 
-        // 2. Obtener personeros
+        // 2. Obtener personeros y usuarios (Si es Personero solo el suyo, si es Admin/Director todos)
         $personerosQuery = \App\Models\Personero::with(['user', 'pollingStations']);
         if ($user->role === 'PERSONERO' && $user->personero) {
             $personerosQuery->where('id', $user->personero->id);
         }
 
         $personeros = $personerosQuery->get()->map(function ($p) {
-            $stationCode = $p->pollingStations->first()?->code;
+            $stationCode = $p->pollingStations->first()?->code ?? '030390';
+            $fullName = $p->user?->name ?? 'Personero Registrado';
+            $parts = explode(' ', trim($fullName));
+            $firstName = $parts[0] ?? 'Personero';
+            $lastName = count($parts) > 1 ? implode(' ', array_slice($parts, 1)) : ' ';
+
             return [
                 'id'                   => $p->id,
                 'dni'                  => $p->document_number,
-                'first_name'           => explode(' ', $p->user?->name ?? 'Personero')[0],
-                'last_name'            => implode(' ', array_slice(explode(' ', $p->user?->name ?? ''), 1)),
+                'first_name'           => $firstName,
+                'last_name'            => $lastName,
+                'name'                 => $fullName,
                 'polling_station_code' => $stationCode,
                 'phone_number'         => $p->phone_number,
                 'email'                => $p->user?->email,

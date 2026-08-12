@@ -173,11 +173,11 @@ class SyncEngine {
       final personeroCompanions = <LocalPersonerosTableCompanion>[];
       for (final item in personerosList) {
         if (item is Map<String, Object?>) {
-          final dni = item['dni'] as String?;
-          final firstName = item['first_name'] as String?;
-          final lastName = item['last_name'] as String?;
-          final stationCode = item['polling_station_code'] as String?;
-          if (dni != null && firstName != null && lastName != null && stationCode != null) {
+          final dni = item['dni']?.toString();
+          final firstName = item['first_name']?.toString() ?? 'Personero';
+          final lastName = item['last_name']?.toString() ?? ' ';
+          final stationCode = item['polling_station_code']?.toString() ?? '030390';
+          if (dni != null && dni.isNotEmpty) {
             personeroCompanions.add(
               LocalPersonerosTableCompanion.insert(
                 dni: dni,
