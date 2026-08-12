@@ -136,15 +136,20 @@ Antes de escribir código en cualquier área, **leer el skill correspondiente**.
 
 ---
 
-## 📏 Reglas de Commits (siempre)
+## 📏 Reglas Obligatorias de Commits (Estructura Multilínea Estricta)
 
-Leer el skill `git-conventional-commits` antes de cualquier commit.
+TOCAR Y LEER el skill `git-conventional-commits` ANTES de cada commit.
+Todo mensaje de commit **DEBE** incluir obligatoriamente el título (con emoji y scope), cuerpo explicativo detallado y pie de commit.
 
 ```
-<emoji> <tipo>(<scope>): <descripción en español>
+<emoji> <tipo>(<scope>): <resumen conciso en español>
+
+<cuerpo explicativo detallado de lo implementado o modificado en español>
+
+<pie de commit: Closes #issue, Co-authored-by, o módulo relacionado>
 ```
 
-Scopes del proyecto:
+Scopes permitidos del monorepo:
 - `api` — Backend Laravel
 - `mobile` — Flutter app
 - `database` — Migraciones y seeders

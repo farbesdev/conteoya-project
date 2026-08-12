@@ -41,10 +41,12 @@ flowchart TD
 ## 🛠️ Detalle de Comandos
 
 ### Paso 1: Commit Local Semántico (`git-conventional-commits`)
-Formatear el mensaje según el skill `git-conventional-commits`:
+Formatear el mensaje obligatoriamente en 3 partes (título, cuerpo y pie) según el skill `git-conventional-commits`:
 ```bash
 git add .
-git commit -m "<emoji> <tipo>(<scope>): <descripción en español>"
+git commit -m "<emoji> <tipo>(<scope>): <resumen en español>" \
+           -m "<cuerpo detallado explicando las razones y cambios de la implementación>" \
+           -m "<pie de commit: Closes #issue o módulo afectado>"
 ```
 *Scopes del Proyecto*: `api`, `mobile`, `database`, `docs`, `specs`, `config`.
 
