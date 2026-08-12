@@ -99,18 +99,39 @@ class UserSeeder extends Seeder
             ]
         );
 
-        // Asignar Mesa 040104 (Yuyapichis) si la mesa existe en la BD o crearla
-        $firstLocation = \Illuminate\Support\Facades\DB::table('electoral_locations')->first();
-        $locationId = $firstLocation ? $firstLocation->id : 1;
+        // ─── MESA YUYAPICHIS (PUERTO INCA) ──────────────────────────────────
+        // 1. Asegurar la existencia de Departamento, Provincia y Distrito para Yuyapichis
+        \Illuminate\Support\Facades\DB::table('departments')->updateOrInsert(
+            ['code' => '10'],
+            ['name' => 'HUANUCO', 'updated_at' => now(), 'created_at' => now()]
+        );
+        \Illuminate\Support\Facades\DB::table('provinces')->updateOrInsert(
+            ['code' => '1009'],
+            ['department_code' => '10', 'name' => 'PUERTO INCA', 'updated_at' => now(), 'created_at' => now()]
+        );
+        \Illuminate\Support\Facades\DB::table('districts')->updateOrInsert(
+            ['code' => '100905'],
+            ['province_code' => '1009', 'department_code' => '10', 'name' => 'YUYAPICHIS', 'updated_at' => now(), 'created_at' => now()]
+        );
 
+        // 2. Obtener o crear la ElectoralLocation vinculada al distrito de Yuyapichis
+        $electoralLocation = \App\Models\ElectoralLocation::firstOrCreate(
+            ['name' => 'I.E. YUYAPICHIS', 'district_code' => '100905'],
+            [
+                'address' => 'Av. Principal s/n, Yuyapichis',
+            ]
+        );
+
+        // 3. Crear o recuperar la Mesa 040104 vinculada a la ElectoralLocation válida
         $mesaYuyapichis = \App\Models\PollingStation::firstOrCreate(
             ['code' => '040104'],
             [
-                'electoral_location_id' => $locationId,
-                'registered_voters' => 305,
-                'status' => 'ACTIVE',
+                'electoral_location_id' => $electoralLocation->id,
+                'registered_voters'     => 305,
+                'status'                => 'ACTIVE',
             ]
         );
+
         $puertoIncaPersonero->pollingStations()->sync([$mesaYuyapichis->id]);
 
         $this->command->info('✅  Usuario PERSONERO PUERTO INCA creado: personero.puertoinca@conteoya.pe / Puertoinca123!');
