@@ -59,6 +59,7 @@ class SyncService
             $result = match ($entityType) {
                 'acts'         => $this->processActOperation($personero, $payload, $clientOperationId, $device?->id),
                 'act_evidence' => $this->processEvidenceOperation($payload, $device?->id),
+                'personeros'   => $this->processPersoneroOperation($payload),
                 default        => throw new \InvalidArgumentException("Tipo de entidad '{$entityType}' no soportada para sincronización."),
             };
 
@@ -183,5 +184,48 @@ class SyncService
             'evidence_id' => $evidence->id,
             'object_key'  => $evidence->object_key,
         ];
+    }
+
+    protected function processPersoneroOperation(array $payload): array
+    {
+        return DB::transaction(function () use ($payload) {
+            $docNumber = $payload['document_number'];
+            $email = $payload['email'] ?? "personero_{$docNumber}@conteoya.pe";
+            $name = $payload['name'] ?? trim(($payload['first_name'] ?? '') . ' ' . ($payload['last_name'] ?? ''));
+
+            $roleModel = \App\Models\Role::where('name', 'PERSONERO')->first();
+
+            $user = \App\Models\User::firstOrCreate(
+                ['email' => $email],
+                [
+                    'name'      => $name,
+                    'password'  => \Illuminate\Support\Facades\Hash::make('Personero123!'),
+                    'role'      => 'PERSONERO',
+                    'role_id'   => $roleModel ? $roleModel->id : 3,
+                    'is_active' => true,
+                ]
+            );
+
+            $personero = Personero::firstOrCreate(
+                ['document_number' => $docNumber],
+                [
+                    'user_id'      => $user->id,
+                    'phone_number' => $payload['phone_number'] ?? null,
+                ]
+            );
+
+            if (!empty($payload['polling_station_code'])) {
+                $station = PollingStation::where('code', $payload['polling_station_code'])->first();
+                if ($station) {
+                    $personero->pollingStations()->syncWithoutDetaching([$station->id]);
+                }
+            }
+
+            return [
+                'personero_id'    => $personero->id,
+                'user_id'         => $user->id,
+                'document_number' => $personero->document_number,
+            ];
+        });
     }
 }

@@ -275,22 +275,94 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
   }
 }
 
-class UserFormModal extends StatefulWidget {
+class UserFormModal extends ConsumerStatefulWidget {
   const UserFormModal({super.key});
 
   @override
-  State<UserFormModal> createState() => _UserFormModalState();
+  ConsumerState<UserFormModal> createState() => _UserFormModalState();
 }
 
-class _UserFormModalState extends State<UserFormModal> {
+class _UserFormModalState extends ConsumerState<UserFormModal> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _dniController = TextEditingController();
+  final _phoneController = TextEditingController();
   String _selectedRole = 'PERSONERO';
+  String? _selectedMesaCode;
+  bool _isSaving = false;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _dniController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitUser() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final dni = _dniController.text.trim();
+    final phone = _phoneController.text.trim();
+
+    if (name.isEmpty || email.isEmpty) {
+      setState(() => _errorMessage = 'Nombre y correo son obligatorios.');
+      return;
+    }
+
+    if (_selectedRole == 'PERSONERO') {
+      if (!RegExp(r'^\d{8}$').hasMatch(dni)) {
+        setState(() => _errorMessage = 'El DNI debe contener 8 dígitos numéricos.');
+        return;
+      }
+      if (_selectedMesaCode == null || _selectedMesaCode!.isEmpty) {
+        setState(() => _errorMessage = 'Debe seleccionar una mesa asignada.');
+        return;
+      }
+    }
+
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final nameParts = name.split(' ');
+      final firstName = nameParts.first;
+      final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : ' ';
+      final cleanDni = dni.isNotEmpty ? dni : 'DNI${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+      final cleanMesa = _selectedMesaCode ?? '030390';
+
+      final repo = ref.read(personerosRepositoryProvider);
+      await repo.createPersonero(
+        dni: cleanDni,
+        firstName: firstName,
+        lastName: lastName,
+        pollingStationCode: cleanMesa,
+        phoneNumber: phone.isNotEmpty ? phone : null,
+        email: email,
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Usuario guardado y encolado para sincronización.'), backgroundColor: AppColors.success),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+        _isSaving = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final mesasAsync = ref.watch(mesasStreamProvider);
 
     return Container(
       decoration: const BoxDecoration(
@@ -298,55 +370,95 @@ class _UserFormModalState extends State<UserFormModal> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + bottomInset),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text('Nuevo Usuario', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 14),
-          TextField(
-            controller: _nameController,
-            style: const TextStyle(color: AppColors.textPrimary),
-            decoration: const InputDecoration(labelText: 'Nombre Completo', filled: true, fillColor: AppColors.background),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _emailController,
-            style: const TextStyle(color: AppColors.textPrimary),
-            decoration: const InputDecoration(labelText: 'Correo Electrónico', filled: true, fillColor: AppColors.background),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _passwordController,
-            obscureText: true,
-            style: const TextStyle(color: AppColors.textPrimary),
-            decoration: const InputDecoration(labelText: 'Contraseña', filled: true, fillColor: AppColors.background),
-          ),
-          const SizedBox(height: 10),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedRole,
-            dropdownColor: AppColors.surface,
-            style: const TextStyle(color: AppColors.textPrimary),
-            decoration: const InputDecoration(labelText: 'Rol', filled: true, fillColor: AppColors.background),
-            items: const [
-              DropdownMenuItem(value: 'ADMIN', child: Text('Administrador (ADMIN)')),
-              DropdownMenuItem(value: 'DIRECTOR', child: Text('Director Electoral')),
-              DropdownMenuItem(value: 'PERSONERO', child: Text('Personero de Mesa')),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text('Nuevo Usuario', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 14),
+
+            if (_errorMessage != null) ...[
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.danger.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.danger),
+                ),
+                child: Text(_errorMessage!, style: const TextStyle(color: AppColors.danger, fontSize: 12)),
+              ),
+              const SizedBox(height: 10),
             ],
-            onChanged: (val) => setState(() => _selectedRole = val ?? 'PERSONERO'),
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent),
-            child: const Text('Crear Usuario', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Usuario creado exitosamente.'), backgroundColor: AppColors.success),
-              );
-            },
-          ),
-        ],
+
+            TextField(
+              controller: _nameController,
+              style: const TextStyle(color: AppColors.textPrimary),
+              decoration: const InputDecoration(labelText: 'Nombre Completo *', filled: true, fillColor: AppColors.background),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              style: const TextStyle(color: AppColors.textPrimary),
+              decoration: const InputDecoration(labelText: 'Correo Electrónico *', filled: true, fillColor: AppColors.background),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _dniController,
+              keyboardType: TextInputType.number,
+              maxLength: 8,
+              style: const TextStyle(color: AppColors.textPrimary),
+              decoration: const InputDecoration(labelText: 'DNI (8 dígitos)', filled: true, fillColor: AppColors.background, counterText: ''),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              style: const TextStyle(color: AppColors.textPrimary),
+              decoration: const InputDecoration(labelText: 'Teléfono (opcional)', filled: true, fillColor: AppColors.background),
+            ),
+            const SizedBox(height: 10),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedRole,
+              dropdownColor: AppColors.surface,
+              style: const TextStyle(color: AppColors.textPrimary),
+              decoration: const InputDecoration(labelText: 'Rol *', filled: true, fillColor: AppColors.background),
+              items: const [
+                DropdownMenuItem(value: 'PERSONERO', child: Text('Personero de Mesa')),
+                DropdownMenuItem(value: 'DIRECTOR', child: Text('Director Electoral')),
+                DropdownMenuItem(value: 'ADMIN', child: Text('Administrador (ADMIN)')),
+              ],
+              onChanged: (val) => setState(() => _selectedRole = val ?? 'PERSONERO'),
+            ),
+            const SizedBox(height: 10),
+
+            mesasAsync.when(
+              data: (mesas) => DropdownButtonFormField<String>(
+                initialValue: _selectedMesaCode,
+                dropdownColor: AppColors.surface,
+                style: const TextStyle(color: AppColors.textPrimary),
+                decoration: const InputDecoration(labelText: 'Mesa Asignada *', filled: true, fillColor: AppColors.background),
+                items: mesas.map((m) => DropdownMenuItem(
+                  value: m.code,
+                  child: Text('Mesa ${m.code} - ${m.locationName}'),
+                )).toList(),
+                onChanged: (val) => setState(() => _selectedMesaCode = val),
+              ),
+              loading: () => const LinearProgressIndicator(),
+              error: (_, __) => const Text('Error al cargar mesas'),
+            ),
+
+            const SizedBox(height: 20),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent),
+              onPressed: _isSaving ? null : _submitUser,
+              child: _isSaving
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Crear y Sincronizar Usuario', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
       ),
     );
   }

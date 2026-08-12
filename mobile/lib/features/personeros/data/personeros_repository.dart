@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:drift/drift.dart';
 import '../../../core/database/app_database.dart';
 import '../domain/personero_model.dart';
@@ -91,6 +92,26 @@ class PersonerosRepository {
         email: email != null && email.trim().isNotEmpty
             ? Value(email.trim())
             : const Value.absent(),
+      ),
+    );
+
+    // 7. Encolar operación de sincronización para enviar a API/VPS
+    await db.enqueueSyncOperation(
+      LocalSyncOperationsTableCompanion.insert(
+        clientOperationId: 'personero_${cleanDni}_${DateTime.now().millisecondsSinceEpoch}',
+        entityType: 'personeros',
+        entityId: cleanDni,
+        operation: const Value('CREATE'),
+        payloadJson: jsonEncode({
+          'document_number': cleanDni,
+          'first_name': cleanFirst,
+          'last_name': cleanLast,
+          'name': '$cleanFirst $cleanLast',
+          'polling_station_code': cleanStation,
+          'phone_number': phoneNumber?.trim(),
+          'email': email?.trim() ?? 'personero_$cleanDni@conteoya.pe',
+        }),
+        status: const Value('PENDING'),
       ),
     );
   }
