@@ -23,7 +23,7 @@ class SyncService
      */
     public function processOperation(
         string $clientOperationId,
-        Personero $personero,
+        ?Personero $personero,
         ?Device $device,
         string $entityType,
         string $entityId,
@@ -45,7 +45,7 @@ class SyncService
         // Si no existe, crear registro en sync_operations
         $syncOp = $existingOp ?? SyncOperation::create([
             'client_operation_id' => $clientOperationId,
-            'personero_id'        => $personero->id,
+            'personero_id'        => $personero?->id,
             'device_id'           => $device?->id,
             'entity_type'         => $entityType,
             'entity_id'           => $entityId,
@@ -94,7 +94,7 @@ class SyncService
      * Procesa un lote (batch) de operaciones de sincronización.
      */
     public function processBatch(
-        Personero $personero,
+        ?Personero $personero,
         ?Device $device,
         array $operations
     ): array {
@@ -123,16 +123,18 @@ class SyncService
         return $results;
     }
 
-    protected function processActOperation(Personero $personero, array $payload, string $clientOpId, ?int $deviceId): array
+    protected function processActOperation(?Personero $personero, array $payload, string $clientOpId, ?int $deviceId): array
     {
         $station = PollingStation::where('code', $payload['polling_station_code'])->firstOrFail();
 
-        // Validar ownership de mesa
-        $hasStation = $personero->pollingStations()->where('polling_stations.id', $station->id)->exists();
-        if (!$hasStation) {
-            throw new \Illuminate\Auth\Access\AuthorizationException(
-                "El personero no tiene asignada la mesa {$station->code}."
-            );
+        // Validar ownership de mesa solo para rol PERSONERO
+        if ($personero) {
+            $hasStation = $personero->pollingStations()->where('polling_stations.id', $station->id)->exists();
+            if (!$hasStation) {
+                throw new \Illuminate\Auth\Access\AuthorizationException(
+                    "El personero no tiene asignada la mesa {$station->code}."
+                );
+            }
         }
 
         $totalsDTO = ActTotalsDTO::fromArray($payload['totals'] ?? []);

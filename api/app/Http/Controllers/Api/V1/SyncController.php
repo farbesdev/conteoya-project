@@ -32,8 +32,8 @@ class SyncController extends Controller
         $user = $request->user();
         $personero = $user->personero;
 
-        if (!$personero && !$user->isAdmin()) {
-            return response()->json(['message' => 'Solo personeros pueden sincronizar operaciones.'], 403);
+        if (!$personero && !$user->isAdmin() && !$user->isDirector()) {
+            return response()->json(['message' => 'No autorizado para sincronizar operaciones.'], 403);
         }
 
         $device = null;
