@@ -4,36 +4,46 @@ import '../theme/app_colors.dart';
 class StatMetricCard extends StatelessWidget {
   final String title;
   final String value;
-  final String subtitle;
+  final String? subtitle;
   final IconData icon;
-  final Color color;
+  final Color accentColor;
   final VoidCallback? onTap;
 
   const StatMetricCard({
     super.key,
     required this.title,
     required this.value,
-    required this.subtitle,
+    this.subtitle,
     required this.icon,
-    this.color = AppColors.accent,
+    this.accentColor = AppColors.accent,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textPrimary = theme.colorScheme.onSurface;
+    final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
+    final textMuted = theme.colorScheme.onSurface.withAlpha(128);
+    final cardBg = theme.colorScheme.surface;
+    final borderColor = theme.colorScheme.outlineVariant;
+
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.08),
+            color: accentColor.withValues(alpha: 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.2)
+                : Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -57,13 +67,13 @@ class StatMetricCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.15),
+                        color: accentColor.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(icon, color: color, size: 22),
+                      child: Icon(icon, color: accentColor, size: 22),
                     ),
                     if (onTap != null)
-                      const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted, size: 18),
+                      Icon(Icons.chevron_right_rounded, color: textMuted, size: 18),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -72,8 +82,8 @@ class StatMetricCard extends StatelessWidget {
                   children: [
                     Text(
                       value,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: textPrimary,
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
                         letterSpacing: -0.5,
@@ -82,19 +92,20 @@ class StatMetricCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
+                      style: TextStyle(
+                        color: textSecondary,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        color: AppColors.textMuted,
-                        fontSize: 11,
+                    if (subtitle != null && subtitle!.isNotEmpty)
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          color: textMuted,
+                          fontSize: 11,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ],

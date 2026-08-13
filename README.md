@@ -48,8 +48,8 @@ Permite a los personeros registrar resultados de actas electorales mediante una 
 | **Cache & Queues** | Redis |
 | **Almacenamiento** | Cloudflare R2 / S3 (Privado + Signed URLs) |
 | **App Móvil** | Flutter 3.44 + SQLite/Drift (Offline-first) |
-| **Frontend Web** | Vue 3.5 + Vite 8 + Pinia + Vuetify 4 |
-| **Realtime** | Laravel Reverb + Echo |
+| **Frontend Web** | Vue 3.5 + Vite 8 + Pinia *(Fase 2 — no iniciada)* |
+| **Realtime** | Laravel Reverb *(Fase 2 — no iniciada)* |
 | **Documentación API** | Dedoc Scramble (OpenAPI 3.1) |
 
 ---
@@ -58,51 +58,20 @@ Permite a los personeros registrar resultados de actas electorales mediante una 
 
 ```text
 conteoya-project/
-├── GEMINI.md                   # Reglas del proyecto para Antigravity / Gemini
-├── CLAUDE.md                   # Reglas del proyecto para Claude AI
-├── .agents/                    # Customizations y Skills para Agentes IA
-│   └── skills/
-│       ├── cloudflare-r2-s3-storage/    # Skill subida segura de evidencias
-│       ├── flutter-dart-best-practices/ # Skill desarrollo mobile Flutter 3.44+
-│       ├── git-conventional-commits/   # Skill estrategia de commits y ramas
-│       ├── laravel-api-fase1-ingesta/   # Skill endpoints de ingesta en Laravel
-│       ├── ocr-ia-adapter-pattern/      # Skill patrón Adapter OCR/IA
-│       ├── offline-first-sync-engine/   # Skill motor de sincronización offline
-│       ├── postgresql-16-best-practices/# Skill diseño BD en PostgreSQL 16
-│       ├── software-engineering-best-practices/# Skill arquitectura e ingeniería
-│       └── sqlite-drift-offline-first/  # Skill persistencia móvil Drift
-├── api/                        # 🟠 Backend Laravel 12 (app principal activa)
-│   ├── app/
-│   │   ├── Http/Controllers/Api/V1/
-│   │   │   ├── AuthController.php      # Login, /me, Logout (Sanctum)
-│   │   │   ├── CatalogController.php   # Catálogos geográficos y electorales
-│   │   │   └── PersoneroController.php # Mesas asignadas
-│   │   └── Models/
-│   │       ├── Role.php                # Modelo de Roles (ADMIN, DIRECTOR, PERSONERO)
-│   │       ├── User.php                # Usuario con role_id FK
-│   │       └── Personero.php           # Perfil personero
-│   ├── config/scramble.php             # Configuración OpenAPI/Scramble
-│   ├── database/
-│   │   ├── migrations/                 # 6 migraciones del esquema ConteoYA
-│   │   └── seeders/
-│   │       ├── RoleSeeder.php          # Roles del sistema
-│   │       ├── UserSeeder.php          # Usuarios de prueba por rol
-│   │       └── JeeDatabaseSeeder.php   # Datos maestros JEE (requiere erm2026.db)
-│   ├── routes/api.php                  # Rutas API v1 con throttle y Sanctum
-│   └── README.md                       # Guía de instalación y uso del backend
-├── database/                   # Archivos de BD fuente
-│   └── erm2026.db              # Fuente SQLite de datos maestros JEE
-├── docs/                       # Documentación técnica
-│   ├── database_modeling.md    # Modelado Conceptual, Lógico y Físico
-│   └── api_reference.md        # Referencia de endpoints y ejemplos
-├── specs/                      # Especificaciones funcionales por fase
-│   ├── CONTEOYA_PROPUESTA_FASES_ERM2026.md
-│   ├── CONTEOYA_PROMPT_FASE0_FOUNDATION.md
-│   ├── CONTEOYA_PROMPT_FASE1_INGESTA.md
-│   ├── CONTEOYA_PROMPT_FASE2_REALTIME_DASHBOARD.md
-│   └── CONTEOYA_PROMPT_FASE3_HARDENING.md
-└── README.md                   # Este archivo
+├── api/                    # 🟠 Backend Laravel 12 (activo)
+├── mobile/                 # 🔵 App Móvil Flutter 3.44 (activo)
+├── database/               # Datos maestros JEE (erm2026.db)
+├── docs/                   # Documentación técnica
+├── specs/                  # Especificaciones funcionales por fase
+├── .agents/                # Skills y customizations para agentes IA
+├── GEMINI.md               # Reglas del proyecto para Antigravity
+├── CLAUDE.md               # Reglas del proyecto para Claude AI
+└── README.md               # Este archivo
 ```
+
+Ver los READMEs individuales para detalles de cada subproyecto:
+- [`api/README.md`](api/README.md) — Instalación, migraciones, endpoints, comandos backend
+- [`mobile/README.md`](mobile/README.md) — Instalación, arquitectura, features, comandos mobile
 
 ---
 
@@ -135,17 +104,20 @@ Para más detalle, consulta:
 ## 🔐 Autenticación y Setup Rápido
 
 ```bash
-# Desde el directorio api/
+# Backend (desde api/)
 cd api/
-
-# 1. Migraciones
+composer install
+cp .env.example .env
+php artisan key:generate
 php artisan migrate
-
-# 2. Seeders (roles + usuarios + datos JEE)
 php artisan db:seed
-
-# 3. Correr servidor
 php artisan serve
+
+# App Móvil (desde mobile/)
+cd mobile/
+flutter pub get
+flutter pub run build_runner build --delete-conflicting-outputs
+flutter run
 ```
 
 ### Usuarios de prueba
@@ -173,15 +145,6 @@ http://localhost:8000/docs/api
 php artisan scramble:export
 ```
 
-### Endpoints Principales v1
-
-- **Autenticación:** `/api/v1/login`, `/api/v1/me`, `/api/v1/logout` (Devuelve `polling_station_code` cuando es personero)
-- **Gestión de Usuarios (CRUD):** `/api/v1/users` (ADMIN / DIRECTOR)
-- **Personeros (CRUD):** `/api/v1/personeros` (ADMIN / DIRECTOR)
-- **Mesas Electorales (CRUD):** `/api/v1/mesas` (ADMIN / DIRECTOR)
-- **Ingesta de Actas & Evidencias:** `/api/v1/acts`, `/api/v1/acts/{id}/confirm`, `/api/v1/acts/{id}/evidence/upload-url`, `/api/v1/acts/{id}/evidence/confirm`
-- **OCR/IA & Sync Offline:** `/api/v1/acts/recognize`, `/api/v1/sync`
-
 Ver [docs/api_reference.md](docs/api_reference.md) para la referencia completa de endpoints.
 
 ---
@@ -191,7 +154,7 @@ Ver [docs/api_reference.md](docs/api_reference.md) para la referencia completa d
 | Fase | Estado | Descripción |
 |------|--------|-------------|
 | **Fase 0 — Foundation** | ✅ Completada | API base, PostgreSQL, Sanctum, Roles, Catálogo JEE, Auth |
-| **Fase 1 — Ingesta** | 🟡 En progreso | App Flutter 3.44 offline-first, Drift SQLite, CRUD usuarios/mesas, captura de actas, evidenciador R2 |
+| **Fase 1 — Ingesta** | 🟡 En progreso | App Flutter 3.44 offline-first, Drift SQLite, captura de actas, evidencias R2, OCR/IA, sync engine |
 | **Fase 2 — Resultados** | ⏳ Pendiente | Dashboard Vue 3, consolidados, Laravel Reverb realtime |
 | **Fase 3 — Hardening** | ⏳ Pendiente | E2E, carga masiva, auditoría, disaster recovery |
 

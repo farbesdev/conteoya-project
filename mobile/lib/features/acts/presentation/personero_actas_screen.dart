@@ -8,7 +8,6 @@ import '../../auth/presentation/auth_notifier.dart';
 import '../../mesas/domain/mesa_model.dart';
 import 'act_form_screen.dart';
 import 'act_detail_screen.dart';
-import 'select_act_type_modal.dart';
 
 class PersoneroActasScreen extends ConsumerWidget {
   const PersoneroActasScreen({super.key});
@@ -21,13 +20,16 @@ class PersoneroActasScreen extends ConsumerWidget {
     final mesasAsync = ref.watch(mesasStreamProvider);
     final personerosAsync = ref.watch(personerosStreamProvider);
 
+    final theme = Theme.of(context);
+    final textPrimary = theme.colorScheme.onSurface;
+    final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: mesasAsync.when(
           data: (mesas) {
-            // Obtener la mesa asignada a este personero
             return personerosAsync.when(
               data: (personeros) {
                 final userEmail = user?.email.trim().toLowerCase();
@@ -58,50 +60,68 @@ class PersoneroActasScreen extends ConsumerWidget {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Header Informativo de la Mesa Asignada
-                    _buildMesaHeaderCard(assignedMesa),
-                    const SizedBox(height: 20),
-
-                    const Text(
-                      'Actas Electorales a Registrar',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'Seleccione el acta correspondiente para registrar o verificar los votos:',
-                      style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    // Encabezado
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Mis Actas Electorales',
+                          style: TextStyle(
+                            color: textPrimary,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Mesa N.º ${assignedMesa.code} • ${assignedMesa.locationName}',
+                          style: TextStyle(color: textSecondary, fontSize: 13),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
 
-                    // Opción 1: Acta Regional
+                    // Resumen de la mesa
+                    _buildMesaHeaderCard(context, assignedMesa),
+                    const SizedBox(height: 20),
+
+                    // Título sección
+                    Text(
+                      'Actas Electorales de la Mesa',
+                      style: TextStyle(
+                        color: textPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // 1. Acta Regional
                     _buildActCard(
                       context: context,
                       ref: ref,
                       mesaCode: assignedMesa.code,
                       electoralLevelId: 1,
-                      title: '🏛 Acta Regional',
-                      subtitle: 'Elección para Gobernador y Vicegobernador Regional',
+                      title: 'Acta Regional',
+                      subtitle: 'Elección de Gobernador y Vicegobernador Regional',
+                      icon: Icons.account_balance_rounded,
+                      iconColor: AppColors.accent,
                       status: assignedMesa.regionalStatus,
-                      primaryColor: AppColors.accent,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
 
-                    // Opción 2: Acta Municipal Provincial-Distrital
+                    // 2. Acta Municipal Provincial-Distrital
                     _buildActCard(
                       context: context,
                       ref: ref,
                       mesaCode: assignedMesa.code,
                       electoralLevelId: 2,
-                      title: '🏙 Acta Municipal Provincial-Distrital',
-                      subtitle: 'Elección para Alcalde y Regidores Provinciales y Distritales',
+                      title: 'Acta Municipal Provincial-Distrital',
+                      subtitle: 'Elección de Alcaldes y Concejos Municipales',
+                      icon: Icons.location_city_rounded,
+                      iconColor: AppColors.info,
                       status: assignedMesa.municipalStatus,
-                      primaryColor: AppColors.info,
                     ),
-                    const SizedBox(height: 80),
                   ],
                 );
               },
@@ -113,119 +133,60 @@ class PersoneroActasScreen extends ConsumerWidget {
           error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: AppColors.danger))),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          final personeros = personerosAsync.asData?.value;
-          final userEmail = user?.email.trim().toLowerCase();
-          dynamic myPersonero;
-          if (personeros != null && personeros.isNotEmpty) {
-            final matches = personeros.where(
-              (p) =>
-                  (userEmail != null && p.email?.trim().toLowerCase() == userEmail) ||
-                  (user?.personeroId != null && p.id == user?.personeroId),
-            );
-            if (matches.isNotEmpty) {
-              myPersonero = matches.first;
-            }
-          }
-          final code = myPersonero?.pollingStationCode ?? '040104';
-
-          SelectActTypeModal.show(
-            context,
-            pollingStationCode: code,
-          );
-        },
-        backgroundColor: AppColors.accent,
-        elevation: 4,
-        icon: const Icon(Icons.add_task_rounded, color: Colors.white),
-        label: const Text(
-          '+ Registrar Acta',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-      ),
     );
   }
 
-  Widget _buildMesaHeaderCard(MesaModel mesa) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-      ),
+  Widget _buildMesaHeaderCard(BuildContext context, MesaModel mesa) {
+    final theme = Theme.of(context);
+    final textPrimary = theme.colorScheme.onSurface;
+    final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
+    final textMuted = theme.colorScheme.onSurface.withAlpha(128);
+    final cardBg = theme.colorScheme.surface;
+    final borderColor = theme.colorScheme.outlineVariant;
+
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: AppColors.accent.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.how_to_vote_rounded, color: AppColors.accent, size: 24),
+                child: const Icon(Icons.how_to_vote_rounded, color: AppColors.accent, size: 20),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Mi Mesa Asignada',
-                      style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600),
-                    ),
-                    Text(
-                      'Mesa N.º ${mesa.code}',
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'Mesa N.º ${mesa.code}',
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.border),
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: borderColor),
                 ),
                 child: Text(
                   '${mesa.registeredVoters} electores',
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: textSecondary, fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          const Divider(color: AppColors.border, height: 1),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Icon(Icons.school_outlined, color: AppColors.textMuted, size: 16),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  mesa.locationName,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w500),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Icon(Icons.location_on_outlined, color: AppColors.textMuted, size: 16),
-              const SizedBox(width: 6),
-              Text(
-                '${mesa.districtName} • ${mesa.provinceName}',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
-              ),
-            ],
+          const SizedBox(height: 8),
+          Text(
+            '${mesa.locationName} — ${mesa.districtName}, ${mesa.provinceName}',
+            style: TextStyle(color: textMuted, fontSize: 12),
           ),
         ],
       ),
@@ -239,89 +200,89 @@ class PersoneroActasScreen extends ConsumerWidget {
     required int electoralLevelId,
     required String title,
     required String subtitle,
+    required IconData icon,
+    required Color iconColor,
     required ActRegistrationStatus status,
-    required Color primaryColor,
   }) {
     final isRegistered = status.isRegistrada;
     final statusColor = isRegistered ? AppColors.success : AppColors.warning;
-    final statusIcon = isRegistered ? Icons.check_circle_rounded : Icons.hourglass_empty_rounded;
+
+    final theme = Theme.of(context);
+    final textPrimary = theme.colorScheme.onSurface;
+    final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
+    final buttonBg = isRegistered ? theme.colorScheme.surfaceContainerHigh : iconColor;
 
     return AppCard(
-      borderColor: isRegistered ? AppColors.success.withValues(alpha: 0.3) : AppColors.border,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: primaryColor.withValues(alpha: 0.15),
+                  color: iconColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.description_rounded, color: primaryColor, size: 22),
+                child: Icon(icon, color: iconColor, size: 22),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: statusColor.withValues(alpha: 0.4)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(statusIcon, color: statusColor, size: 14),
-                    const SizedBox(width: 4),
                     Text(
-                      status.label,
+                      title,
                       style: TextStyle(
-                        color: statusColor,
-                        fontSize: 12,
+                        color: textPrimary,
+                        fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(color: textSecondary, fontSize: 12),
                     ),
                   ],
                 ),
               ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  status.label,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            subtitle,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.3),
-          ),
-          const SizedBox(height: 16),
-
-          // Botón Acción [ Registrar Acta ] o [ Ver Acta ]
+          const SizedBox(height: 14),
           SizedBox(
             width: double.infinity,
-            height: 46,
+            height: 42,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: isRegistered ? AppColors.surfaceElevated : primaryColor,
+                backgroundColor: buttonBg,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               icon: Icon(
-                isRegistered ? Icons.visibility_outlined : Icons.how_to_vote_rounded,
+                isRegistered ? Icons.visibility_outlined : Icons.edit_note_rounded,
                 color: Colors.white,
                 size: 18,
               ),
               label: Text(
-                isRegistered ? 'Ver Acta Registrada' : 'Registrar Acta',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                isRegistered ? 'Ver Detalle del Acta' : 'Registrar Acta Ahora',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
               ),
               onPressed: () async {
                 if (isRegistered) {

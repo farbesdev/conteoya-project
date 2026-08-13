@@ -1,7 +1,7 @@
 # ConteoYA — Referencia de Endpoints API v1
 
 **Base URL:** `http://localhost:8000/api/v1`  
-**Versión:** 0.1.0 (Fase 0 — Foundation)  
+**Versión:** 1.0.0 (Fase 0 + Fase 1 — Ingesta)  
 **Autenticación:** Bearer Token (Laravel Sanctum)  
 **Documentación interactiva:** `http://localhost:8000/docs/api`
 
@@ -20,10 +20,12 @@ La API usa **Laravel Sanctum** con tokens Bearer. El flujo es:
 
 ### Rate Limiting
 
-| Grupo | Límite |
-|-------|--------|
-| `api` (throttle global) | 60 req/min por IP |
-| `login` (throttle estricto) | 5 req/min por IP |
+| Grupo | Límite | Aplicado a |
+|-------|--------|------------|
+| `api` | 60 req/min por IP | Throttle global |
+| `login` | 5 req/min por IP | Endpoint `/login` |
+| `acts` | Configurable | Escritura de actas y confirmaciones |
+| `ingestion` | Configurable | Endpoints de sincronización `/sync` |
 
 ---
 
@@ -92,6 +94,76 @@ Autentica al usuario y devuelve un Bearer token junto con el perfil completo (in
 ## 🔒 Endpoints Protegidos (Bearer Token)
 
 Todos requieren el header: `Authorization: Bearer {token}`
+
+---
+
+## 👤 Usuarios (CRUD — solo ADMIN / DIRECTOR)
+
+### `GET /api/v1/users`
+
+Listado paginado de usuarios (20 por página).
+
+**Query Parameters**
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `role` | `string` | Filtrar por rol: `ADMIN`, `DIRECTOR`, `PERSONERO` — opcional |
+| `search` | `string` | Buscar por nombre, email o DNI del personero — opcional |
+
+---
+
+### `POST /api/v1/users`
+
+Crea un nuevo usuario. Si el rol es `PERSONERO` o se envía `document_number`, se crea automáticamente el perfil `personero` asociado.
+
+**Request Body**
+```json
+{
+  "name": "María García",
+  "email": "mgarcia@conteoya.pe",
+  "password": "SecurePass123!",
+  "role": "PERSONERO",
+  "document_number": "45678901",
+  "phone_number": "+51 987 111 222",
+  "polling_station_id": 5
+}
+```
+
+**Respuesta `201 Created`** — devuelve el usuario creado con relaciones `roleModel` y `personero.pollingStations`.
+
+---
+
+### `GET /api/v1/users/{id}`
+
+Ver usuario específico. El propio usuario puede consultar su propio perfil; ADMIN/DIRECTOR pueden ver cualquiera.
+
+---
+
+### `PUT /api/v1/users/{id}` / `PATCH /api/v1/users/{id}`
+
+Actualiza datos del usuario. Todos los campos son opcionales (`sometimes`).
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `name` | `string` | Nombre completo |
+| `email` | `string` | Email único |
+| `password` | `string` | Nueva contraseña (mín. 6 caracteres) |
+| `role` | `string` | `ADMIN`, `DIRECTOR` o `PERSONERO` |
+| `is_active` | `boolean` | Estado activo/inactivo |
+| `document_number` | `string` | DNI del personero |
+| `phone_number` | `string` | Teléfono del personero |
+| `polling_station_id` | `integer` | Mesa asignada (null para desasignar) |
+
+---
+
+### `DELETE /api/v1/users/{id}`
+
+Elimina un usuario y su perfil personero asociado. Solo accesible por `ADMIN`. Un admin no puede eliminarse a sí mismo.
+
+**Respuesta `200 OK`**
+```json
+{ "message": "Usuario eliminado correctamente." }
+```
 
 ---
 
@@ -327,6 +399,34 @@ Si la suma de votos difiere del total emitido declarado, devuelve `201 Created` 
 
 ---
 
+### `GET /api/v1/acts/{id}`
+
+Devuelve el acta con sus totales, resultados y evidencias. Solo el personero propietario o roles ADMIN/DIRECTOR pueden acceder.
+
+**Respuesta `200 OK`**
+```json
+{
+  "data": {
+    "id": 1,
+    "polling_station_code": "030390",
+    "election_id": 1,
+    "electoral_level_id": 2,
+    "act_code": "ACT-030390-MP",
+    "status": "DRAFT",
+    "captured_at": "2026-08-13T10:00:00Z",
+    "confirmed_at": null,
+    "totals": { "registered_voters": 300, "voters_who_voted": 280, "total_votes": 280, "blank_votes": 10, "null_votes": 5, "challenged_votes": 0, "is_valid_total": true },
+    "results": [
+      { "political_organization_id": 1, "votes": 165, "source": "MANUAL", "confidence": null },
+      { "political_organization_id": 2, "votes": 100, "source": "OCR", "confidence": 0.94 }
+    ],
+    "evidence": []
+  }
+}
+```
+
+---
+
 ### `POST /api/v1/acts/{id}/confirm`
 Transiciona el estado del acta a `CONFIRMED` e inserta la marca temporal de confirmación `confirmed_at`.
 
@@ -348,6 +448,20 @@ Genera una Presigned PUT URL privada para Cloudflare R2 con TTL de 15 minutos.
 
 ### `POST /api/v1/acts/{id}/evidence/confirm`
 Registra la evidencia fotográfica en la base de datos tras la subida exitosa a R2.
+
+---
+
+### `GET /api/v1/acts/{id}/evidence/{evidence_id}/download`
+
+Genera una **Presigned GET URL** para descarga segura del archivo de evidencia desde Cloudflare R2. TTL máximo: **60 minutos**.
+
+**Respuesta `200 OK`**
+```json
+{
+  "url": "https://r2.cloudflarestorage.com/bucket/path?X-Amz-Signature=...",
+  "expires_at": "2026-08-13T11:00:00Z"
+}
+```
 
 ---
 
@@ -379,8 +493,23 @@ Garantiza procesamiento idempotente por `client_operation_id`.
 
 ---
 
+### `GET /api/v1/sync/pull`
+Descarga actualizaciones del servidor al dispositivo (catálogos, cambios de estado de actas, asignaciones de mesas). Usado por el `SyncEngine` móvil.
+
+---
+
 ### `GET /api/v1/sync/status`
 Consulta el estado de sincronización de las operaciones del personero autenticado.
+
+**Respuesta `200 OK`**
+```json
+{
+  "pending": 3,
+  "processing": 0,
+  "done": 12,
+  "failed": 0
+}
+```
 
 ---
 
@@ -426,4 +555,4 @@ php artisan scramble:export
 
 ---
 
-_Última actualización: Fase 0 — v0.1.0 — 2026-08-10_
+_Última actualización: Fase 0 + Fase 1 — v1.0.0 — 2026-08-13_

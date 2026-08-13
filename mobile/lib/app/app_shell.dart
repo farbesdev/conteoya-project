@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers.dart';
 import '../core/theme/app_colors.dart';
+import '../core/theme/theme_notifier.dart';
 import '../features/acts/presentation/admin_actas_screen.dart';
 import '../features/acts/presentation/personero_actas_screen.dart';
 import '../features/auth/domain/auth_state.dart';
@@ -18,40 +19,85 @@ class AppShell extends ConsumerStatefulWidget {
   ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends ConsumerState<AppShell> {
+class _AppShellState extends ConsumerState<AppShell>
+    with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
 
+  // Controlador de animación para el icono del tema
+  late final AnimationController _themeAnimController;
+  late final Animation<double> _themeIconRotation;
+
+  @override
+  void initState() {
+    super.initState();
+    _themeAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _themeIconRotation = Tween<double>(begin: 0.0, end: 0.5).animate(
+      CurvedAnimation(parent: _themeAnimController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _themeAnimController.dispose();
+    super.dispose();
+  }
+
   void _onTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
+    setState(() => _currentIndex = index);
+  }
+
+  Future<void> _toggleTheme() async {
+    // Animación del icono al cambiar tema
+    if (_themeAnimController.isCompleted) {
+      await _themeAnimController.reverse();
+    } else {
+      await _themeAnimController.forward();
+    }
+    await ref.read(themeModeProvider.notifier).toggle();
   }
 
   void _showLogoutDialog(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: cs.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.border),
+          side: BorderSide(color: cs.outlineVariant),
         ),
-        title: const Text('Cerrar Sesión', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
-        content: const Text(
+        title: Text(
+          'Cerrar Sesión',
+          style: TextStyle(
+            color: cs.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        content: Text(
           '¿Está seguro de que desea cerrar la sesión actual?',
-          style: TextStyle(color: AppColors.textSecondary),
+          style: TextStyle(color: cs.onSurface.withAlpha(178)),
         ),
         actions: [
           TextButton(
-            child: const Text('Cancelar', style: TextStyle(color: AppColors.textMuted)),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: cs.onSurface.withAlpha(128)),
+            ),
             onPressed: () => Navigator.pop(ctx),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.danger,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text('Cerrar Sesión', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Cerrar Sesión',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
             onPressed: () {
               Navigator.pop(ctx);
               ref.read(authNotifierProvider.notifier).logout();
@@ -67,6 +113,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     final authState = ref.watch(authNotifierProvider);
     final user = authState is Authenticated ? authState.session : null;
     final isAdminOrDirector = user?.isAdminOrDirector ?? false;
+    final isDark = ref.watch(themeModeProvider) == ThemeMode.dark;
+    final cs = Theme.of(context).colorScheme;
 
     // Pantallas disponibles según rol
     final List<Widget> screens = isAdminOrDirector
@@ -142,25 +190,55 @@ class _AppShellState extends ConsumerState<AppShell> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        elevation: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               getTitle(),
-              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary, fontSize: 17),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
             ),
             if (user != null)
               Text(
                 '${user.name} • ${user.role}',
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+                style: TextStyle(
+                  color: cs.onSurface.withAlpha(128),
+                  fontSize: 11,
+                ),
               ),
           ],
         ),
         actions: [
+          // ─── Botón Toggle Tema ──────────────────────────────────────────
+          Tooltip(
+            message: isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro',
+            child: AnimatedBuilder(
+              animation: _themeIconRotation,
+              builder: (context, child) => Transform.rotate(
+                angle: _themeIconRotation.value * 3.14159,
+                child: child,
+              ),
+              child: IconButton(
+                icon: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder: (child, animation) => ScaleTransition(
+                    scale: animation,
+                    child: child,
+                  ),
+                  child: Icon(
+                    isDark
+                        ? Icons.light_mode_rounded
+                        : Icons.dark_mode_rounded,
+                    key: ValueKey(isDark),
+                    color: isDark ? AppColors.warning : AppColors.accent,
+                  ),
+                ),
+                onPressed: _toggleTheme,
+              ),
+            ),
+          ),
+
+          // ─── Botón Sincronizar ──────────────────────────────────────────
           IconButton(
             icon: const Icon(Icons.sync_rounded, color: AppColors.info),
             tooltip: 'Sincronizar Datos',
@@ -174,7 +252,8 @@ class _AppShellState extends ConsumerState<AppShell> {
               );
 
               try {
-                final metrics = await ref.read(syncEngineProvider).syncPendingOperations();
+                final metrics =
+                    await ref.read(syncEngineProvider).syncPendingOperations();
                 if (context.mounted) {
                   final stations = metrics['polling_stations'] ?? 0;
                   final personeros = metrics['personeros'] ?? 0;
@@ -201,8 +280,13 @@ class _AppShellState extends ConsumerState<AppShell> {
               }
             },
           ),
+
+          // ─── Botón Cerrar Sesión ────────────────────────────────────────
           IconButton(
-            icon: const Icon(Icons.logout_rounded, color: AppColors.textSecondary),
+            icon: Icon(
+              Icons.logout_rounded,
+              color: cs.onSurface.withAlpha(153),
+            ),
             tooltip: 'Cerrar Sesión',
             onPressed: () => _showLogoutDialog(context),
           ),
@@ -212,23 +296,10 @@ class _AppShellState extends ConsumerState<AppShell> {
         index: safeIndex,
         children: screens,
       ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: AppColors.primary,
-          border: Border(top: BorderSide(color: AppColors.border, width: 1)),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: safeIndex,
-          onTap: _onTabTapped,
-          backgroundColor: AppColors.primary,
-          selectedItemColor: AppColors.accent,
-          unselectedItemColor: AppColors.textMuted,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-          unselectedLabelStyle: const TextStyle(fontSize: 12),
-          type: BottomNavigationBarType.fixed,
-          elevation: 8,
-          items: navItems,
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: safeIndex,
+        onTap: _onTabTapped,
+        items: navItems,
       ),
     );
   }

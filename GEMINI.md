@@ -30,16 +30,32 @@ conteoya-project/
 ├── .agents/skills/        ← Skills de experto cargados bajo demanda
 ├── api/                   ← Backend Laravel 12 (código activo)
 │   ├── app/
+│   │   ├── Contracts/                         # Interfaces de storage y OCR
+│   │   ├── Domain/Acts/ · Domain/Evidence/    # Services, UseCases, DTOs
 │   │   ├── Http/Controllers/Api/V1/
 │   │   │   ├── AuthController.php
+│   │   │   ├── ActController.php
+│   │   │   ├── EvidenceController.php
+│   │   │   ├── RecognitionController.php
+│   │   │   ├── SyncController.php
+│   │   │   ├── UserController.php
 │   │   │   ├── CatalogController.php
 │   │   │   └── PersoneroController.php
+│   │   ├── Infrastructure/Ocr/ · Infrastructure/Storage/  # Providers
+│   │   ├── Jobs/          # ProcessSyncOperationJob
+│   │   ├── Middleware/    # IdempotencyMiddleware
+│   │   ├── Policies/      # ActPolicy · EvidencePolicy
 │   │   └── Models/
 │   │       ├── Role.php · User.php · Personero.php · Device.php
 │   │       └── Act · ActResult · ActTotal · ActEvidence · ...
 │   ├── config/scramble.php
-│   ├── database/migrations/   ← 6 migraciones aplicadas
+│   ├── database/migrations/   ← 7 migraciones aplicadas
 │   └── database/seeders/      ← RoleSeeder · UserSeeder · JeeDatabaseSeeder
+├── mobile/                ← App Flutter 3.44 (código activo)
+│   └── lib/
+│       ├── core/database/  # Drift schema v4, 8 tablas locales
+│       ├── core/sync/      # SyncEngine + BackoffCalculator
+│       └── features/       # acts · auth · dashboard · mesas · ocr_ai · personeros · sync · users
 ├── database/erm2026.db    ← Datos maestros JEE (SQLite fuente)
 ├── docs/                  ← Documentación técnica
 │   ├── database_modeling.md
@@ -52,7 +68,7 @@ conteoya-project/
 | Fase | Estado | Descripción |
 |------|--------|-------------|
 | **Fase 0 — Foundation** | ✅ Completada | API base, PostgreSQL, Sanctum, Roles, Auth, Catálogos JEE |
-| **Fase 1 — Ingesta** | 🔜 Próxima | Flutter offline-first, actas, evidencias R2, sync engine |
+| **Fase 1 — Ingesta** | 🟡 En progreso | Flutter offline-first, actas, evidencias R2, sync engine |
 | **Fase 2 — Resultados** | ⏳ Pendiente | Dashboard Vue 3, realtime Reverb |
 | **Fase 3 — Hardening** | ⏳ Pendiente | E2E, carga, auditoría |
 

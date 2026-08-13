@@ -24,8 +24,12 @@ class PersoneroDashboardScreen extends ConsumerWidget {
     final personerosAsync = ref.watch(personerosStreamProvider);
     final syncState = ref.watch(syncStateStreamProvider);
 
+    final theme = Theme.of(context);
+    final textPrimary = theme.textTheme.titleMedium?.color ?? theme.colorScheme.onSurface;
+    final textSecondary = theme.textTheme.bodyMedium?.color ?? theme.colorScheme.onSurface.withAlpha(178);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: mesasAsync.when(
@@ -65,16 +69,16 @@ class PersoneroDashboardScreen extends ConsumerWidget {
                     // Saludo al personero
                     Text(
                       'Hola, ${user?.name ?? "Personero"}',
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: textPrimary,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 2),
-                    const Text(
+                    Text(
                       'Jornada Electoral — Elecciones Regionales y Municipales 2026',
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                      style: TextStyle(color: textSecondary, fontSize: 13),
                     ),
                     const SizedBox(height: 16),
 
@@ -83,18 +87,18 @@ class PersoneroDashboardScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
 
                     // Tarjeta Principal: Mi Mesa Asignada
-                    _buildMesaCard(assignedMesa),
+                    _buildMesaCard(context, assignedMesa),
                     const SizedBox(height: 16),
 
-                    // Tarjeta de Avance de Actas (Requerimiento 7: "1 / 2 registradas")
-                    _buildProgressCard(registeredActsCount),
+                    // Tarjeta de Avance de Actas
+                    _buildProgressCard(context, registeredActsCount),
                     const SizedBox(height: 20),
 
                     // Lista de Actas de su Mesa
-                    const Text(
+                    Text(
                       'Mis Actas Electorales',
                       style: TextStyle(
-                        color: AppColors.textPrimary,
+                        color: textPrimary,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -139,7 +143,14 @@ class PersoneroDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMesaCard(MesaModel mesa) {
+  Widget _buildMesaCard(BuildContext context, MesaModel mesa) {
+    final theme = Theme.of(context);
+    final textPrimary = theme.colorScheme.onSurface;
+    final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
+    final textMuted = theme.colorScheme.onSurface.withAlpha(128);
+    final cardBg = theme.colorScheme.surface;
+    final borderColor = theme.colorScheme.outlineVariant;
+
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,14 +170,14 @@ class PersoneroDashboardScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Mesa Asignada',
-                      style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: textMuted, fontSize: 11, fontWeight: FontWeight.w600),
                     ),
                     Text(
                       'N.º ${mesa.code}',
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: textPrimary,
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
@@ -177,28 +188,28 @@ class PersoneroDashboardScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.background,
+                  color: cardBg,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(color: borderColor),
                 ),
                 child: Text(
                   '${mesa.registeredVoters} electores',
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(color: AppColors.border, height: 1),
+          Divider(color: borderColor, height: 1),
           const SizedBox(height: 10),
           Row(
             children: [
-              const Icon(Icons.school_outlined, color: AppColors.textMuted, size: 15),
+              Icon(Icons.school_outlined, color: textMuted, size: 15),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   mesa.locationName,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w500),
+                  style: TextStyle(color: textPrimary, fontSize: 13, fontWeight: FontWeight.w500),
                 ),
               ),
             ],
@@ -206,11 +217,11 @@ class PersoneroDashboardScreen extends ConsumerWidget {
           const SizedBox(height: 4),
           Row(
             children: [
-              const Icon(Icons.location_on_outlined, color: AppColors.textMuted, size: 15),
+              Icon(Icons.location_on_outlined, color: textMuted, size: 15),
               const SizedBox(width: 6),
               Text(
                 '${mesa.districtName} • ${mesa.provinceName}',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                style: TextStyle(color: textSecondary, fontSize: 12),
               ),
             ],
           ),
@@ -219,14 +230,21 @@ class PersoneroDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildProgressCard(int registeredCount) {
+  Widget _buildProgressCard(BuildContext context, int registeredCount) {
     final isComplete = registeredCount == 2;
+    final theme = Theme.of(context);
+    final textPrimary = theme.colorScheme.onSurface;
+    final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
+    final textMuted = theme.colorScheme.onSurface.withAlpha(128);
+    final cardBg = theme.colorScheme.surface;
+    final borderColor = theme.colorScheme.outlineVariant;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isComplete ? AppColors.success.withValues(alpha: 0.4) : AppColors.border),
+        border: Border.all(color: isComplete ? AppColors.success.withValues(alpha: 0.4) : borderColor),
       ),
       child: Row(
         children: [
@@ -247,14 +265,14 @@ class PersoneroDashboardScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Mis Actas',
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600),
+                  style: TextStyle(color: textMuted, fontSize: 12, fontWeight: FontWeight.w600),
                 ),
                 Text(
                   '$registeredCount / 2',
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: textPrimary,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     letterSpacing: -0.5,
@@ -263,7 +281,7 @@ class PersoneroDashboardScreen extends ConsumerWidget {
                 Text(
                   isComplete ? 'Todas las actas registradas' : 'registradas para su mesa',
                   style: TextStyle(
-                    color: isComplete ? AppColors.success : AppColors.textSecondary,
+                    color: isComplete ? AppColors.success : textSecondary,
                     fontSize: 12,
                     fontWeight: isComplete ? FontWeight.bold : FontWeight.normal,
                   ),
@@ -290,6 +308,10 @@ class PersoneroDashboardScreen extends ConsumerWidget {
     final statusColor = isRegistered ? AppColors.success : AppColors.warning;
     final statusIcon = isRegistered ? Icons.check_circle_rounded : Icons.hourglass_empty_rounded;
 
+    final theme = Theme.of(context);
+    final textPrimary = theme.colorScheme.onSurface;
+    final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
+
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,15 +333,15 @@ class PersoneroDashboardScreen extends ConsumerWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: textPrimary,
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
                       subtitle,
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      style: TextStyle(color: textSecondary, fontSize: 12),
                     ),
                   ],
                 ),
@@ -350,7 +372,7 @@ class PersoneroDashboardScreen extends ConsumerWidget {
             height: 40,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: isRegistered ? AppColors.surfaceElevated : primaryColor,
+                backgroundColor: isRegistered ? theme.colorScheme.surfaceContainerHigh : primaryColor,
                 elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
@@ -425,12 +447,17 @@ class PersoneroDashboardScreen extends ConsumerWidget {
         break;
     }
 
+    final theme = Theme.of(context);
+    final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
+    final cardBg = theme.colorScheme.surface;
+    final borderColor = theme.colorScheme.outlineVariant;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cardBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: borderColor),
       ),
       child: Row(
         children: [
@@ -439,7 +466,7 @@ class PersoneroDashboardScreen extends ConsumerWidget {
           Expanded(
             child: Text(
               statusText,
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500),
+              style: TextStyle(color: textSecondary, fontSize: 12, fontWeight: FontWeight.w500),
             ),
           ),
           IconButton(

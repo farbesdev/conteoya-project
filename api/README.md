@@ -12,6 +12,7 @@ API REST del sistema **ConteoYA** para la captura, validación y consolidación 
 | Autenticación | Laravel Sanctum (Bearer Token) |
 | Base de datos | PostgreSQL 16+ |
 | Cache / Queues | Redis |
+| Almacenamiento | Cloudflare R2 (S3-compatible, privado) |
 | Documentación API | Dedoc Scramble (OpenAPI 3.1) |
 | Realtime (Fase 2) | Laravel Reverb |
 
@@ -62,14 +63,15 @@ php artisan serve
 
 ### Migraciones (orden de ejecución)
 
-| Migración | Descripción |
-|-----------|-------------|
-| `0001_01_01_000000_create_users_table` | Tabla `users` con columna `role` (string) |
-| `0001_01_01_000001_create_cache_table` | Tablas de cache y sesiones |
-| `0001_01_01_000002_create_jobs_table` | Cola de trabajos |
-| `2026_08_09_165656_create_personal_access_tokens_table` | Tokens Sanctum |
-| `2026_08_09_165708_create_conteoya_tables` | Esquema principal: geography, catálogo electoral, personeros, actas |
-| `2026_08_10_102628_create_roles_table` | Tabla `roles` + FK `role_id` en `users` |
+| # | Migración | Descripción |
+|---|-----------|-------------|
+| 1 | `0001_01_01_000000_create_users_table` | Tabla `users` con columna `role` (string) |
+| 2 | `0001_01_01_000001_create_cache_table` | Tablas de cache y sesiones |
+| 3 | `0001_01_01_000002_create_jobs_table` | Cola de trabajos |
+| 4 | `2026_08_09_165656_create_personal_access_tokens_table` | Tokens Sanctum |
+| 5 | `2026_08_09_165708_create_conteoya_tables` | Esquema principal: geografía, catálogo electoral, personeros, actas, sync, auditoría |
+| 6 | `2026_08_10_102628_create_roles_table` | Tabla `roles` + FK `role_id` en `users` |
+| 7 | `2026_08_10_220000_make_device_id_nullable_in_sync_operations_table` | Hace `device_id` nullable en `sync_operations` |
 
 ### Seeders
 
@@ -78,16 +80,14 @@ php artisan serve
 php artisan db:seed
 
 # Seeders individuales
-php artisan db:seed --class=RoleSeeder    # Crea roles: ADMIN, DIRECTOR, PERSONERO
-php artisan db:seed --class=UserSeeder    # Crea un usuario de prueba por cada rol
-php artisan db:seed --class=JeeDatabaseSeeder  # Carga datos maestros JEE (requiere erm2026.db)
+php artisan db:seed --class=RoleSeeder          # Crea roles: ADMIN, DIRECTOR, PERSONERO
+php artisan db:seed --class=UserSeeder          # Crea usuarios de prueba por cada rol
+php artisan db:seed --class=JeeDatabaseSeeder   # Carga datos maestros JEE (requiere erm2026.db)
 ```
 
 ---
 
 ## 👥 Roles del sistema
-
-La tabla `roles` define los tres roles del sistema. Cada `user` tiene una FK `role_id` hacia `roles`, además de mantener la columna `role` (string) para compatibilidad y acceso rápido sin JOIN.
 
 | Rol | `name` | Descripción |
 |-----|--------|-------------|
@@ -107,15 +107,6 @@ Authorization: Bearer {token}
 
 El token se obtiene desde `POST /api/v1/login`.
 
-### Flujo de autenticación
-
-```
-POST /api/v1/login
-  → Valida credenciales (email + password)
-  → Si es Personero + device_uuid → registra/actualiza dispositivo
-  → Devuelve: access_token + usuario + objeto rol completo
-```
-
 ### Respuesta de login
 
 ```json
@@ -134,7 +125,8 @@ POST /api/v1/login
       "name": "PERSONERO",
       "display_name": "Personero"
     },
-    "personero_id": 1
+    "personero_id": 1,
+    "polling_station_code": "030390"
   }
 }
 ```
@@ -147,12 +139,12 @@ POST /api/v1/login
 |-------|----------|-----|---------------|
 | `admin@conteoya.pe` | `Admin123!` | `ADMIN` | — |
 | `director@conteoya.pe` | `Director123!` | `DIRECTOR` | — |
-| `personero@conteoya.pe` | `Personero123!` | `PERSONERO` | Mesa `030390` (Lima) |
+| `personero@conteoya.pe` | `Personero123!` | `PERSONERO` | Mesa `030390` (Lima Cercado) |
 | `personero.puertoinca@conteoya.pe` | `Puertoinca123!` | `PERSONERO` | Mesa `040104` (Yuyapichis) |
 
 ---
 
-## 📡 Endpoints disponibles (v0.1.0 — Fase 0)
+## 📡 Endpoints disponibles (v1.0.0 — Fase 0 + Fase 1)
 
 Base URL: `http://localhost:8000/api/v1`
 
@@ -164,22 +156,109 @@ Base URL: `http://localhost:8000/api/v1`
 | `GET` | `/me` | 🔒 Bearer | Perfil del usuario autenticado |
 | `POST` | `/logout` | 🔒 Bearer | Revocar token actual |
 
+### Usuarios (CRUD — solo ADMIN / DIRECTOR)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| `GET` | `/users` | 🔒 Bearer | Listar usuarios (con filtro `?role=` y `?search=`) |
+| `POST` | `/users` | 🔒 Bearer | Crear usuario (crea perfil `personero` automáticamente si aplica) |
+| `GET` | `/users/{id}` | 🔒 Bearer | Ver usuario específico |
+| `PUT/PATCH` | `/users/{id}` | 🔒 Bearer | Actualizar usuario |
+| `DELETE` | `/users/{id}` | 🔒 Bearer | Eliminar usuario (solo ADMIN) |
+
 ### Personero
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
 | `GET` | `/personero/polling-stations` | 🔒 Bearer | Mesas asignadas al personero autenticado |
 
-### Catálogos electorales _(caché Redis 24h)_
+### Catálogos electorales _(caché Redis)_
 
-| Método | Ruta | Auth | Parámetros | Descripción |
+| Método | Ruta | Auth | Cache | Descripción |
+|--------|------|------|-------|-------------|
+| `GET` | `/departments` | 🔒 Bearer | 24h | Listado de departamentos |
+| `GET` | `/provinces` | 🔒 Bearer | 24h | Provincias (filtrable `?department_code=`) |
+| `GET` | `/districts` | 🔒 Bearer | 24h | Distritos (filtrable `?province_code=`) |
+| `GET` | `/elections` | 🔒 Bearer | 24h | Elecciones con niveles electorales |
+| `GET` | `/political-organizations` | 🔒 Bearer | 12h | Organizaciones políticas |
+| `GET` | `/electoral-lists` | 🔒 Bearer | 1h | Listas electorales paginadas (`?electoral_level_id=&district_code=&page=`) |
+
+### Actas Electorales (Fase 1)
+
+| Método | Ruta | Auth | Rate Limit | Descripción |
 |--------|------|------|------------|-------------|
-| `GET` | `/departments` | 🔒 Bearer | — | Listado de departamentos |
-| `GET` | `/provinces` | 🔒 Bearer | `?department_code=` | Provincias (filtrable) |
-| `GET` | `/districts` | 🔒 Bearer | `?province_code=` | Distritos (filtrable) |
-| `GET` | `/elections` | 🔒 Bearer | — | Elecciones con niveles electorales |
-| `GET` | `/political-organizations` | 🔒 Bearer | — | Organizaciones políticas |
-| `GET` | `/electoral-lists` | 🔒 Bearer | `?electoral_level_id=&district_code=&page=` | Listas electorales paginadas |
+| `POST` | `/acts` | 🔒 Bearer | `throttle:acts` | Registrar acta (idempotente, `Idempotency-Key`) |
+| `GET` | `/acts/{id}` | 🔒 Bearer | — | Ver acta con totales, resultados y evidencias |
+| `POST` | `/acts/{id}/confirm` | 🔒 Bearer | `throttle:acts` | Confirmar acta (transición → `CONFIRMED`) |
+
+### Evidencias Fotográficas (Fase 1)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| `POST` | `/acts/{id}/evidence/upload-url` | 🔒 Bearer | Genera Presigned PUT URL en R2 (TTL 15min) |
+| `POST` | `/acts/{id}/evidence/confirm` | 🔒 Bearer | Registra evidencia tras subida exitosa a R2 |
+| `GET` | `/acts/{id}/evidence/{eid}/download` | 🔒 Bearer | Genera Presigned GET URL para descarga (TTL 60min) |
+
+### OCR / IA (Fase 1 — Human-in-the-Loop)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| `POST` | `/acts/recognize` | 🔒 Bearer | Procesar imagen de acta con OCR/IA (devuelve propuesta con `confidence`) |
+| `POST` | `/acts/{id}/recognize` | 🔒 Bearer | Re-procesar imagen de acta ya existente |
+
+### Motor de Sincronización Offline (Fase 1)
+
+| Método | Ruta | Auth | Rate Limit | Descripción |
+|--------|------|------|------------|-------------|
+| `POST` | `/sync` | 🔒 Bearer | `throttle:ingestion` | Enviar lote de `SyncOperation` (idempotente por `client_operation_id`) |
+| `GET` | `/sync/pull` | 🔒 Bearer | `throttle:ingestion` | Descargar actualizaciones del servidor al dispositivo |
+| `GET` | `/sync/status` | 🔒 Bearer | `throttle:ingestion` | Estado de sync de las operaciones del personero |
+
+### Rate Limiting
+
+| Grupo | Límite | Aplicado a |
+|-------|--------|------------|
+| `api` | 60 req/min por IP | Throttle global |
+| `login` | 5 req/min por IP | Endpoint `/login` |
+| `acts` | Config `throttle:acts` | Escritura de actas y confirmaciones |
+| `ingestion` | Config `throttle:ingestion` | Endpoints `/sync` |
+
+---
+
+## 📁 Estructura del proyecto
+
+```text
+api/
+├── app/
+│   ├── Contracts/                  # Interfaces (StorageProviderInterface, ActRecognitionProviderInterface)
+│   ├── Domain/
+│   │   ├── Acts/                   # ActService, ActValidationService, ActRecognitionService, DTOs
+│   │   └── Evidence/               # EvidenceService
+│   ├── Http/
+│   │   ├── Controllers/Api/V1/     # AuthController, ActController, EvidenceController,
+│   │   │                           # RecognitionController, SyncController, UserController,
+│   │   │                           # CatalogController, PersoneroController
+│   │   ├── Middleware/             # IdempotencyMiddleware
+│   │   ├── Requests/               # CreateActRequest, ConfirmActRequest, RecognizeActRequest,
+│   │   │                           # RequestUploadUrlRequest, ConfirmEvidenceRequest, SyncOperationRequest
+│   │   └── Resources/              # ActResource, ActTotalsResource, ActResultResource,
+│   │                               # ActEvidenceResource, SyncOperationResource
+│   ├── Infrastructure/
+│   │   ├── Ocr/                    # GeminiVisionProvider, OpenAiVisionProvider, MockActRecognitionProvider
+│   │   └── Storage/                # R2StorageProvider, MockStorageProvider
+│   ├── Jobs/                       # ProcessSyncOperationJob
+│   ├── Models/                     # User, Role, Personero, Device, Act, ActTotal, ActResult,
+│   │                               # ActEvidence, OcrAiExtraction, SyncOperation, AuditLog, ...
+│   ├── Policies/                   # ActPolicy, EvidencePolicy
+│   └── Traits/                     # MigrationSeedingMethod
+├── config/
+│   └── scramble.php                # Configuración OpenAPI (Bearer auth, título, descripción)
+├── database/
+│   ├── migrations/                 # 7 migraciones del esquema ConteoYA
+│   └── seeders/                    # DatabaseSeeder, RoleSeeder, UserSeeder, JeeDatabaseSeeder
+└── routes/
+    └── api.php                     # Rutas API v1 con throttle, auth:sanctum e idempotent
+```
 
 ---
 
@@ -195,42 +274,7 @@ http://localhost:8000/docs/api
 php artisan scramble:export   # → genera api/api.json
 ```
 
-**Características:**
-- Rutas públicas (`/login`) → `security: []`
-- Rutas protegidas → `security: Bearer` (detectado automáticamente por `auth:sanctum`)
-- Anotaciones `@tags`, `@bodyParam`, `@response` en todos los controladores
-
----
-
-## 📁 Estructura del proyecto
-
-```text
-api/
-├── app/
-│   ├── Http/Controllers/Api/V1/
-│   │   ├── AuthController.php      # Login, /me, Logout
-│   │   ├── CatalogController.php   # Catálogos electorales (geog. + electoral)
-│   │   └── PersoneroController.php # Mesas asignadas al personero
-│   ├── Models/
-│   │   ├── Role.php                # Roles del sistema (ADMIN, DIRECTOR, PERSONERO)
-│   │   ├── User.php                # Usuario con role_id FK + hasRole()
-│   │   ├── Personero.php           # Perfil personero de mesa
-│   │   ├── Device.php              # Dispositivo móvil registrado
-│   │   └── ...                     # Modelos electorales (Act, Election, etc.)
-│   └── Traits/
-│       └── MigrationSeedingMethod.php
-├── config/
-│   └── scramble.php                # Configuración OpenAPI (Bearer auth, título, descripción)
-├── database/
-│   ├── migrations/                 # 6 migraciones (ver tabla arriba)
-│   └── seeders/
-│       ├── DatabaseSeeder.php      # Orquestador principal
-│       ├── RoleSeeder.php          # Roles del sistema
-│       ├── UserSeeder.php          # Usuarios de prueba por rol
-│       └── JeeDatabaseSeeder.php   # Datos maestros JEE
-└── routes/
-    └── api.php                     # Rutas API v1 con throttle y auth:sanctum
-```
+Ver la referencia completa en [docs/api_reference.md](../docs/api_reference.md).
 
 ---
 
@@ -248,6 +292,9 @@ php artisan migrate:fresh --seed
 
 # Ejecutar tests
 php artisan test
+
+# Exportar spec OpenAPI (ejecutar tras cada cambio de ruta o controller)
+php artisan scramble:export
 ```
 
 ---

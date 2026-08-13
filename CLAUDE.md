@@ -29,12 +29,25 @@ conteoya-project/
 ├── GEMINI.md              ← Reglas para Antigravity/Gemini
 ├── CLAUDE.md              ← Reglas para Claude (este archivo)
 ├── .agents/skills/        ← Skills de experto por tecnología
-├── api/                   ← Backend Laravel 12 (ÚNICO código activo hoy)
-│   ├── app/Http/Controllers/Api/V1/   AuthController · CatalogController · PersoneroController
-│   ├── app/Models/                    Role · User · Personero · Device · Act · ...
-│   ├── config/scramble.php            Configuración OpenAPI
-│   ├── database/migrations/           6 migraciones aplicadas en PostgreSQL
-│   └── database/seeders/              RoleSeeder · UserSeeder · JeeDatabaseSeeder
+├── api/                   ← Backend Laravel 12 (activo)
+│   ├── app/Contracts/                   Interfaces Storage y OCR
+│   ├── app/Domain/Acts · Domain/Evidence Services, DTOs
+│   ├── app/Http/Controllers/Api/V1/     AuthController · ActController · EvidenceController ·
+│   │                                    RecognitionController · SyncController · UserController ·
+│   │                                    CatalogController · PersoneroController
+│   ├── app/Infrastructure/Ocr · Storage/  Providers OCR y R2
+│   ├── app/Jobs/                         ProcessSyncOperationJob
+│   ├── app/Middleware/                   IdempotencyMiddleware
+│   ├── app/Policies/                     ActPolicy · EvidencePolicy
+│   ├── app/Models/                       Role · User · Personero · Device · Act · ...
+│   ├── config/scramble.php               Configuración OpenAPI
+│   ├── database/migrations/              7 migraciones aplicadas en PostgreSQL
+│   └── database/seeders/                 RoleSeeder · UserSeeder · JeeDatabaseSeeder
+├── mobile/                ← App Flutter 3.44 (activo)
+│   └── lib/
+│       ├── core/database/  Drift schema v4, 8 tablas locales
+│       ├── core/sync/      SyncEngine + BackoffCalculator
+│       └── features/       acts · auth · dashboard · mesas · ocr_ai · personeros · sync · users
 ├── database/erm2026.db    ← Fuente SQLite con datos maestros JEE
 ├── docs/
 │   ├── database_modeling.md
@@ -76,7 +89,28 @@ Lo implementado:
 
 **Documentación:** `GET /docs/api` (Scramble interactive) · `GET /docs/api.json`
 
-### Fase 1 — Ingesta 🔜 PRÓXIMA (NO iniciar sin instrucción explícita)
+### Fase 1 — Ingesta 🟡 EN PROGRESO
+
+**Endpoints activos (Fase 1):**
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `GET/POST/PUT/DELETE` | `/users` | CRUD de usuarios (ADMIN/DIRECTOR) |
+| `POST` | `/acts` | Registrar acta (idempotente, `Idempotency-Key`) |
+| `GET` | `/acts/{id}` | Ver acta con totales, resultados y evidencias |
+| `POST` | `/acts/{id}/confirm` | Confirmar acta |
+| `POST` | `/acts/{id}/evidence/upload-url` | Presigned PUT URL en R2 (TTL 15min) |
+| `POST` | `/acts/{id}/evidence/confirm` | Registrar evidencia tras subida |
+| `GET` | `/acts/{id}/evidence/{eid}/download` | Presigned GET URL (TTL 60min) |
+| `POST` | `/acts/recognize` | OCR/IA sobre imagen de acta |
+| `POST` | `/sync` | Enviar lote de operaciones offline |
+| `GET` | `/sync/pull` | Descargar actualizaciones del servidor |
+| `GET` | `/sync/status` | Estado de sincronización del personero |
+
+**App Móvil Flutter:**
+- Drift schema v4, 8 tablas locales
+- SyncEngine offline-first con exponential backoff
+- Features: acts, auth, dashboard, mesas, ocr_ai, personeros, sync, users
 
 ### Fase 2 y 3 — ⏳ NO iniciar
 

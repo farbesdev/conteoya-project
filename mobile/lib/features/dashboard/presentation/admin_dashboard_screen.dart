@@ -28,8 +28,12 @@ class AdminDashboardScreen extends ConsumerWidget {
     final mesasCount = mesasAsync.value?.length ?? 0;
     final actsCount = actsAsync.value?.where((a) => a.status != 'DRAFT').length ?? 0;
 
+    final theme = Theme.of(context);
+    final textPrimary = theme.colorScheme.onSurface;
+    final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -44,8 +48,8 @@ class AdminDashboardScreen extends ConsumerWidget {
                     children: [
                       Text(
                         'Bienvenido, ${user?.name ?? "Administrador"}',
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
+                        style: TextStyle(
+                          color: textPrimary,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
@@ -53,8 +57,8 @@ class AdminDashboardScreen extends ConsumerWidget {
                       const SizedBox(height: 2),
                       Text(
                         'Panel de Control — ERM 2026 (${user?.role ?? "ADMIN"})',
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
+                        style: TextStyle(
+                          color: textSecondary,
                           fontSize: 13,
                         ),
                       ),
@@ -67,56 +71,51 @@ class AdminDashboardScreen extends ConsumerWidget {
 
             // Tarjeta de Estado del Sync Engine
             _buildSyncStatusCard(context, ref, syncState.value ?? SyncEngineState.idle),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            // Título de Sección Indicadores
-            const Text(
-              'Indicadores Generales',
-              style: TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // Grid de Métricas Principales (Requerimiento 6)
+            // Métricas Principales (2x2 Grid)
             Row(
               children: [
                 Expanded(
                   child: StatMetricCard(
                     title: 'Personeros',
                     value: '$personerosCount',
-                    subtitle: 'registrados',
                     icon: Icons.people_alt_rounded,
-                    color: AppColors.accent,
+                    accentColor: AppColors.accent,
                     onTap: () => onNavigateTab?.call(1),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: StatMetricCard(
-                    title: 'Mesas',
+                    title: 'Mesas Electorales',
                     value: '$mesasCount',
-                    subtitle: 'mesas electorales',
                     icon: Icons.how_to_vote_rounded,
-                    color: AppColors.info,
-                    onTap: () => onNavigateTab?.call(2),
+                    accentColor: AppColors.info,
+                    onTap: () => onNavigateTab?.call(3),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-
             Row(
               children: [
                 Expanded(
                   child: StatMetricCard(
-                    title: 'Actas',
+                    title: 'Actas Procesadas',
                     value: '$actsCount',
-                    subtitle: 'registradas / procesadas',
-                    icon: Icons.description_rounded,
-                    color: AppColors.success,
+                    icon: Icons.assignment_turned_in_rounded,
+                    accentColor: AppColors.success,
+                    onTap: () => onNavigateTab?.call(3),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: StatMetricCard(
+                    title: 'Usuarios Totales',
+                    value: '${(personerosCount + 2)}',
+                    icon: Icons.manage_accounts_rounded,
+                    accentColor: AppColors.warning,
                     onTap: () => onNavigateTab?.call(2),
                   ),
                 ),
@@ -124,49 +123,137 @@ class AdminDashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
 
-            // Acciones Rápidas
-            const Text(
+            // Accesos Rápidos (Acciones Administrativas)
+            Text(
               'Acciones Rápidas',
               style: TextStyle(
-                color: AppColors.textPrimary,
+                color: textPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 12),
 
-            Row(
-              children: [
-                Expanded(
-                  child: _buildQuickActionButton(
-                    icon: Icons.person_add_rounded,
-                    label: 'Registrar\nPersonero',
-                    color: AppColors.accent,
-                    onTap: () => PersoneroFormModal.show(context),
+            _buildActionTile(
+              context: context,
+              icon: Icons.person_add_alt_1_rounded,
+              title: 'Registrar Nuevo Personero',
+              subtitle: 'Asignar DNI y mesa de votación',
+              color: AppColors.accent,
+              onTap: () {
+                showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (ctx) => const PersoneroFormModal(),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+
+            _buildActionTile(
+              context: context,
+              icon: Icons.add_location_alt_rounded,
+              title: 'Crear Mesa de Sufragio',
+              subtitle: 'Agregar nuevo código de mesa y recinto',
+              color: AppColors.info,
+              onTap: () {
+                showModalBottomSheet<void>(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (ctx) => const AddMesaModal(),
+                );
+              },
+            ),
+            const SizedBox(height: 10),
+
+            _buildActionTile(
+              context: context,
+              icon: Icons.sync_sharp,
+              title: 'Forzar Sincronización Global',
+              subtitle: 'Enviar cambios locales y descargar catálogos',
+              color: AppColors.success,
+              onTap: () async {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Iniciando sincronización global...'),
+                    backgroundColor: AppColors.info,
+                    duration: Duration(seconds: 1),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildQuickActionButton(
-                    icon: Icons.add_home_work_rounded,
-                    label: 'Agregar\nMesa',
-                    color: AppColors.info,
-                    onTap: () => AddMesaModal.show(context),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildQuickActionButton(
-                    icon: Icons.post_add_rounded,
-                    label: 'Ver / Registrar\nActas',
-                    color: AppColors.success,
-                    onTap: () => onNavigateTab?.call(2),
-                  ),
-                ),
-              ],
+                );
+                try {
+                  await ref.read(syncEngineProvider).syncPendingOperations();
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('✓ Sincronización exitosa con la API ConteoYA.'),
+                        backgroundColor: AppColors.success,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('⚠️ Error al sincronizar: $e'),
+                        backgroundColor: AppColors.danger,
+                      ),
+                    );
+                  }
+                }
+              },
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildActionTile({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final textPrimary = theme.colorScheme.onSurface;
+    final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
+    final cardBg = theme.colorScheme.surface;
+    final borderColor = theme.colorScheme.outlineVariant;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: borderColor),
+      ),
+      child: ListTile(
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: color, size: 22),
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: textPrimary,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(color: textSecondary, fontSize: 12),
+        ),
+        trailing: Icon(Icons.chevron_right_rounded, color: textSecondary, size: 20),
       ),
     );
   }
@@ -194,112 +281,43 @@ class AdminDashboardScreen extends ConsumerWidget {
         break;
       case SyncEngineState.idle:
         badgeColor = AppColors.success;
-        statusText = 'Base de datos sincronizada';
+        statusText = 'Servidor conectado';
         icon = Icons.cloud_done;
         break;
     }
 
+    final theme = Theme.of(context);
+    final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
+    final cardBg = theme.colorScheme.surface;
+    final borderColor = theme.colorScheme.outlineVariant;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
+        color: cardBg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor),
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: badgeColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: badgeColor, size: 20),
-          ),
-          const SizedBox(width: 12),
+          Icon(icon, color: badgeColor, size: 18),
+          const SizedBox(width: 8),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Motor de Sincronización',
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 11),
-                ),
-                Text(
-                  statusText,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+            child: Text(
+              statusText,
+              style: TextStyle(color: textSecondary, fontSize: 12, fontWeight: FontWeight.w500),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.sync_rounded, color: AppColors.accent, size: 20),
-            tooltip: 'Sincronizar ahora',
+            icon: const Icon(Icons.sync_rounded, color: AppColors.accent, size: 18),
+            tooltip: 'Sincronizar',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
             onPressed: () {
               ref.read(syncEngineProvider).syncPendingOperations();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Sincronizando operaciones pendientes...'),
-                  backgroundColor: AppColors.info,
-                  duration: Duration(seconds: 2),
-                ),
-              );
             },
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActionButton({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(icon, color: color, size: 22),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    height: 1.2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

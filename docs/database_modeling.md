@@ -111,7 +111,7 @@ El modelo lógico normaliza las entidades a Tercera Forma Normal (3FN), aseguran
 | `act_totals` | Totales del Acta | `id` (BIGINT) | `act_id` |
 | `act_results` | Resultados de Votos | `id` (BIGINT) | `act_id`, `political_organization_id`, `electoral_list_id`, `candidate_id` |
 | `act_evidence` | Evidencia Fotográfica | `id` (BIGINT) | `act_id`, `device_id` |
-| `sync_operations` | Operaciones Offline | `id` (BIGINT) | `device_id`, `personero_id` |
+| `sync_operations` | Operaciones Offline | `id` (BIGINT) | `device_id` (nullable), `personero_id` |
 | `audit_logs` | Auditoría de Cambios | `id` (BIGINT) | `user_id` |
 
 ---
@@ -142,7 +142,19 @@ La base de datos original `database/erm2026.db` (proveniente del JEE) se mapea h
 
 ---
 
-## 6. Archivo SQL DDL
+## 6. Fuente de Verdad del Esquema
 
-El script SQL completo para la creación de tablas, índices, constraints y triggers se encuentra disponible en:
-[database/schema_v1_postgres.sql](file:///home/fredy/Documents/Proyectos/conteoya-project/database/schema_v1_postgres.sql)
+El esquema físico de PostgreSQL está definido y versionado mediante **migraciones Laravel** en `api/database/migrations/`. Son la única fuente de verdad del esquema.
+
+| Migración | Descripción |
+|-----------|-------------|
+| `2026_08_09_165708_create_conteoya_tables` | Esquema completo: geografía, catálogo electoral, personeros, actas, sync, auditoría |
+| `2026_08_10_102628_create_roles_table` | Tabla `roles` + FK `role_id` en `users` |
+| `2026_08_10_220000_make_device_id_nullable_in_sync_operations_table` | `sync_operations.device_id` pasa a ser nullable |
+
+Para aplicar el esquema desde cero:
+
+```bash
+cd api/
+php artisan migrate:fresh --seed
+```
