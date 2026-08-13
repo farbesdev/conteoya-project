@@ -19,7 +19,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _repository;
 
   AuthNotifier(this._repository) : super(const AuthInitial()) {
-    checkSession();
+    _init();
+  }
+
+  Future<void> _init() async {
+    await _repository.initServerUrl();
+    await checkSession();
   }
 
   Future<void> checkSession() async {
@@ -58,7 +63,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
-    state = const AuthLoading();
     await _repository.logout();
     state = const Unauthenticated();
   }

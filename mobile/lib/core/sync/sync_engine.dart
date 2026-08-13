@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart';
@@ -62,6 +61,35 @@ class SyncEngine {
     _stateController.add(SyncEngineState.syncing);
 
     try {
+      // 0. Autodetectar y auto-encolar personeros/usuarios creados localmente que no tengan SyncOperation asociada
+      final allLocalPersoneros = await db.getAllPersoneros();
+      final existingSyncOps = await db.select(db.localSyncOperationsTable).get();
+      final syncOpEntityIds = existingSyncOps.map((op) => op.entityId).toSet();
+
+      for (final p in allLocalPersoneros) {
+        if (!syncOpEntityIds.contains(p.dni)) {
+          await db.enqueueSyncOperation(
+            LocalSyncOperationsTableCompanion.insert(
+              clientOperationId: 'personero_${p.dni}_auto_sync',
+              entityType: 'personeros',
+              entityId: p.dni,
+              operation: const Value('CREATE'),
+              payloadJson: jsonEncode({
+                'document_number': p.dni,
+                'first_name': p.firstName,
+                'last_name': p.lastName,
+                'name': '${p.firstName} ${p.lastName}'.trim(),
+                'polling_station_code': p.pollingStationCode,
+                'phone_number': p.phoneNumber,
+                'email': p.email ?? 'personero_${p.dni}@conteoya.pe',
+              }),
+              status: const Value('PENDING'),
+            ),
+          );
+        }
+      }
+
+      // 1. SINCRONIZACIÓN ASCENDENTE (PUSH)
       final pendingOps = await db.getPendingSyncOperations();
       if (pendingOps.isNotEmpty) {
         final operationsPayload = pendingOps.map((op) {
@@ -117,12 +145,9 @@ class SyncEngine {
             }
           }
         }
-
-        // Sincronizar evidencias fotográficas pendientes
-        await _syncPendingEvidence();
       }
 
-      // 2. SINCRONIZACIÓN DESCENDENTE (PULL): Descargar mesas, personeros y catálogos actualizados desde el backend API (PostgreSQL local / VPS)
+      // 2. SINCRONIZACIÓN DESCENDENTE (PULL): Descargar mesas, personeros y catálogos actualizados desde el backend API
       final pullMetrics = await pullLatestDataFromBackend();
 
       _stateController.add(SyncEngineState.idle);
@@ -214,7 +239,7 @@ class SyncEngine {
           }
         }
       }
-      if (orgCompanions.isNotEmpty) {
+      if (personeroCompanions.isNotEmpty) {
         await db.savePoliticalOrganizations(orgCompanions);
       }
 
@@ -226,75 +251,5 @@ class SyncEngine {
     }
 
     return {'polling_stations': 0, 'personeros': 0, 'political_organizations': 0};
-  }
-
-  Future<void> _syncPendingEvidence() async {
-    final pendingEvidence = await (db.select(db.localActEvidenceTable)
-          ..where((t) => t.isUploaded.equals(false)))
-        .get();
-
-    for (final ev in pendingEvidence) {
-      final file = File(ev.localFilePath);
-      if (!file.existsSync()) continue;
-
-      try {
-        // Obtener el acta local para conocer el serverActId si existe
-        final act = await (db.select(db.localActsTable)
-              ..where((t) => t.clientActUuid.equals(ev.clientActUuid)))
-            .getSingleOrNull();
-
-        if (act == null || act.serverActId == null) {
-          // El acta aún no tiene ID en el servidor; esperar a que se sincronice el acta primero
-          continue;
-        }
-
-        // 1. Solicitar presigned upload URL
-        final urlRes = await apiClient.post<Map<String, Object?>>(
-          '/acts/${act.serverActId}/evidence/upload-url',
-          data: {
-            'sha256_hash': ev.sha256Hash,
-            'file_mime': ev.fileMime,
-            'file_size_bytes': ev.fileSizeBytes,
-          },
-        );
-
-        if (urlRes.statusCode == 200 && urlRes.data != null) {
-          final data = urlRes.data!['data'] as Map<String, Object?>;
-          final uploadUrl = data['upload_url'] as String;
-          final objectKey = data['object_key'] as String;
-
-          // 2. Subir binario a Cloudflare R2 vía PUT presignado
-          await apiClient.uploadToPresignedUrl(
-            presignedUrl: uploadUrl,
-            file: file,
-            fileMime: ev.fileMime,
-            sha256Hash: ev.sha256Hash,
-          );
-
-          // 3. Confirmar evidencia en el backend
-          await apiClient.post<Map<String, Object?>>(
-            '/acts/${act.serverActId}/evidence/confirm',
-            data: {
-              'object_key': objectKey,
-              'sha256_hash': ev.sha256Hash,
-              'file_mime': ev.fileMime,
-              'file_size_bytes': ev.fileSizeBytes,
-              'width_px': ev.widthPx,
-              'height_px': ev.heightPx,
-            },
-          );
-
-          // Marcar como subida en base de datos local
-          await (db.update(db.localActEvidenceTable)..where((t) => t.id.equals(ev.id))).write(
-            LocalActEvidenceTableCompanion(
-              isUploaded: const Value(true),
-              storageKey: Value(objectKey),
-            ),
-          );
-        }
-      } catch (e) {
-        // Continuará en el siguiente ciclo
-      }
-    }
   }
 }
