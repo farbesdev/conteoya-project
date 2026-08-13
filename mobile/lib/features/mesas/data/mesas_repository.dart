@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:drift/drift.dart';
 import '../../../core/database/app_database.dart';
 import '../domain/mesa_model.dart';
@@ -104,14 +105,40 @@ class MesasRepository {
       throw Exception('La mesa con código $cleanCode ya se encuentra registrada.');
     }
 
+    final cleanLocation = locationName.trim().isEmpty ? 'LOCAL DE VOTACIÓN PRINCIPAL' : locationName.trim();
+    final cleanDistrict = districtName ?? 'LIMA - CERCADO';
+    final cleanProvince = provinceName ?? 'LIMA';
+    final cleanDepartment = departmentName ?? 'LIMA';
+    final cleanVoters = registeredVoters > 0 ? registeredVoters : 300;
+
     await db.insertPollingStation(
       LocalPollingStationsTableCompanion.insert(
         code: cleanCode,
-        locationName: locationName.trim().isEmpty ? 'LOCAL DE VOTACIÓN PRINCIPAL' : locationName.trim(),
-        districtName: Value(districtName ?? 'LIMA - CERCADO'),
-        provinceName: Value(provinceName ?? 'LIMA'),
-        departmentName: Value(departmentName ?? 'LIMA'),
-        registeredVoters: Value(registeredVoters > 0 ? registeredVoters : 300),
+        locationName: cleanLocation,
+        districtName: Value(cleanDistrict),
+        provinceName: Value(cleanProvince),
+        departmentName: Value(cleanDepartment),
+        registeredVoters: Value(cleanVoters),
+      ),
+    );
+
+    // Encolar operación de sincronización ascendente (Push -> VPS)
+    await db.enqueueSyncOperation(
+      LocalSyncOperationsTableCompanion.insert(
+        clientOperationId: 'mesa_${cleanCode}_${DateTime.now().millisecondsSinceEpoch}',
+        entityType: 'polling_stations',
+        entityId: cleanCode,
+        operation: const Value('CREATE'),
+        payloadJson: jsonEncode({
+          'code': cleanCode,
+          'location_name': cleanLocation,
+          'district_name': cleanDistrict,
+          'province_name': cleanProvince,
+          'department_name': cleanDepartment,
+          'registered_voters': cleanVoters,
+          'status': 'ACTIVE',
+        }),
+        status: const Value('PENDING'),
       ),
     );
   }

@@ -57,10 +57,11 @@ class SyncService
 
         try {
             $result = match ($entityType) {
-                'acts'         => $this->processActOperation($personero, $payload, $clientOperationId, $device?->id),
-                'act_evidence' => $this->processEvidenceOperation($payload, $device?->id),
-                'personeros'   => $this->processPersoneroOperation($payload),
-                default        => throw new \InvalidArgumentException("Tipo de entidad '{$entityType}' no soportada para sincronización."),
+                'acts'             => $this->processActOperation($personero, $payload, $clientOperationId, $device?->id),
+                'act_evidence'     => $this->processEvidenceOperation($payload, $device?->id),
+                'personeros'       => $this->processPersoneroOperation($payload),
+                'polling_stations' => $this->processPollingStationOperation($payload),
+                default            => throw new \InvalidArgumentException("Tipo de entidad '{$entityType}' no soportada para sincronización."),
             };
 
             $syncOp->update([
@@ -227,5 +228,25 @@ class SyncService
                 'document_number' => $personero->document_number,
             ];
         });
+    }
+
+    protected function processPollingStationOperation(array $payload): array
+    {
+        $code = $payload['code'];
+        $locationName = $payload['location_name'] ?? 'LOCAL DE VOTACIÓN PRINCIPAL';
+        $voters = (int)($payload['registered_voters'] ?? 300);
+
+        $station = PollingStation::firstOrCreate(
+            ['code' => $code],
+            [
+                'registered_voters' => $voters,
+                'status'            => $payload['status'] ?? 'ACTIVE',
+            ]
+        );
+
+        return [
+            'polling_station_id' => $station->id,
+            'code'               => $station->code,
+        ];
     }
 }

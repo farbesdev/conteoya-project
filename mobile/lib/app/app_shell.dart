@@ -50,7 +50,6 @@ class _AppShellState extends ConsumerState<AppShell>
   }
 
   Future<void> _toggleTheme() async {
-    // Animación del icono al cambiar tema
     if (_themeAnimController.isCompleted) {
       await _themeAnimController.reverse();
     } else {
@@ -238,7 +237,7 @@ class _AppShellState extends ConsumerState<AppShell>
             ),
           ),
 
-          // ─── Botón Sincronizar ──────────────────────────────────────────
+          // ─── Botón Sincronizar (Bidireccional) ──────────────────────────
           IconButton(
             icon: const Icon(Icons.sync_rounded, color: AppColors.info),
             tooltip: 'Sincronizar Datos',
@@ -252,18 +251,19 @@ class _AppShellState extends ConsumerState<AppShell>
               );
 
               try {
-                final metrics =
-                    await ref.read(syncEngineProvider).syncPendingOperations();
+                await ref.read(syncEngineProvider).syncPendingOperations();
+                final db = ref.read(appDatabaseProvider);
+                final totalPersoneros = (await db.getAllPersoneros()).length;
+                final totalMesas = (await db.getAllPollingStations()).length;
+
                 if (context.mounted) {
-                  final stations = metrics['polling_stations'] ?? 0;
-                  final personeros = metrics['personeros'] ?? 0;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        '✓ Sincronización completada. Mesas: $stations, Personeros: $personeros actualizados.',
+                        '✓ Sincronización bidireccional completada. Total en dispositivo: $totalPersoneros usuarios/personeros, $totalMesas mesas.',
                       ),
                       backgroundColor: AppColors.success,
-                      duration: const Duration(seconds: 3),
+                      duration: const Duration(seconds: 4),
                     ),
                   );
                 }
