@@ -55,12 +55,6 @@ class ApiClient {
       formatted = 'http://$formatted';
     }
 
-    // En emuladores de Android, 127.0.0.1 apunta al mismo celular emulado.
-    // Para conectar al localhost de la máquina host desde Android, se debe usar 10.0.2.2
-    if (!kIsWeb && Platform.isAndroid && formatted.contains('127.0.0.1')) {
-      formatted = formatted.replaceAll('127.0.0.1', '10.0.2.2');
-    }
-
     if (!formatted.endsWith('/api/v1')) {
       if (formatted.endsWith('/')) {
         formatted = '${formatted}api/v1';
