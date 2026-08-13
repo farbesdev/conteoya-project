@@ -196,7 +196,7 @@ class SyncService
 
             $roleModel = \App\Models\Role::where('name', 'PERSONERO')->first();
 
-            $user = \App\Models\User::firstOrCreate(
+            $user = \App\Models\User::updateOrCreate(
                 ['email' => $email],
                 [
                     'name'      => $name,
@@ -207,7 +207,7 @@ class SyncService
                 ]
             );
 
-            $personero = Personero::firstOrCreate(
+            $personero = Personero::updateOrCreate(
                 ['document_number' => $docNumber],
                 [
                     'user_id'      => $user->id,
