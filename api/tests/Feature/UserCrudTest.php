@@ -20,7 +20,8 @@ class UserCrudTest extends TestCase
 
     public function test_admin_can_list_users()
     {
-        $admin = User::factory()->create(['role' => Role::ADMIN, 'role_id' => 1]);
+        $roleAdmin = Role::where('name', 'ADMIN')->first();
+        $admin = User::factory()->create(['role' => Role::ADMIN, 'role_id' => $roleAdmin->id]);
 
         $response = $this->actingAs($admin)
             ->getJson('/api/v1/users');
@@ -30,7 +31,8 @@ class UserCrudTest extends TestCase
 
     public function test_admin_can_create_personero_user()
     {
-        $admin = User::factory()->create(['role' => Role::ADMIN, 'role_id' => 1]);
+        $roleAdmin = Role::where('name', 'ADMIN')->first();
+        $admin = User::factory()->create(['role' => Role::ADMIN, 'role_id' => $roleAdmin->id]);
 
         $response = $this->actingAs($admin)
             ->postJson('/api/v1/users', [

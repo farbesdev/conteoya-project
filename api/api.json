@@ -3,16 +3,11 @@
     "info": {
         "title": "ConteoYA API Docs",
         "version": "0.1.0",
-        "description": "## ConteoYA API \u2014 Fase 0\n\nAPI REST del sistema **ConteoYA** para la captura y consolidaci\u00f3n de actas electorales en tiempo real.\n\n### Autenticaci\u00f3n\nUsa **Bearer Token** (Laravel Sanctum). Obt\u00e9n el token desde `POST /api/v1/login` y env\u00edalo en la cabecera:\n```\nAuthorization: Bearer {token}\n```\n\n### Roles del sistema\n| Rol | Descripci\u00f3n |\n|-----|-------------|\n| `ADMIN` | Acceso total al sistema |\n| `DIRECTOR` | Supervisor electoral |\n| `PERSONERO` | Captura actas desde app m\u00f3vil |"
+        "description": "## ConteoYA API \u2014 Fase 0\n\nAPI REST del sistema **ConteoYA** para la captura y consolidaci\u00f3n de actas electorales en tiempo real.\n\n### Autenticaci\u00f3n\nUsa **Bearer Token** (Laravel Sanctum). Obt\u00e9n el token desde `POST /api/v1/login` y env\u00edalo en la cabecera:\n```\nAuthorization: Bearer {token}\n```"
     },
     "servers": [
         {
             "url": "http://localhost/api"
-        }
-    ],
-    "security": [
-        {
-            "http": []
         }
     ],
     "paths": {
@@ -2636,12 +2631,6 @@
         }
     },
     "components": {
-        "securitySchemes": {
-            "http": {
-                "type": "http",
-                "scheme": "bearer"
-            }
-        },
         "schemas": {
             "ActEvidenceResource": {
                 "type": "object",
