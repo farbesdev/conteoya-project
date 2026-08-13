@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 
 import '../database/app_database.dart';
 import '../network/api_client.dart';
@@ -70,7 +71,7 @@ class SyncEngine {
         if (!syncOpEntityIds.contains(p.dni)) {
           await db.enqueueSyncOperation(
             LocalSyncOperationsTableCompanion.insert(
-              clientOperationId: 'personero_${p.dni}_auto_sync',
+              clientOperationId: const Uuid().v4(),
               entityType: 'personeros',
               entityId: p.dni,
               operation: const Value('CREATE'),
@@ -239,7 +240,7 @@ class SyncEngine {
           }
         }
       }
-      if (personeroCompanions.isNotEmpty) {
+      if (orgCompanions.isNotEmpty) {
         await db.savePoliticalOrganizations(orgCompanions);
       }
 

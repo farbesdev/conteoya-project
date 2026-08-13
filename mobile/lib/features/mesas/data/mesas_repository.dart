@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
+
 import '../../../core/database/app_database.dart';
 import '../domain/mesa_model.dart';
 
@@ -122,10 +124,10 @@ class MesasRepository {
       ),
     );
 
-    // Encolar operación de sincronización ascendente (Push -> VPS)
+    // Encolar operación de sincronización ascendente (Push -> VPS con UUIDv4 válido)
     await db.enqueueSyncOperation(
       LocalSyncOperationsTableCompanion.insert(
-        clientOperationId: 'mesa_${cleanCode}_${DateTime.now().millisecondsSinceEpoch}',
+        clientOperationId: const Uuid().v4(),
         entityType: 'polling_stations',
         entityId: cleanCode,
         operation: const Value('CREATE'),

@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
+
 import '../../../core/database/app_database.dart';
 import '../domain/personero_model.dart';
 
@@ -95,10 +97,11 @@ class PersonerosRepository {
       ),
     );
 
-    // 7. Encolar operación de sincronización para enviar a API/VPS
+    // 7. Encolar operación de sincronización para enviar a API/VPS (UUIDv4 válido para PostgreSQL)
+    final clientOpId = const Uuid().v4();
     await db.enqueueSyncOperation(
       LocalSyncOperationsTableCompanion.insert(
-        clientOperationId: 'personero_${cleanDni}_${DateTime.now().millisecondsSinceEpoch}',
+        clientOperationId: clientOpId,
         entityType: 'personeros',
         entityId: cleanDni,
         operation: const Value('CREATE'),
