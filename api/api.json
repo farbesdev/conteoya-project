@@ -1363,6 +1363,40 @@
                                                                             "evidence_id",
                                                                             "object_key"
                                                                         ]
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "personero_id": {
+                                                                                "type": "integer"
+                                                                            },
+                                                                            "user_id": {
+                                                                                "type": "integer"
+                                                                            },
+                                                                            "document_number": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "personero_id",
+                                                                            "user_id",
+                                                                            "document_number"
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "type": "object",
+                                                                        "properties": {
+                                                                            "polling_station_id": {
+                                                                                "type": "integer"
+                                                                            },
+                                                                            "code": {
+                                                                                "type": "string"
+                                                                            }
+                                                                        },
+                                                                        "required": [
+                                                                            "polling_station_id",
+                                                                            "code"
+                                                                        ]
                                                                     }
                                                                 ]
                                                             }
@@ -1449,6 +1483,202 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/sync/pull": {
+            "get": {
+                "operationId": "sync.pull",
+                "description": "Devuelve las mesas, personeros y cat\u00e1logos autorizados para la base de datos local SQLite (app_database.dart).",
+                "summary": "Sincronizaci\u00f3n Descendente (Pull / Downstream Sync)",
+                "tags": [
+                    "Motor de Sincronizaci\u00f3n (Offline-First)",
+                    "Sync"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Sincronizaci\u00f3n descendente completada."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "polling_stations": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "code": {
+                                                                "type": "string"
+                                                            },
+                                                            "location_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "address": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "district_code": {
+                                                                "type": "string"
+                                                            },
+                                                            "district_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "province_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "department_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "registered_voters": {
+                                                                "type": "integer"
+                                                            },
+                                                            "status": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "code",
+                                                            "location_name",
+                                                            "address",
+                                                            "district_code",
+                                                            "district_name",
+                                                            "province_name",
+                                                            "department_name",
+                                                            "registered_voters",
+                                                            "status"
+                                                        ]
+                                                    }
+                                                },
+                                                "personeros": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "dni": {
+                                                                "type": "string"
+                                                            },
+                                                            "first_name": {},
+                                                            "last_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "polling_station_code": {
+                                                                "type": "string"
+                                                            },
+                                                            "phone_number": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "email": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "dni",
+                                                            "first_name",
+                                                            "last_name",
+                                                            "name",
+                                                            "polling_station_code",
+                                                            "phone_number",
+                                                            "email"
+                                                        ]
+                                                    }
+                                                },
+                                                "political_organizations": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "code": {
+                                                                "type": "string"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "short_name": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "logo_url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "order_index": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "integer",
+                                                                        "enum": [
+                                                                            0
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "code",
+                                                            "name",
+                                                            "short_name",
+                                                            "logo_url",
+                                                            "order_index"
+                                                        ]
+                                                    }
+                                                },
+                                                "server_time": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "polling_stations",
+                                                "personeros",
+                                                "political_organizations",
+                                                "server_time"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
             }
@@ -3349,14 +3579,15 @@
                             "type": "object",
                             "properties": {
                                 "client_operation_id": {
-                                    "type": "string",
-                                    "format": "uuid"
+                                    "type": "string"
                                 },
                                 "entity_type": {
                                     "type": "string",
                                     "enum": [
                                         "acts",
-                                        "act_evidence"
+                                        "act_evidence",
+                                        "personeros",
+                                        "polling_stations"
                                     ]
                                 },
                                 "entity_id": {
