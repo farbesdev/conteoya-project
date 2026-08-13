@@ -22,7 +22,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -31,7 +31,7 @@ class AppDatabase extends _$AppDatabase {
         },
         onUpgrade: (m, from, to) async {
           final migrator = createMigrator();
-          if (from < 4) {
+          if (from < 5) {
             try {
               await migrator.drop(localPersonerosTable);
               await migrator.createTable(localPersonerosTable);
@@ -62,16 +62,20 @@ class AppDatabase extends _$AppDatabase {
             } catch (_) {}
           }
 
-          // 2. Validar y autorreparar local_personeros_table
+          // 2. Validar y autorreparar local_personeros_table (eliminar UNIQUE en polling_station_code)
           try {
-            final personeroColumns = await customSelect("PRAGMA table_info('local_personeros_table')").get();
-            final hasLastName = personeroColumns.any((row) => row.read<String>('name') == 'last_name');
-            if (!hasLastName) {
+            final indexList = await customSelect("PRAGMA index_list('local_personeros_table')").get();
+            final hasPollingUnique = indexList.any((row) {
+              final name = row.read<String>('name');
+              return name.contains('polling_station_code');
+            });
+            if (hasPollingUnique) {
               await m.drop(localPersonerosTable);
               await m.createTable(localPersonerosTable);
             }
           } catch (_) {
             try {
+              await m.drop(localPersonerosTable);
               await m.createTable(localPersonerosTable);
             } catch (_) {}
           }
@@ -265,10 +269,24 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  Future<void> savePersoneros(List<LocalPersonerosTableCompanion> personeros) {
-    return batch((b) {
-      b.insertAllOnConflictUpdate(localPersonerosTable, personeros);
-    });
+  Future<void> savePersoneros(List<LocalPersonerosTableCompanion> personeros) async {
+    for (final personero in personeros) {
+      final dni = personero.dni.value;
+      final existing = await (select(localPersonerosTable)..where((t) => t.dni.equals(dni))).getSingleOrNull();
+      if (existing != null) {
+        await (update(localPersonerosTable)..where((t) => t.dni.equals(dni))).write(
+          LocalPersonerosTableCompanion(
+            firstName: personero.firstName,
+            lastName: personero.lastName,
+            pollingStationCode: personero.pollingStationCode,
+            phoneNumber: personero.phoneNumber,
+            email: personero.email,
+          ),
+        );
+      } else {
+        await into(localPersonerosTable).insert(personero, mode: InsertMode.insertOrReplace);
+      }
+    }
   }
 
   // ─── DAOs para Organizaciones Políticas ────────────────────────────────────
