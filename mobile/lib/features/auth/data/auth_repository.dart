@@ -130,53 +130,31 @@ class AuthRepository {
       dioOrServerException = e;
     }
 
-    // 1. Si existe base de datos local SQLite, intentar primero autenticar localmente (Offline-First)
-    if (db != null) {
-      final localPersonero = await db!.getPersoneroByEmailOrDni(email);
-      if (localPersonero != null) {
-        final session = UserSession(
-          id: localPersonero.id,
-          name: '${localPersonero.firstName} ${localPersonero.lastName}',
-          email: localPersonero.email ?? '${localPersonero.dni}@conteoya.pe',
-          role: 'PERSONERO',
-          personeroId: localPersonero.id,
-          pollingStationCode: localPersonero.pollingStationCode,
-          token: 'offline-token-${localPersonero.dni}',
-          deviceUuid: deviceUuid,
-        );
+    // Fallback Offline-First: Si falló por falta de red y existe base local SQLite, buscar personero local
+    if (db != null && dioOrServerException != null) {
+      final isConnectionError = dioOrServerException.toString().contains('Sin conexión') ||
+          dioOrServerException.toString().contains('Connection refused') ||
+          dioOrServerException.toString().contains('SocketException');
 
-        // Si hay red, sincronizar en segundo plano con el backend
-        try {
-          final response = await apiClient.post<dynamic>(
-            '/login',
-            data: {
-              'email': email.trim(),
-              'password': password,
-              'device_uuid': deviceUuid,
-              'device_model': deviceModel ?? 'Flutter Mobile Device',
-            },
+      if (isConnectionError) {
+        final localPersonero = await db!.getPersoneroByEmailOrDni(email);
+        if (localPersonero != null) {
+          final session = UserSession(
+            id: localPersonero.id,
+            name: '${localPersonero.firstName} ${localPersonero.lastName}',
+            email: localPersonero.email ?? '${localPersonero.dni}@conteoya.pe',
+            role: 'PERSONERO',
+            personeroId: localPersonero.id,
+            pollingStationCode: localPersonero.pollingStationCode,
+            token: 'offline-token-${localPersonero.dni}',
+            deviceUuid: deviceUuid,
           );
-          if (response.statusCode == 200 && response.data != null) {
-            final Map<String, dynamic> data = _normalizeToMap(response.data);
-            final token = data['access_token']?.toString() ?? session.token;
-            final userData = _normalizeToMap(data['user']);
-            final backendSession = UserSession.fromBackendResponse(
-              userData: userData,
-              token: token,
-              deviceUuid: deviceUuid,
-            );
-            apiClient.setAuthToken(backendSession.token);
-            final prefs = await SharedPreferences.getInstance();
-            await prefs.setString(_sessionKey, jsonEncode(backendSession.toJson()));
-            return backendSession;
-          }
-        } catch (_) {}
 
-        apiClient.setAuthToken(session.token);
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_sessionKey, jsonEncode(session.toJson()));
-
-        return session;
+          apiClient.setAuthToken(session.token);
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(_sessionKey, jsonEncode(session.toJson()));
+          return session;
+        }
       }
     }
 
