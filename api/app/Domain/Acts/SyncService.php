@@ -56,6 +56,12 @@ class SyncService
         ]);
 
         try {
+            if ($personero && !in_array($entityType, ['acts', 'act_evidence'])) {
+                throw new \Illuminate\Auth\Access\AuthorizationException(
+                    "Un personero solo tiene autorización para sincronizar actas y evidencias de actas ('acts', 'act_evidence')."
+                );
+            }
+
             $result = match ($entityType) {
                 'acts'             => $this->processActOperation($personero, $payload, $clientOperationId, $device?->id),
                 'act_evidence'     => $this->processEvidenceOperation($payload, $device?->id),
@@ -216,10 +222,11 @@ class SyncService
             );
 
             if (!empty($payload['polling_station_code'])) {
-                $station = PollingStation::where('code', $payload['polling_station_code'])->first();
-                if ($station) {
-                    $personero->pollingStations()->syncWithoutDetaching([$station->id]);
-                }
+                $station = PollingStation::firstOrCreate(
+                    ['code' => $payload['polling_station_code']],
+                    ['registered_voters' => 300, 'status' => 'ACTIVE']
+                );
+                $personero->pollingStations()->syncWithoutDetaching([$station->id]);
             }
 
             return [

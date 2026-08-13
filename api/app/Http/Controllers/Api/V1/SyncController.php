@@ -30,18 +30,24 @@ class SyncController extends Controller
     public function sync(SyncOperationRequest $request): JsonResponse
     {
         $user = $request->user();
-        $personero = $user->personero;
-
-        if (!$personero && !$user->isAdmin() && !$user->isDirector()) {
+        if (!$user->isPersonero() && !$user->isAdmin() && !$user->isDirector()) {
             return response()->json(['message' => 'No autorizado para sincronizar operaciones.'], 403);
         }
 
-        $device = null;
-        if ($request->has('device_uuid')) {
-            $device = Device::where('device_uuid', $request->input('device_uuid'))->first();
-        }
-
         $operations = $request->input('operations', []);
+
+        // El PERSONERO solo puede sincronizar datos de actas y evidencias ('acts', 'act_evidence')
+        // EL ADMIN y DIRECTOR pueden sincronizar cualquier entidad
+        if ($user->isPersonero()) {
+            foreach ($operations as $op) {
+                $type = $op['entity_type'] ?? '';
+                if (!in_array($type, ['acts', 'act_evidence'])) {
+                    return response()->json([
+                        'message' => "Un personero solo tiene autorización para sincronizar actas y evidencias de actas ('acts', 'act_evidence').",
+                    ], 403);
+                }
+            }
+        }
         $results = $this->syncService->processBatch(
             personero: $personero,
             device: $device,

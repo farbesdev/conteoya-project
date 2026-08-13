@@ -62,7 +62,10 @@ class SyncEngine {
     _stateController.add(SyncEngineState.syncing);
 
     try {
-      // 0. Autodetectar y auto-encolar personeros/usuarios creados localmente que no tengan SyncOperation asociada
+      // 1. SINCRONIZACIÓN DESCENDENTE (PULL): Descargar mesas, personeros y catálogos actualizados desde el VPS
+      final pullMetrics = await pullLatestDataFromBackend();
+
+      // 2. AUTODETECTAR Personeros/Usuarios creados localmente que no tengan SyncOperation en estado SYNCED o PENDING
       final allLocalPersoneros = await db.getAllPersoneros();
       final existingSyncOps = await db.select(db.localSyncOperationsTable).get();
       final syncOpEntityIds = existingSyncOps.map((op) => op.entityId).toSet();
@@ -90,7 +93,7 @@ class SyncEngine {
         }
       }
 
-      // 1. SINCRONIZACIÓN ASCENDENTE (PUSH)
+      // 3. SINCRONIZACIÓN ASCENDENTE (PUSH): Enviar operaciones pendientes al VPS (POST /api/v1/sync)
       final pendingOps = await db.getPendingSyncOperations();
       if (pendingOps.isNotEmpty) {
         final operationsPayload = pendingOps.map((op) {
@@ -147,9 +150,6 @@ class SyncEngine {
           }
         }
       }
-
-      // 2. SINCRONIZACIÓN DESCENDENTE (PULL): Descargar mesas, personeros y catálogos actualizados desde el backend API
-      final pullMetrics = await pullLatestDataFromBackend();
 
       _stateController.add(SyncEngineState.idle);
       return pullMetrics;
@@ -219,6 +219,42 @@ class SyncEngine {
       }
       if (personeroCompanions.isNotEmpty) {
         await db.savePersoneros(personeroCompanions);
+      }
+
+      // 2b. Autodetectar si hay personeros en la BD local SQLite que NO existen en la respuesta del backend
+      // (por ejemplo si fueron sincronizados previamente en un entorno local y ahora se conecta al VPS)
+      final serverDnis = personeroCompanions.map((p) => p.dni.value).toSet();
+      final allLocalPersoneros = await db.getAllPersoneros();
+
+      for (final localP in allLocalPersoneros) {
+        if (!serverDnis.contains(localP.dni)) {
+          final existingOps = await (db.select(db.localSyncOperationsTable)
+                ..where((t) => t.entityId.equals(localP.dni)))
+              .get();
+
+          final hasPending = existingOps.any((op) => op.status == 'PENDING' || op.status == 'PROCESSING');
+
+          if (!hasPending) {
+            await db.enqueueSyncOperation(
+              LocalSyncOperationsTableCompanion.insert(
+                clientOperationId: const Uuid().v4(),
+                entityType: 'personeros',
+                entityId: localP.dni,
+                operation: const Value('CREATE'),
+                payloadJson: jsonEncode({
+                  'document_number': localP.dni,
+                  'first_name': localP.firstName,
+                  'last_name': localP.lastName,
+                  'name': '${localP.firstName} ${localP.lastName}'.trim(),
+                  'polling_station_code': localP.pollingStationCode,
+                  'phone_number': localP.phoneNumber,
+                  'email': localP.email ?? 'personero_${localP.dni}@conteoya.pe',
+                }),
+                status: const Value('PENDING'),
+              ),
+            );
+          }
+        }
       }
 
       // 3. Descargar y upsert de Organizaciones Políticas
