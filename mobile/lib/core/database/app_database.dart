@@ -265,16 +265,10 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  Future<void> savePersoneros(List<LocalPersonerosTableCompanion> personeros) async {
-    for (final personero in personeros) {
-      final dni = personero.dni.value;
-      final existing = await (select(localPersonerosTable)..where((t) => t.dni.equals(dni))).getSingleOrNull();
-      if (existing != null) {
-        await (update(localPersonerosTable)..where((t) => t.dni.equals(dni))).write(personero);
-      } else {
-        await into(localPersonerosTable).insert(personero, mode: InsertMode.insertOrReplace);
-      }
-    }
+  Future<void> savePersoneros(List<LocalPersonerosTableCompanion> personeros) {
+    return batch((b) {
+      b.insertAllOnConflictUpdate(localPersonerosTable, personeros);
+    });
   }
 
   // ─── DAOs para Organizaciones Políticas ────────────────────────────────────

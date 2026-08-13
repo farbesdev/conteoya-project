@@ -107,7 +107,7 @@ class LocalPersonerosTable extends Table {
   TextColumn get dni => text().unique()();
   TextColumn get firstName => text()();
   TextColumn get lastName => text()();
-  TextColumn get pollingStationCode => text().unique()(); // 1 personero = 1 mesa asignada obligatoria
+  TextColumn get pollingStationCode => text()();
   TextColumn get phoneNumber => text().nullable()();
   TextColumn get email => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();

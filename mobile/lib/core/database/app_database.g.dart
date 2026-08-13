@@ -4299,7 +4299,6 @@ class $LocalPersonerosTableTable extends LocalPersonerosTable
         false,
         type: DriftSqlType.string,
         requiredDuringInsert: true,
-        defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
       );
   static const VerificationMeta _phoneNumberMeta = const VerificationMeta(
     'phoneNumber',

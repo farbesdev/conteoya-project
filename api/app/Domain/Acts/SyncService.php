@@ -222,9 +222,14 @@ class SyncService
             );
 
             if (!empty($payload['polling_station_code'])) {
+                $locationId = \App\Models\ElectoralLocation::value('id') ?? 1;
                 $station = PollingStation::firstOrCreate(
                     ['code' => $payload['polling_station_code']],
-                    ['registered_voters' => 300, 'status' => 'ACTIVE']
+                    [
+                        'electoral_location_id' => $locationId,
+                        'registered_voters'     => 300,
+                        'status'                => 'ACTIVE',
+                    ]
                 );
                 $personero->pollingStations()->syncWithoutDetaching([$station->id]);
             }
@@ -240,14 +245,15 @@ class SyncService
     protected function processPollingStationOperation(array $payload): array
     {
         $code = $payload['code'];
-        $locationName = $payload['location_name'] ?? 'LOCAL DE VOTACIÓN PRINCIPAL';
         $voters = (int)($payload['registered_voters'] ?? 300);
+        $locationId = \App\Models\ElectoralLocation::value('id') ?? 1;
 
         $station = PollingStation::firstOrCreate(
             ['code' => $code],
             [
-                'registered_voters' => $voters,
-                'status'            => $payload['status'] ?? 'ACTIVE',
+                'electoral_location_id' => $locationId,
+                'registered_voters'     => $voters,
+                'status'                => $payload['status'] ?? 'ACTIVE',
             ]
         );
 
