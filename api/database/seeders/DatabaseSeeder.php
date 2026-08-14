@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             JeeDatabaseSeeder::class,
+            PollingStationSeeder::class,
             UserSeeder::class,
         ]);
     }

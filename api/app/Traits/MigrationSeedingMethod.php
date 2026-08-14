@@ -27,13 +27,13 @@ trait MigrationSeedingMethod
         }
 
         $conflictColumns = $options['conflictColumns'] ?? ['external_id'];
-        $chunkSize = $options['chunkSize'] ?? 500;
         $isPg = $this->isPostgres();
+        $isSqlite = $this->isSqlite();
 
         foreach (array_chunk($rows, $chunkSize) as $chunk) {
             $data = $this->buildBulkPlaceholders($chunk, $columns);
 
-            if ($isPg) {
+            if ($isPg || $isSqlite) {
                 $sql = sprintf(
                     'INSERT INTO %s (%s) VALUES %s ON CONFLICT (%s) DO NOTHING',
                     $this->q($table),
@@ -362,10 +362,8 @@ trait MigrationSeedingMethod
             return ['total' => 0, 'chunks' => 0];
         }
 
-        $conflictColumn = $options['conflictColumn'] ?? 'code';
-        $chunkSize = $options['chunkSize'] ?? 500;
-        $verbose = $options['verbose'] ?? true;
         $isPg = $this->isPostgres();
+        $isSqlite = $this->isSqlite();
 
         $chunks = array_chunk($rows, $chunkSize);
         $totalRows = count($rows);
@@ -374,7 +372,7 @@ trait MigrationSeedingMethod
         foreach ($chunks as $i => $chunk) {
             $data = $this->buildBulkPlaceholders($chunk, $columns);
 
-            if ($isPg) {
+            if ($isPg || $isSqlite) {
                 $sql = sprintf(
                     'INSERT INTO %s (%s) VALUES %s ON CONFLICT (%s) DO NOTHING',
                     $this->q($table),
@@ -625,6 +623,7 @@ trait MigrationSeedingMethod
         $chunkSize = $options['chunkSize'] ?? 500;
         $verbose = $options['verbose'] ?? true;
         $isPg = $this->isPostgres();
+        $isSqlite = $this->isSqlite();
 
         $chunks = array_chunk($rows, $chunkSize);
         $totalRows = count($rows);
@@ -632,7 +631,7 @@ trait MigrationSeedingMethod
         foreach ($chunks as $i => $chunk) {
             $data = $this->buildBulkPlaceholders($chunk, $columns);
 
-            if ($isPg) {
+            if ($isPg || $isSqlite) {
                 $setClause = implode(', ', array_map(function ($col) {
                     return sprintf('%s = EXCLUDED.%s', $this->q($col), $this->q($col));
                 }, $updateColumns));
@@ -812,6 +811,11 @@ trait MigrationSeedingMethod
     private function isPostgres(): bool
     {
         return DB::connection()->getDriverName() === 'pgsql';
+    }
+
+    private function isSqlite(): bool
+    {
+        return DB::connection()->getDriverName() === 'sqlite';
     }
 
     private function q(string $identifier): string

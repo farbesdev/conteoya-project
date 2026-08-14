@@ -10,7 +10,13 @@ class PollingStation extends Model
         'electoral_location_id',
         'code',
         'registered_voters',
-        'status'
+        'status',
+        'odpe',
+        'pdf_file',
+        'pdf_page',
+        'department_name',
+        'province_name',
+        'district_name',
     ];
 
     public function electoralLocation()
