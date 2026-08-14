@@ -144,4 +144,65 @@ class MesasRepository {
       ),
     );
   }
+
+  Future<void> updateMesa({
+    required String code,
+    required String locationName,
+    String? districtName,
+    String? provinceName,
+    String? departmentName,
+    int registeredVoters = 300,
+  }) async {
+    final cleanCode = code.trim();
+    final cleanLocation = locationName.trim();
+    final cleanVoters = registeredVoters > 0 ? registeredVoters : 300;
+
+    await db.updatePollingStation(
+      LocalPollingStationsTableCompanion(
+        code: Value(cleanCode),
+        locationName: Value(cleanLocation),
+        districtName: districtName != null ? Value(districtName) : const Value.absent(),
+        provinceName: provinceName != null ? Value(provinceName) : const Value.absent(),
+        departmentName: departmentName != null ? Value(departmentName) : const Value.absent(),
+        registeredVoters: Value(cleanVoters),
+      ),
+    );
+
+    await db.enqueueSyncOperation(
+      LocalSyncOperationsTableCompanion.insert(
+        clientOperationId: const Uuid().v4(),
+        entityType: 'polling_stations',
+        entityId: cleanCode,
+        operation: const Value('UPDATE'),
+        payloadJson: jsonEncode({
+          'code': cleanCode,
+          'location_name': cleanLocation,
+          'district_name': districtName,
+          'province_name': provinceName,
+          'department_name': departmentName,
+          'registered_voters': cleanVoters,
+          'status': 'ACTIVE',
+        }),
+        status: const Value('PENDING'),
+      ),
+    );
+  }
+
+  Future<void> deleteMesa(String code) async {
+    final cleanCode = code.trim();
+    await db.deletePollingStationByCode(cleanCode);
+
+    await db.enqueueSyncOperation(
+      LocalSyncOperationsTableCompanion.insert(
+        clientOperationId: const Uuid().v4(),
+        entityType: 'polling_stations',
+        entityId: cleanCode,
+        operation: const Value('DELETE'),
+        payloadJson: jsonEncode({
+          'code': cleanCode,
+        }),
+        status: const Value('PENDING'),
+      ),
+    );
+  }
 }

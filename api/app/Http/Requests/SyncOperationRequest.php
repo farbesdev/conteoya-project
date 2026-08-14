@@ -20,9 +20,9 @@ class SyncOperationRequest extends FormRequest
         return [
             'operations'                          => ['required', 'array', 'min:1'],
             'operations.*.client_operation_id'    => ['required', 'string'],
-            'operations.*.entity_type'            => ['required', 'string', 'in:acts,act_evidence,personeros,polling_stations'],
+            'operations.*.entity_type'            => ['required', 'string', 'in:acts,act_evidence,personeros,users,polling_stations'],
             'operations.*.entity_id'              => ['required'],
-            'operations.*.operation'              => ['required', 'string', 'in:CREATE,UPDATE,CONFIRM'],
+            'operations.*.operation'              => ['required', 'string', 'in:CREATE,UPDATE,DELETE,CONFIRM'],
             'operations.*.payload'                => ['required', 'array'],
             'operations.*.checksum'               => ['nullable', 'string'],
             'device_uuid'                         => ['nullable', 'string'],

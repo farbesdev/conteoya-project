@@ -154,4 +154,90 @@ class SyncEngineApiTest extends TestCase
         $this->assertDatabaseCount('acts', 1);
         $this->assertDatabaseCount('sync_operations', 1);
     }
+
+    public function test_admin_can_update_and_delete_personero_via_sync(): void
+    {
+        $adminUser = User::create([
+            'name'      => 'Admin User',
+            'email'     => 'admin_sync@conteoya.pe',
+            'password'  => bcrypt('Admin123!'),
+            'role'      => 'ADMIN',
+            'role_id'   => 1,
+            'is_active' => true,
+        ]);
+
+        Sanctum::actingAs($adminUser);
+
+        $clientOpIdUpdate = Str::uuid()->toString();
+        $payloadUpdate = [
+            'operations' => [
+                [
+                    'client_operation_id' => $clientOpIdUpdate,
+                    'entity_type'         => 'personeros',
+                    'entity_id'           => '99887766',
+                    'operation'           => 'UPDATE',
+                    'payload'             => [
+                        'document_number'      => '99887766',
+                        'first_name'           => 'Luis',
+                        'last_name'            => 'Editado',
+                        'phone_number'         => '+51999888777',
+                        'polling_station_code' => '030390',
+                    ],
+                ],
+            ],
+        ];
+
+        $resUpdate = $this->postJson('/api/v1/sync', $payloadUpdate);
+        $resUpdate->assertStatus(200)->assertJsonPath('data.0.status', 'SYNCED');
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'luis@conteoya.pe',
+            'name'  => 'Luis Editado',
+        ]);
+
+        $clientOpIdDelete = Str::uuid()->toString();
+        $payloadDelete = [
+            'operations' => [
+                [
+                    'client_operation_id' => $clientOpIdDelete,
+                    'entity_type'         => 'personeros',
+                    'entity_id'           => '99887766',
+                    'operation'           => 'DELETE',
+                    'payload'             => [
+                        'document_number' => '99887766',
+                    ],
+                ],
+            ],
+        ];
+
+        $resDelete = $this->postJson('/api/v1/sync', $payloadDelete);
+        $resDelete->assertStatus(200)->assertJsonPath('data.0.status', 'SYNCED');
+
+        $this->assertDatabaseMissing('personeros', [
+            'document_number' => '99887766',
+        ]);
+    }
+
+    public function test_personero_cannot_sync_user_or_personero_operations(): void
+    {
+        Sanctum::actingAs($this->user);
+
+        $payload = [
+            'operations' => [
+                [
+                    'client_operation_id' => Str::uuid()->toString(),
+                    'entity_type'         => 'personeros',
+                    'entity_id'           => '99887766',
+                    'operation'           => 'DELETE',
+                    'payload'             => [
+                        'document_number' => '99887766',
+                    ],
+                ],
+            ],
+        ];
+
+        $response = $this->postJson('/api/v1/sync', $payload);
+        $response->assertStatus(200)
+            ->assertJsonPath('data.0.status', 'FAILED');
+    }
 }

@@ -174,10 +174,49 @@ class PersonerosRepository {
         email: Value(email?.trim()),
       ),
     );
+
+    // 7. Encolar operación de sincronización UPDATE
+    final clientOpId = const Uuid().v4();
+    await db.enqueueSyncOperation(
+      LocalSyncOperationsTableCompanion.insert(
+        clientOperationId: clientOpId,
+        entityType: 'personeros',
+        entityId: cleanDni,
+        operation: const Value('UPDATE'),
+        payloadJson: jsonEncode({
+          'document_number': cleanDni,
+          'first_name': cleanFirst,
+          'last_name': cleanLast,
+          'name': '$cleanFirst $cleanLast'.trim(),
+          'polling_station_code': cleanStation,
+          'phone_number': phoneNumber?.trim(),
+          'email': email?.trim() ?? 'personero_$cleanDni@conteoya.pe',
+        }),
+        status: const Value('PENDING'),
+      ),
+    );
   }
 
   Future<void> deletePersonero(int id) async {
-    await db.deletePersonero(id);
+    final existing = await (db.select(db.localPersonerosTable)..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (existing != null) {
+      await db.deletePersonero(id);
+
+      final clientOpId = const Uuid().v4();
+      await db.enqueueSyncOperation(
+        LocalSyncOperationsTableCompanion.insert(
+          clientOperationId: clientOpId,
+          entityType: 'personeros',
+          entityId: existing.dni,
+          operation: const Value('DELETE'),
+          payloadJson: jsonEncode({
+            'document_number': existing.dni,
+            'email': existing.email ?? 'personero_${existing.dni}@conteoya.pe',
+          }),
+          status: const Value('PENDING'),
+        ),
+      );
+    }
   }
 
   PersoneroModel _mapToModel(LocalPersonero entity) {

@@ -188,6 +188,9 @@ Estas restricciones NO tienen excepciones:
 5. **No exponer credenciales** (R2 keys, API keys OCR, Sanctum tokens) en logs, respuestas de API o código fuente.
 6. **Un personero no puede registrar actas de mesas no asignadas.** Verificar siempre en `authorize()` del FormRequest y en la Policy.
 7. **No usar `dynamic` en código Dart** bajo ninguna circunstancia.
+8. **Permisos por Rol (Ingesta y Sincronización):**
+   - **PERSONERO**: Únicamente puede crear, editar y eliminar **ACTAS** (y sus evidencias). No puede gestionar ni sincronizar creación/edición/eliminación de personeros, usuarios o mesas.
+   - **ADMIN** y **DIRECTOR**: Tienen permisos completos para crear, editar y eliminar personeros, usuarios, mesas y actas.
 
 ---
 

@@ -224,36 +224,40 @@ class AdminDashboardScreen extends ConsumerWidget {
     final cardBg = theme.colorScheme.surface;
     final borderColor = theme.colorScheme.outlineVariant;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: borderColor),
-      ),
-      child: ListTile(
-        onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(10),
+    return Material(
+      color: cardBg,
+      borderRadius: BorderRadius.circular(14),
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: borderColor),
+        ),
+        child: ListTile(
+          onTap: onTap,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          leading: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: color, size: 22),
           ),
-          child: Icon(icon, color: color, size: 22),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: textPrimary,
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
+          title: Text(
+            title,
+            style: TextStyle(
+              color: textPrimary,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
           ),
+          subtitle: Text(
+            subtitle,
+            style: TextStyle(color: textSecondary, fontSize: 12),
+          ),
+          trailing: Icon(Icons.chevron_right_rounded, color: textSecondary, size: 20),
         ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(color: textSecondary, fontSize: 12),
-        ),
-        trailing: Icon(Icons.chevron_right_rounded, color: textSecondary, size: 20),
       ),
     );
   }

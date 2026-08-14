@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../personeros/domain/personero_model.dart';
+import '../../personeros/presentation/delete_personero_dialog.dart';
+import '../../personeros/presentation/personero_form_modal.dart';
 
 class UsersScreen extends ConsumerStatefulWidget {
   const UsersScreen({super.key});
@@ -102,11 +105,12 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                     'isActive': true,
                   },
                   ...personeros.map((p) => {
-                        'id': p.id + 10,
+                        'id': p.id,
                         'name': p.fullName,
-                        'email': p.email ?? 'personero@conteoya.pe',
+                        'email': p.email ?? 'personero_${p.dni}@conteoya.pe',
                         'role': 'PERSONERO',
                         'dni': p.dni,
+                        'personeroModel': p,
                         'mesa': p.pollingStationCode,
                         'isActive': true,
                       }),
@@ -260,19 +264,29 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
               ],
             ),
           ],
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           const Divider(color: AppColors.border, height: 1),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
+              if (user['personeroModel'] != null)
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.textSecondary,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  ),
+                  icon: const Icon(Icons.edit_outlined, size: 14),
+                  label: const Text('Editar', style: TextStyle(fontSize: 12)),
+                  onPressed: () => PersoneroFormModal.show(context, personeroToEdit: user['personeroModel'] as PersoneroModel),
+                ),
               TextButton.icon(
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.warning,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 ),
-                icon: const Icon(Icons.key_rounded, size: 16),
-                label: const Text('Restablecer Clave', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                icon: const Icon(Icons.key_rounded, size: 14),
+                label: const Text('Clave', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 onPressed: () => _showResetPasswordModal(
                   context,
                   userId: user['id'] as int,
@@ -280,6 +294,33 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                   email: user['email'] as String,
                 ),
               ),
+              if (user['personeroModel'] != null)
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.danger,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  ),
+                  icon: const Icon(Icons.delete_outline_rounded, size: 14),
+                  label: const Text('Eliminar', style: TextStyle(fontSize: 12)),
+                  onPressed: () {
+                    final pModel = user['personeroModel'] as PersoneroModel;
+                    DeletePersoneroDialog.show(
+                      context,
+                      personeroName: pModel.fullName,
+                      onConfirm: () async {
+                        await ref.read(personerosRepositoryProvider).deletePersonero(pModel.id);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              backgroundColor: AppColors.danger,
+                              content: Text('Personero/Usuario eliminado del sistema.'),
+                            ),
+                          );
+                        }
+                      },
+                    );
+                  },
+                ),
             ],
           ),
         ],

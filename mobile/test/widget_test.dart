@@ -69,7 +69,7 @@ void main() {
     expect(find.text('Dashboard'), findsOneWidget);
     expect(find.text('Personeros'), findsNWidgets(2)); // Metric card + Tab
     expect(find.text('Usuarios'), findsOneWidget);
-    expect(find.text('Actas'), findsNWidgets(2)); // Metric card + Tab
+    expect(find.textContaining('Actas'), findsNWidgets(2)); // Metric card 'Actas Procesadas' + Tab 'Actas'
     expect(find.text('Admin Demo • ADMIN'), findsOneWidget);
 
     testEngine.stop();

@@ -63,10 +63,11 @@ class SyncService
             }
 
             $result = match ($entityType) {
-                'acts'             => $this->processActOperation($personero, $payload, $clientOperationId, $device?->id),
+                'acts'             => $this->processActOperation($personero, $payload, $clientOperationId, $device?->id, $operation),
                 'act_evidence'     => $this->processEvidenceOperation($payload, $device?->id),
-                'personeros'       => $this->processPersoneroOperation($payload),
-                'polling_stations' => $this->processPollingStationOperation($payload),
+                'personeros'       => $this->processPersoneroOperation($payload, $operation),
+                'users'            => $this->processUserOperation($payload, $operation),
+                'polling_stations' => $this->processPollingStationOperation($payload, $operation),
                 default            => throw new \InvalidArgumentException("Tipo de entidad '{$entityType}' no soportada para sincronización."),
             };
 
@@ -131,8 +132,25 @@ class SyncService
         return $results;
     }
 
-    protected function processActOperation(?Personero $personero, array $payload, string $clientOpId, ?int $deviceId): array
+    protected function processActOperation(?Personero $personero, array $payload, string $clientOpId, ?int $deviceId, string $operation = 'CREATE'): array
     {
+        if ($operation === 'DELETE') {
+            $act = null;
+            if (!empty($payload['client_act_uuid'])) {
+                $act = \App\Models\Act::where('client_operation_id', $payload['client_act_uuid'])->first();
+            }
+            if (!$act && !empty($payload['act_id'])) {
+                $act = \App\Models\Act::find($payload['act_id']);
+            }
+            if ($act) {
+                $act->evidence()->delete();
+                $act->results()->delete();
+                $act->totals()->delete();
+                $act->delete();
+            }
+            return ['deleted' => true];
+        }
+
         $station = PollingStation::where('code', $payload['polling_station_code'])->firstOrFail();
 
         // Validar ownership de mesa solo para rol PERSONERO
@@ -193,39 +211,59 @@ class SyncService
         ];
     }
 
-    protected function processPersoneroOperation(array $payload): array
+    protected function processPersoneroOperation(array $payload, string $operation = 'CREATE'): array
     {
-        return DB::transaction(function () use ($payload) {
-            $docNumber = $payload['document_number'];
-            $email = $payload['email'] ?? "personero_{$docNumber}@conteoya.pe";
+        return DB::transaction(function () use ($payload, $operation) {
+            $docNumber = $payload['document_number'] ?? null;
+            if (!$docNumber) {
+                throw new \InvalidArgumentException("document_number es requerido para operaciones de personero.");
+            }
+
+            $personero = Personero::where('document_number', $docNumber)->first();
+
+            if ($operation === 'DELETE') {
+                if ($personero) {
+                    $personero->pollingStations()->detach();
+                    $user = $personero->user;
+                    $personero->delete();
+                    if ($user) {
+                        $user->delete();
+                    }
+                }
+                return ['document_number' => $docNumber, 'deleted' => true];
+            }
+
+            $email = $payload['email'] ?? ($personero?->user?->email ?? "personero_{$docNumber}@conteoya.pe");
             $name = $payload['name'] ?? trim(($payload['first_name'] ?? '') . ' ' . ($payload['last_name'] ?? ''));
+            if (empty($name) && $personero?->user) {
+                $name = $personero->user->name;
+            }
 
             $roleModel = \App\Models\Role::where('name', 'PERSONERO')->first();
 
-            $user = \App\Models\User::where('email', $email)->first();
-
-            if (!$user) {
-                $user = \App\Models\User::create([
-                    'email'     => $email,
-                    'name'      => $name,
+            $user = \App\Models\User::updateOrCreate(
+                ['email' => $email],
+                [
+                    'name'      => $name ?: "Personero $docNumber",
                     'password'  => \Illuminate\Support\Facades\Hash::make('Personero123!'),
                     'role'      => 'PERSONERO',
                     'role_id'   => $roleModel ? $roleModel->id : 3,
                     'is_active' => true,
-                ]);
-            } else {
-                $user->update([
-                    'name' => $name,
-                ]);
-            }
-
-            $personero = Personero::updateOrCreate(
-                ['document_number' => $docNumber],
-                [
-                    'user_id'      => $user->id,
-                    'phone_number' => $payload['phone_number'] ?? null,
                 ]
             );
+
+            if ($personero) {
+                $personero->update([
+                    'user_id'      => $user->id,
+                    'phone_number' => $payload['phone_number'] ?? $personero->phone_number,
+                ]);
+            } else {
+                $personero = Personero::create([
+                    'document_number' => $docNumber,
+                    'user_id'         => $user->id,
+                    'phone_number'    => $payload['phone_number'] ?? null,
+                ]);
+            }
 
             if (!empty($payload['polling_station_code'])) {
                 $locationId = \App\Models\ElectoralLocation::value('id') ?? 1;
@@ -237,7 +275,7 @@ class SyncService
                         'status'                => 'ACTIVE',
                     ]
                 );
-                $personero->pollingStations()->syncWithoutDetaching([$station->id]);
+                $personero->pollingStations()->sync([$station->id]);
             }
 
             return [
@@ -248,20 +286,117 @@ class SyncService
         });
     }
 
-    protected function processPollingStationOperation(array $payload): array
+    protected function processUserOperation(array $payload, string $operation = 'CREATE'): array
     {
-        $code = $payload['code'];
+        return DB::transaction(function () use ($payload, $operation) {
+            $email = $payload['email'] ?? null;
+            $userId = $payload['id'] ?? null;
+
+            $user = null;
+            if ($userId) {
+                $user = \App\Models\User::find($userId);
+            }
+            if (!$user && $email) {
+                $user = \App\Models\User::where('email', $email)->first();
+            }
+
+            if ($operation === 'DELETE') {
+                if ($user) {
+                    if ($user->personero) {
+                        $user->personero->pollingStations()->detach();
+                        $user->personero->delete();
+                    }
+                    $user->delete();
+                }
+                return ['email' => $email, 'deleted' => true];
+            }
+
+            if (!$user && !$email) {
+                throw new \InvalidArgumentException("Email es requerido para operaciones de usuario.");
+            }
+
+            $role = strtoupper($payload['role'] ?? 'PERSONERO');
+            $roleModel = \App\Models\Role::where('name', $role)->first();
+
+            $userData = [
+                'name'      => $payload['name'] ?? ($user?->name ?? 'Usuario'),
+                'email'     => $email ?: $user->email,
+                'role'      => $role,
+                'role_id'   => $roleModel ? $roleModel->id : 3,
+                'is_active' => $payload['is_active'] ?? ($user?->is_active ?? true),
+            ];
+
+            if (!empty($payload['password'])) {
+                $userData['password'] = \Illuminate\Support\Facades\Hash::make($payload['password']);
+            } elseif (!$user) {
+                $userData['password'] = \Illuminate\Support\Facades\Hash::make('User123!');
+            }
+
+            if ($user) {
+                $user->update($userData);
+            } else {
+                $user = \App\Models\User::create($userData);
+            }
+
+            if ($role === 'PERSONERO' || !empty($payload['document_number'])) {
+                $docNumber = $payload['document_number'] ?? ('DNI' . str_pad((string)$user->id, 6, '0', STR_PAD_LEFT));
+                $personero = Personero::updateOrCreate(
+                    ['user_id' => $user->id],
+                    [
+                        'document_number' => $docNumber,
+                        'phone_number'    => $payload['phone_number'] ?? null,
+                    ]
+                );
+
+                if (!empty($payload['polling_station_code'])) {
+                    $station = PollingStation::where('code', $payload['polling_station_code'])->first();
+                    if ($station) {
+                        $personero->pollingStations()->sync([$station->id]);
+                    }
+                }
+            }
+
+            return [
+                'user_id' => $user->id,
+                'email'   => $user->email,
+                'role'    => $user->role,
+            ];
+        });
+    }
+
+    protected function processPollingStationOperation(array $payload, string $operation = 'CREATE'): array
+    {
+        $code = $payload['code'] ?? null;
+        if (!$code) {
+            throw new \InvalidArgumentException("code de mesa es requerido.");
+        }
+
+        $station = PollingStation::where('code', $code)->first();
+
+        if ($operation === 'DELETE') {
+            if ($station) {
+                $station->personeros()->detach();
+                $station->delete();
+            }
+            return ['code' => $code, 'deleted' => true];
+        }
+
         $voters = (int)($payload['registered_voters'] ?? 300);
         $locationId = \App\Models\ElectoralLocation::value('id') ?? 1;
 
-        $station = PollingStation::firstOrCreate(
-            ['code' => $code],
-            [
+        if ($station) {
+            $station->update([
+                'registered_voters' => $voters,
+                'status'            => $payload['status'] ?? $station->status,
+            ]);
+        } else {
+            $station = PollingStation::create([
+                'code'                  => $code,
                 'electoral_location_id' => $locationId,
                 'registered_voters'     => $voters,
                 'status'                => $payload['status'] ?? 'ACTIVE',
-            ]
-        );
+            ]);
+        }
 
         return [
             'polling_station_id' => $station->id,

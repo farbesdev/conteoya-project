@@ -1121,345 +1121,7 @@
                                         },
                                         "data": {
                                             "type": "array",
-                                            "items": {
-                                                "anyOf": [
-                                                    {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "client_operation_id": {
-                                                                "type": "string"
-                                                            },
-                                                            "status": {
-                                                                "type": "string",
-                                                                "const": "SYNCED"
-                                                            },
-                                                            "replayed": {
-                                                                "type": "boolean"
-                                                            },
-                                                            "processed_at": {
-                                                                "type": "string"
-                                                            },
-                                                            "result": {
-                                                                "anyOf": [
-                                                                    {
-                                                                        "type": "object",
-                                                                        "properties": {
-                                                                            "act_id": {
-                                                                                "type": "integer"
-                                                                            },
-                                                                            "status": {
-                                                                                "type": "string"
-                                                                            },
-                                                                            "validation_result": {
-                                                                                "type": "object",
-                                                                                "properties": {
-                                                                                    "is_valid_total": {
-                                                                                        "type": "string"
-                                                                                    },
-                                                                                    "warnings": {
-                                                                                        "type": "array",
-                                                                                        "items": {
-                                                                                            "anyOf": [
-                                                                                                {
-                                                                                                    "type": "object",
-                                                                                                    "properties": {
-                                                                                                        "code": {
-                                                                                                            "type": "string",
-                                                                                                            "const": "TOTAL_MISMATCH"
-                                                                                                        },
-                                                                                                        "severity": {
-                                                                                                            "type": "string",
-                                                                                                            "const": "WARNING"
-                                                                                                        },
-                                                                                                        "message": {
-                                                                                                            "type": "string"
-                                                                                                        },
-                                                                                                        "details": {
-                                                                                                            "type": "object",
-                                                                                                            "properties": {
-                                                                                                                "sum_results": {
-                                                                                                                    "type": "integer"
-                                                                                                                },
-                                                                                                                "blank_votes": {
-                                                                                                                    "type": "integer"
-                                                                                                                },
-                                                                                                                "null_votes": {
-                                                                                                                    "type": "integer"
-                                                                                                                },
-                                                                                                                "challenged_votes": {
-                                                                                                                    "type": "integer"
-                                                                                                                },
-                                                                                                                "expected_total": {
-                                                                                                                    "type": "string"
-                                                                                                                },
-                                                                                                                "declared_total": {
-                                                                                                                    "type": "integer"
-                                                                                                                },
-                                                                                                                "difference": {
-                                                                                                                    "type": "string"
-                                                                                                                }
-                                                                                                            },
-                                                                                                            "required": [
-                                                                                                                "sum_results",
-                                                                                                                "blank_votes",
-                                                                                                                "null_votes",
-                                                                                                                "challenged_votes",
-                                                                                                                "expected_total",
-                                                                                                                "declared_total",
-                                                                                                                "difference"
-                                                                                                            ]
-                                                                                                        }
-                                                                                                    },
-                                                                                                    "required": [
-                                                                                                        "code",
-                                                                                                        "severity",
-                                                                                                        "message",
-                                                                                                        "details"
-                                                                                                    ]
-                                                                                                },
-                                                                                                {
-                                                                                                    "type": "object",
-                                                                                                    "properties": {
-                                                                                                        "code": {
-                                                                                                            "type": "string",
-                                                                                                            "const": "VOTERS_EXCEED_REGISTERED"
-                                                                                                        },
-                                                                                                        "severity": {
-                                                                                                            "type": "string",
-                                                                                                            "const": "WARNING"
-                                                                                                        },
-                                                                                                        "message": {
-                                                                                                            "type": "string"
-                                                                                                        },
-                                                                                                        "details": {
-                                                                                                            "type": "object",
-                                                                                                            "properties": {
-                                                                                                                "voters_who_voted": {
-                                                                                                                    "type": "integer"
-                                                                                                                },
-                                                                                                                "registered_voters": {
-                                                                                                                    "type": "integer"
-                                                                                                                }
-                                                                                                            },
-                                                                                                            "required": [
-                                                                                                                "voters_who_voted",
-                                                                                                                "registered_voters"
-                                                                                                            ]
-                                                                                                        }
-                                                                                                    },
-                                                                                                    "required": [
-                                                                                                        "code",
-                                                                                                        "severity",
-                                                                                                        "message",
-                                                                                                        "details"
-                                                                                                    ]
-                                                                                                },
-                                                                                                {
-                                                                                                    "type": "object",
-                                                                                                    "properties": {
-                                                                                                        "code": {
-                                                                                                            "type": "string",
-                                                                                                            "const": "VOTES_EXCEED_REGISTERED"
-                                                                                                        },
-                                                                                                        "severity": {
-                                                                                                            "type": "string",
-                                                                                                            "const": "WARNING"
-                                                                                                        },
-                                                                                                        "message": {
-                                                                                                            "type": "string"
-                                                                                                        },
-                                                                                                        "details": {
-                                                                                                            "type": "object",
-                                                                                                            "properties": {
-                                                                                                                "total_votes": {
-                                                                                                                    "type": "integer"
-                                                                                                                },
-                                                                                                                "registered_voters": {
-                                                                                                                    "type": "integer"
-                                                                                                                }
-                                                                                                            },
-                                                                                                            "required": [
-                                                                                                                "total_votes",
-                                                                                                                "registered_voters"
-                                                                                                            ]
-                                                                                                        }
-                                                                                                    },
-                                                                                                    "required": [
-                                                                                                        "code",
-                                                                                                        "severity",
-                                                                                                        "message",
-                                                                                                        "details"
-                                                                                                    ]
-                                                                                                },
-                                                                                                {
-                                                                                                    "type": "object",
-                                                                                                    "properties": {
-                                                                                                        "code": {
-                                                                                                            "type": "string",
-                                                                                                            "const": "VOTES_EXCEED_ATTENDANCE"
-                                                                                                        },
-                                                                                                        "severity": {
-                                                                                                            "type": "string",
-                                                                                                            "const": "WARNING"
-                                                                                                        },
-                                                                                                        "message": {
-                                                                                                            "type": "string"
-                                                                                                        },
-                                                                                                        "details": {
-                                                                                                            "type": "object",
-                                                                                                            "properties": {
-                                                                                                                "total_votes": {
-                                                                                                                    "type": "integer"
-                                                                                                                },
-                                                                                                                "voters_who_voted": {
-                                                                                                                    "type": "integer"
-                                                                                                                }
-                                                                                                            },
-                                                                                                            "required": [
-                                                                                                                "total_votes",
-                                                                                                                "voters_who_voted"
-                                                                                                            ]
-                                                                                                        }
-                                                                                                    },
-                                                                                                    "required": [
-                                                                                                        "code",
-                                                                                                        "severity",
-                                                                                                        "message",
-                                                                                                        "details"
-                                                                                                    ]
-                                                                                                }
-                                                                                            ]
-                                                                                        }
-                                                                                    }
-                                                                                },
-                                                                                "required": [
-                                                                                    "is_valid_total",
-                                                                                    "warnings"
-                                                                                ]
-                                                                            }
-                                                                        },
-                                                                        "required": [
-                                                                            "act_id",
-                                                                            "status",
-                                                                            "validation_result"
-                                                                        ]
-                                                                    },
-                                                                    {
-                                                                        "type": "object",
-                                                                        "properties": {
-                                                                            "evidence_id": {
-                                                                                "type": "integer"
-                                                                            },
-                                                                            "object_key": {
-                                                                                "type": "string"
-                                                                            }
-                                                                        },
-                                                                        "required": [
-                                                                            "evidence_id",
-                                                                            "object_key"
-                                                                        ]
-                                                                    },
-                                                                    {
-                                                                        "type": "object",
-                                                                        "properties": {
-                                                                            "personero_id": {
-                                                                                "type": "integer"
-                                                                            },
-                                                                            "user_id": {
-                                                                                "type": "integer"
-                                                                            },
-                                                                            "document_number": {
-                                                                                "type": "string"
-                                                                            }
-                                                                        },
-                                                                        "required": [
-                                                                            "personero_id",
-                                                                            "user_id",
-                                                                            "document_number"
-                                                                        ]
-                                                                    },
-                                                                    {
-                                                                        "type": "object",
-                                                                        "properties": {
-                                                                            "polling_station_id": {
-                                                                                "type": "integer"
-                                                                            },
-                                                                            "code": {
-                                                                                "type": "string"
-                                                                            }
-                                                                        },
-                                                                        "required": [
-                                                                            "polling_station_id",
-                                                                            "code"
-                                                                        ]
-                                                                    }
-                                                                ]
-                                                            }
-                                                        },
-                                                        "required": [
-                                                            "client_operation_id",
-                                                            "status",
-                                                            "replayed",
-                                                            "processed_at",
-                                                            "result"
-                                                        ]
-                                                    },
-                                                    {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "client_operation_id": {
-                                                                "type": "string"
-                                                            },
-                                                            "status": {
-                                                                "type": "string",
-                                                                "const": "SYNCED"
-                                                            },
-                                                            "replayed": {
-                                                                "type": "boolean"
-                                                            },
-                                                            "processed_at": {
-                                                                "type": [
-                                                                    "string",
-                                                                    "null"
-                                                                ]
-                                                            },
-                                                            "entity_id": {
-                                                                "type": "string"
-                                                            }
-                                                        },
-                                                        "required": [
-                                                            "client_operation_id",
-                                                            "status",
-                                                            "replayed",
-                                                            "processed_at",
-                                                            "entity_id"
-                                                        ]
-                                                    },
-                                                    {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "client_operation_id": {
-                                                                "type": [
-                                                                    "string",
-                                                                    "null"
-                                                                ]
-                                                            },
-                                                            "status": {
-                                                                "type": "string",
-                                                                "const": "FAILED"
-                                                            },
-                                                            "error": {
-                                                                "type": "string"
-                                                            }
-                                                        },
-                                                        "required": [
-                                                            "client_operation_id",
-                                                            "status",
-                                                            "error"
-                                                        ]
-                                                    }
-                                                ]
-                                            }
+                                            "items": {}
                                         }
                                     },
                                     "required": [
@@ -1512,34 +1174,81 @@
                                                         "type": "object",
                                                         "properties": {
                                                             "id": {
-                                                                "type": "integer"
+                                                                "type": "string"
                                                             },
                                                             "code": {
                                                                 "type": "string"
                                                             },
                                                             "location_name": {
-                                                                "type": "string"
-                                                            },
-                                                            "address": {
-                                                                "type": [
-                                                                    "string",
-                                                                    "null"
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "LOCAL DE VOTACI\u00d3N"
+                                                                        ]
+                                                                    }
                                                                 ]
                                                             },
-                                                            "district_code": {
+                                                            "address": {
                                                                 "type": "string"
+                                                            },
+                                                            "district_code": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "000000"
+                                                                        ]
+                                                                    }
+                                                                ]
                                                             },
                                                             "district_name": {
-                                                                "type": "string"
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "DISTRITO"
+                                                                        ]
+                                                                    }
+                                                                ]
                                                             },
                                                             "province_name": {
-                                                                "type": "string"
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "PROVINCIA"
+                                                                        ]
+                                                                    }
+                                                                ]
                                                             },
                                                             "department_name": {
-                                                                "type": "string"
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "DEPARTAMENTO"
+                                                                        ]
+                                                                    }
+                                                                ]
                                                             },
                                                             "registered_voters": {
-                                                                "type": "integer"
+                                                                "type": "string"
                                                             },
                                                             "status": {
                                                                 "type": "string"
@@ -1565,7 +1274,7 @@
                                                         "type": "object",
                                                         "properties": {
                                                             "id": {
-                                                                "type": "integer"
+                                                                "type": "string"
                                                             },
                                                             "dni": {
                                                                 "type": "string"
@@ -1575,16 +1284,33 @@
                                                                 "type": "string"
                                                             },
                                                             "name": {
-                                                                "type": "string"
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "Personero Registrado"
+                                                                        ]
+                                                                    }
+                                                                ]
                                                             },
                                                             "polling_station_code": {
-                                                                "type": "string"
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "030390"
+                                                                        ]
+                                                                    }
+                                                                ]
                                                             },
                                                             "phone_number": {
-                                                                "type": [
-                                                                    "string",
-                                                                    "null"
-                                                                ]
+                                                                "type": "string"
                                                             },
                                                             "email": {
                                                                 "type": "string"
@@ -1608,7 +1334,7 @@
                                                         "type": "object",
                                                         "properties": {
                                                             "id": {
-                                                                "type": "integer"
+                                                                "type": "string"
                                                             },
                                                             "code": {
                                                                 "type": "string"
@@ -1617,16 +1343,10 @@
                                                                 "type": "string"
                                                             },
                                                             "short_name": {
-                                                                "type": [
-                                                                    "string",
-                                                                    "null"
-                                                                ]
+                                                                "type": "string"
                                                             },
                                                             "logo_url": {
-                                                                "type": [
-                                                                    "string",
-                                                                    "null"
-                                                                ]
+                                                                "type": "string"
                                                             },
                                                             "order_index": {
                                                                 "anyOf": [
@@ -1740,7 +1460,7 @@
                                     "type": "object",
                                     "properties": {
                                         "personero_id": {
-                                            "type": "integer"
+                                            "type": "string"
                                         },
                                         "document_number": {
                                             "type": "string"
@@ -2636,10 +2356,10 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "act_id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "storage_provider": {
                         "type": "string"
@@ -2651,25 +2371,22 @@
                         "type": "string"
                     },
                     "file_size_bytes": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "sha256_hash": {
                         "type": "string"
                     },
                     "width_px": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "height_px": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "captured_at": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "created_at": {
                         "type": [
@@ -2697,37 +2414,34 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "act_code": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "status": {
                         "type": "string"
                     },
                     "election_id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "electoral_level_id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "polling_station_id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "polling_station": {
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "code": {
                                 "type": "string"
                             },
                             "registered_voters": {
-                                "type": "integer"
+                                "type": "string"
                             }
                         },
                         "required": [
@@ -2740,7 +2454,7 @@
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "document_number": {
                                 "type": "string"
@@ -2756,28 +2470,15 @@
                         ]
                     },
                     "captured_at": {
-                        "anyOf": [
-                            {
-                                "type": "string",
-                                "format": "date-time"
-                            },
-                            {
-                                "type": "string"
-                            }
+                        "type": [
+                            "string",
+                            "null"
                         ]
                     },
                     "confirmed_at": {
-                        "anyOf": [
-                            {
-                                "type": "string",
-                                "format": "date-time"
-                            },
-                            {
-                                "type": "null"
-                            },
-                            {
-                                "type": "string"
-                            }
+                        "type": [
+                            "string",
+                            "null"
                         ]
                     },
                     "totals": {
@@ -2803,31 +2504,15 @@
                         "type": "string"
                     },
                     "created_at": {
-                        "anyOf": [
-                            {
-                                "type": "string",
-                                "format": "date-time"
-                            },
-                            {
-                                "type": "null"
-                            },
-                            {
-                                "type": "string"
-                            }
+                        "type": [
+                            "string",
+                            "null"
                         ]
                     },
                     "updated_at": {
-                        "anyOf": [
-                            {
-                                "type": "string",
-                                "format": "date-time"
-                            },
-                            {
-                                "type": "null"
-                            },
-                            {
-                                "type": "string"
-                            }
+                        "type": [
+                            "string",
+                            "null"
                         ]
                     }
                 },
@@ -2849,34 +2534,25 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "political_organization_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "political_organization": {
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "name": {
                                 "type": "string"
                             },
                             "short_name": {
-                                "type": [
-                                    "string",
-                                    "null"
-                                ]
+                                "type": "string"
                             },
                             "logo_url": {
-                                "type": [
-                                    "string",
-                                    "null"
-                                ]
+                                "type": "string"
                             }
                         },
                         "required": [
@@ -2887,31 +2563,22 @@
                         ]
                     },
                     "electoral_list_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "candidate_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "candidate": {
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "integer"
+                                "type": "string"
                             },
                             "full_name": {
                                 "type": "string"
                             },
                             "photo_url": {
-                                "type": [
-                                    "string",
-                                    "null"
-                                ]
+                                "type": "string"
                             }
                         },
                         "required": [
@@ -2921,7 +2588,7 @@
                         ]
                     },
                     "votes": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "source": {
                         "type": "string"
@@ -2948,25 +2615,25 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "registered_voters": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "voters_who_voted": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "total_votes": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "blank_votes": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "null_votes": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "challenged_votes": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "is_valid_total": {
                         "type": "boolean"
@@ -3203,290 +2870,63 @@
                 "title": "CreateActRequest"
             },
             "Department": {
-                "type": "object",
-                "properties": {
-                    "code": {
-                        "type": "string"
-                    },
-                    "name": {
-                        "type": "string"
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    }
+                "type": "array",
+                "items": {
+                    "type": "string"
                 },
-                "required": [
-                    "code",
-                    "name",
-                    "created_at",
-                    "updated_at"
-                ],
+                "minItems": 0,
+                "maxItems": 0,
+                "additionalItems": false,
                 "title": "Department"
             },
             "District": {
-                "type": "object",
-                "properties": {
-                    "code": {
-                        "type": "string"
-                    },
-                    "province_code": {
-                        "type": "string"
-                    },
-                    "department_code": {
-                        "type": "string"
-                    },
-                    "name": {
-                        "type": "string"
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    }
+                "type": "array",
+                "items": {
+                    "type": "string"
                 },
-                "required": [
-                    "code",
-                    "province_code",
-                    "department_code",
-                    "name",
-                    "created_at",
-                    "updated_at"
-                ],
+                "minItems": 0,
+                "maxItems": 0,
+                "additionalItems": false,
                 "title": "District"
             },
             "Election": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "code": {
-                        "type": "string"
-                    },
-                    "name": {
-                        "type": "string"
-                    },
-                    "date": {
-                        "type": "string"
-                    },
-                    "status": {
-                        "type": "string"
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    }
+                "type": "array",
+                "items": {
+                    "type": "string"
                 },
-                "required": [
-                    "id",
-                    "code",
-                    "name",
-                    "date",
-                    "status",
-                    "created_at",
-                    "updated_at"
-                ],
+                "minItems": 0,
+                "maxItems": 0,
+                "additionalItems": false,
                 "title": "Election"
             },
             "ElectoralList": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "jee_solicitud_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "political_organization_id": {
-                        "type": "integer"
-                    },
-                    "electoral_level_id": {
-                        "type": "integer"
-                    },
-                    "department_code": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "province_code": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "district_code": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "status": {
-                        "type": "string"
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    }
+                "type": "array",
+                "items": {
+                    "type": "string"
                 },
-                "required": [
-                    "id",
-                    "jee_solicitud_id",
-                    "political_organization_id",
-                    "electoral_level_id",
-                    "department_code",
-                    "province_code",
-                    "district_code",
-                    "status",
-                    "created_at",
-                    "updated_at"
-                ],
+                "minItems": 0,
+                "maxItems": 0,
+                "additionalItems": false,
                 "title": "ElectoralList"
             },
             "PoliticalOrganization": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "jee_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    },
-                    "name": {
-                        "type": "string"
-                    },
-                    "short_name": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "org_type": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "logo_url": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "local_logo_url": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    }
+                "type": "array",
+                "items": {
+                    "type": "string"
                 },
-                "required": [
-                    "id",
-                    "jee_id",
-                    "name",
-                    "short_name",
-                    "org_type",
-                    "logo_url",
-                    "local_logo_url",
-                    "created_at",
-                    "updated_at"
-                ],
+                "minItems": 0,
+                "maxItems": 0,
+                "additionalItems": false,
                 "title": "PoliticalOrganization"
             },
             "Province": {
-                "type": "object",
-                "properties": {
-                    "code": {
-                        "type": "string"
-                    },
-                    "department_code": {
-                        "type": "string"
-                    },
-                    "name": {
-                        "type": "string"
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    }
+                "type": "array",
+                "items": {
+                    "type": "string"
                 },
-                "required": [
-                    "code",
-                    "department_code",
-                    "name",
-                    "created_at",
-                    "updated_at"
-                ],
+                "minItems": 0,
+                "maxItems": 0,
+                "additionalItems": false,
                 "title": "Province"
             },
             "RecognizeActRequest": {
@@ -3576,6 +3016,7 @@
                                         "acts",
                                         "act_evidence",
                                         "personeros",
+                                        "users",
                                         "polling_stations"
                                     ]
                                 },
@@ -3587,6 +3028,7 @@
                                     "enum": [
                                         "CREATE",
                                         "UPDATE",
+                                        "DELETE",
                                         "CONFIRM"
                                     ]
                                 },
@@ -3630,7 +3072,7 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "client_operation_id": {
                         "type": "string"
@@ -3648,13 +3090,10 @@
                         "type": "string"
                     },
                     "attempts": {
-                        "type": "integer"
+                        "type": "string"
                     },
                     "last_error": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "processed_at": {
                         "type": [
@@ -3684,62 +3123,13 @@
                 "title": "SyncOperationResource"
             },
             "User": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "name": {
-                        "type": "string"
-                    },
-                    "email": {
-                        "type": "string"
-                    },
-                    "email_verified_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "role": {
-                        "type": "string"
-                    },
-                    "is_active": {
-                        "type": "boolean"
-                    },
-                    "created_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
-                    },
-                    "role_id": {
-                        "type": [
-                            "integer",
-                            "null"
-                        ]
-                    }
+                "type": "array",
+                "items": {
+                    "type": "string"
                 },
-                "required": [
-                    "id",
-                    "name",
-                    "email",
-                    "email_verified_at",
-                    "role",
-                    "is_active",
-                    "created_at",
-                    "updated_at",
-                    "role_id"
-                ],
+                "minItems": 0,
+                "maxItems": 0,
+                "additionalItems": false,
                 "title": "User"
             }
         },

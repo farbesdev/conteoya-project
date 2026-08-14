@@ -235,6 +235,28 @@ class AppDatabase extends _$AppDatabase {
     return (delete(localPersonerosTable)..where((t) => t.id.equals(id))).go();
   }
 
+  Future<int> deletePersoneroByDni(String dni) {
+    return (delete(localPersonerosTable)..where((t) => t.dni.equals(dni))).go();
+  }
+
+  Future<int> deletePollingStationByCode(String code) {
+    return (delete(localPollingStationsTable)..where((t) => t.code.equals(code))).go();
+  }
+
+  Future<bool> updatePollingStation(LocalPollingStationsTableCompanion station) {
+    final code = station.code.value;
+    return (update(localPollingStationsTable)..where((t) => t.code.equals(code))).write(station).then((val) => val > 0);
+  }
+
+  Future<int> deleteActByClientUuid(String clientActUuid) {
+    return transaction(() async {
+      await (delete(localActEvidenceTable)..where((t) => t.clientActUuid.equals(clientActUuid))).go();
+      await (delete(localActResultsTable)..where((t) => t.clientActUuid.equals(clientActUuid))).go();
+      await (delete(localActTotalsTable)..where((t) => t.clientActUuid.equals(clientActUuid))).go();
+      return (delete(localActsTable)..where((t) => t.clientActUuid.equals(clientActUuid))).go();
+    });
+  }
+
   // ─── DAOs para Mesas (Polling Stations) ────────────────────────────────────
   Stream<List<LocalPollingStation>> watchAllPollingStations() {
     return (select(localPollingStationsTable)

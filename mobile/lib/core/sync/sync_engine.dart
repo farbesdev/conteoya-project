@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
 
 import '../database/app_database.dart';
 import '../network/api_client.dart';
@@ -78,37 +77,7 @@ class SyncEngine {
       // 1. SINCRONIZACIÓN DESCENDENTE (PULL): Descargar mesas, personeros y catálogos actualizados desde el VPS
       final pullMetrics = await pullLatestDataFromBackend(isPersonero: isPersonero);
 
-      // 2. AUTODETECTAR Personeros/Usuarios creados localmente (Solo para ADMIN / DIRECTOR)
-      if (!isPersonero) {
-        final allLocalPersoneros = await db.getAllPersoneros();
-        final existingSyncOps = await db.select(db.localSyncOperationsTable).get();
-        final syncOpEntityIds = existingSyncOps.map((op) => op.entityId).toSet();
-
-        for (final p in allLocalPersoneros) {
-          if (!syncOpEntityIds.contains(p.dni)) {
-            await db.enqueueSyncOperation(
-              LocalSyncOperationsTableCompanion.insert(
-                clientOperationId: const Uuid().v4(),
-                entityType: 'personeros',
-                entityId: p.dni,
-                operation: const Value('CREATE'),
-                payloadJson: jsonEncode({
-                  'document_number': p.dni,
-                  'first_name': p.firstName,
-                  'last_name': p.lastName,
-                  'name': '${p.firstName} ${p.lastName}'.trim(),
-                  'polling_station_code': p.pollingStationCode,
-                  'phone_number': p.phoneNumber,
-                  'email': p.email ?? 'personero_${p.dni}@conteoya.pe',
-                }),
-                status: const Value('PENDING'),
-              ),
-            );
-          }
-        }
-      }
-
-      // 3. SINCRONIZACIÓN ASCENDENTE (PUSH): Enviar operaciones pendientes al VPS (POST /api/v1/sync)
+      // 2. SINCRONIZACIÓN ASCENDENTE (PUSH): Enviar operaciones pendientes al VPS (POST /api/v1/sync)
       // Si el rol es PERSONERO, únicamente se envían 'acts' y 'act_evidence'
       final rawPendingOps = await db.getPendingSyncOperations();
       final pendingOps = isPersonero
@@ -148,11 +117,19 @@ class SyncEngine {
                 if (status == 'SYNCED') {
                   await db.updateSyncOpStatus(clientOpId, 'SYNCED');
 
-                  // Encontrar la operación para actualizar el estado del acta local
+                  // Encontrar la operación para actualizar el estado de entidades locales
                   final op = pendingOps.firstWhere((o) => o.clientOperationId == clientOpId);
                   if (op.entityType == 'acts') {
-                    final serverActId = (item['result'] as Map<String, Object?>?)?['act_id'] as int?;
-                    await db.updateActStatus(op.entityId, 'SYNCED', serverActId: serverActId);
+                    if (op.operation == 'DELETE') {
+                      await db.deleteActByClientUuid(op.entityId);
+                    } else {
+                      final serverActId = (item['result'] as Map<String, Object?>?)?['act_id'] as int?;
+                      await db.updateActStatus(op.entityId, 'SYNCED', serverActId: serverActId);
+                    }
+                  } else if (op.entityType == 'personeros' && op.operation == 'DELETE') {
+                    await db.deletePersoneroByDni(op.entityId);
+                  } else if (op.entityType == 'polling_stations' && op.operation == 'DELETE') {
+                    await db.deletePollingStationByCode(op.entityId);
                   }
                 } else {
                   final error = item['error'] as String? ?? 'Error en sincronización';
@@ -212,6 +189,20 @@ class SyncEngine {
       }
       if (stationCompanions.isNotEmpty) {
         await db.savePollingStations(stationCompanions);
+
+        // Eliminar mesas locales que ya no existen en el servidor (salvo operaciones locales pendientes)
+        if (!isPersonero) {
+          final serverCodes = stationCompanions.map((s) => s.code.value).toSet();
+          final allLocalStations = await db.getAllPollingStations();
+          final pendingOps = await db.getPendingSyncOperations();
+          final pendingEntityIds = pendingOps.map((op) => op.entityId).toSet();
+
+          for (final localS in allLocalStations) {
+            if (!serverCodes.contains(localS.code) && !pendingEntityIds.contains(localS.code)) {
+              await db.deletePollingStationByCode(localS.code);
+            }
+          }
+        }
       }
 
       // 2. Descargar y upsert de Personeros
@@ -239,41 +230,17 @@ class SyncEngine {
       }
       if (personeroCompanions.isNotEmpty) {
         await db.savePersoneros(personeroCompanions);
-      }
 
-      // 2b. Autodetectar si hay personeros en la BD local SQLite que NO existen en la respuesta del backend
-      // Solo para usuarios con rol ADMIN o DIRECTOR
-      if (!isPersonero) {
-        final serverDnis = personeroCompanions.map((p) => p.dni.value).toSet();
-        final allLocalPersoneros = await db.getAllPersoneros();
+        // Eliminar personeros locales que fueron eliminados en el servidor
+        if (!isPersonero) {
+          final serverDnis = personeroCompanions.map((p) => p.dni.value).toSet();
+          final allLocalPersoneros = await db.getAllPersoneros();
+          final pendingOps = await db.getPendingSyncOperations();
+          final pendingEntityIds = pendingOps.map((op) => op.entityId).toSet();
 
-        for (final localP in allLocalPersoneros) {
-          if (!serverDnis.contains(localP.dni)) {
-            final existingOps = await (db.select(db.localSyncOperationsTable)
-                  ..where((t) => t.entityId.equals(localP.dni)))
-                .get();
-
-            final hasPending = existingOps.any((op) => op.status == 'PENDING' || op.status == 'PROCESSING');
-
-            if (!hasPending) {
-              await db.enqueueSyncOperation(
-                LocalSyncOperationsTableCompanion.insert(
-                  clientOperationId: const Uuid().v4(),
-                  entityType: 'personeros',
-                  entityId: localP.dni,
-                  operation: const Value('CREATE'),
-                  payloadJson: jsonEncode({
-                    'document_number': localP.dni,
-                    'first_name': localP.firstName,
-                    'last_name': localP.lastName,
-                    'name': '${localP.firstName} ${localP.lastName}'.trim(),
-                    'polling_station_code': localP.pollingStationCode,
-                    'phone_number': localP.phoneNumber,
-                    'email': localP.email ?? 'personero_${localP.dni}@conteoya.pe',
-                  }),
-                  status: const Value('PENDING'),
-                ),
-              );
+          for (final localP in allLocalPersoneros) {
+            if (!serverDnis.contains(localP.dni) && !pendingEntityIds.contains(localP.dni)) {
+              await db.deletePersonero(localP.id);
             }
           }
         }
