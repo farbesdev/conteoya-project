@@ -35,19 +35,28 @@ class SyncController extends Controller
         }
 
         $operations = $request->input('operations', []);
+        $filteredOperations = [];
+        $unauthorizedResults = [];
 
         // El PERSONERO solo puede sincronizar datos de actas y evidencias ('acts', 'act_evidence')
         // EL ADMIN y DIRECTOR pueden sincronizar cualquier entidad
         if ($user->isPersonero()) {
             foreach ($operations as $op) {
                 $type = $op['entity_type'] ?? '';
-                if (!in_array($type, ['acts', 'act_evidence'])) {
-                    return response()->json([
-                        'message' => "Un personero solo tiene autorización para sincronizar actas y evidencias de actas ('acts', 'act_evidence').",
-                    ], 403);
+                if (in_array($type, ['acts', 'act_evidence'])) {
+                    $filteredOperations[] = $op;
+                } else {
+                    $unauthorizedResults[] = [
+                        'client_operation_id' => $op['client_operation_id'] ?? null,
+                        'status'              => 'FAILED',
+                        'error'               => "El rol PERSONERO solo está autorizado para sincronizar actas y evidencias.",
+                    ];
                 }
             }
+        } else {
+            $filteredOperations = $operations;
         }
+
         $personero = $user->personero;
 
         $device = null;
@@ -58,12 +67,14 @@ class SyncController extends Controller
         $results = $this->syncService->processBatch(
             personero: $personero,
             device: $device,
-            operations: $operations
+            operations: $filteredOperations
         );
+
+        $finalResults = array_merge($unauthorizedResults, $results);
 
         return response()->json([
             'message' => 'Lote de operaciones de sincronización procesado.',
-            'data'    => $results,
+            'data'    => $finalResults,
         ]);
     }
 

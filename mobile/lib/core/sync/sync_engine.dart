@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../database/app_database.dart';
@@ -62,39 +63,58 @@ class SyncEngine {
     _stateController.add(SyncEngineState.syncing);
 
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final sessionJson = prefs.getString('user_session');
+      String userRole = 'PERSONERO';
+      if (sessionJson != null) {
+        try {
+          final Map<String, dynamic> data = jsonDecode(sessionJson) as Map<String, dynamic>;
+          userRole = data['role']?.toString().toUpperCase() ?? 'PERSONERO';
+        } catch (_) {}
+      }
+
+      final isPersonero = userRole == 'PERSONERO';
+
       // 1. SINCRONIZACIÓN DESCENDENTE (PULL): Descargar mesas, personeros y catálogos actualizados desde el VPS
-      final pullMetrics = await pullLatestDataFromBackend();
+      final pullMetrics = await pullLatestDataFromBackend(isPersonero: isPersonero);
 
-      // 2. AUTODETECTAR Personeros/Usuarios creados localmente que no tengan SyncOperation en estado SYNCED o PENDING
-      final allLocalPersoneros = await db.getAllPersoneros();
-      final existingSyncOps = await db.select(db.localSyncOperationsTable).get();
-      final syncOpEntityIds = existingSyncOps.map((op) => op.entityId).toSet();
+      // 2. AUTODETECTAR Personeros/Usuarios creados localmente (Solo para ADMIN / DIRECTOR)
+      if (!isPersonero) {
+        final allLocalPersoneros = await db.getAllPersoneros();
+        final existingSyncOps = await db.select(db.localSyncOperationsTable).get();
+        final syncOpEntityIds = existingSyncOps.map((op) => op.entityId).toSet();
 
-      for (final p in allLocalPersoneros) {
-        if (!syncOpEntityIds.contains(p.dni)) {
-          await db.enqueueSyncOperation(
-            LocalSyncOperationsTableCompanion.insert(
-              clientOperationId: const Uuid().v4(),
-              entityType: 'personeros',
-              entityId: p.dni,
-              operation: const Value('CREATE'),
-              payloadJson: jsonEncode({
-                'document_number': p.dni,
-                'first_name': p.firstName,
-                'last_name': p.lastName,
-                'name': '${p.firstName} ${p.lastName}'.trim(),
-                'polling_station_code': p.pollingStationCode,
-                'phone_number': p.phoneNumber,
-                'email': p.email ?? 'personero_${p.dni}@conteoya.pe',
-              }),
-              status: const Value('PENDING'),
-            ),
-          );
+        for (final p in allLocalPersoneros) {
+          if (!syncOpEntityIds.contains(p.dni)) {
+            await db.enqueueSyncOperation(
+              LocalSyncOperationsTableCompanion.insert(
+                clientOperationId: const Uuid().v4(),
+                entityType: 'personeros',
+                entityId: p.dni,
+                operation: const Value('CREATE'),
+                payloadJson: jsonEncode({
+                  'document_number': p.dni,
+                  'first_name': p.firstName,
+                  'last_name': p.lastName,
+                  'name': '${p.firstName} ${p.lastName}'.trim(),
+                  'polling_station_code': p.pollingStationCode,
+                  'phone_number': p.phoneNumber,
+                  'email': p.email ?? 'personero_${p.dni}@conteoya.pe',
+                }),
+                status: const Value('PENDING'),
+              ),
+            );
+          }
         }
       }
 
       // 3. SINCRONIZACIÓN ASCENDENTE (PUSH): Enviar operaciones pendientes al VPS (POST /api/v1/sync)
-      final pendingOps = await db.getPendingSyncOperations();
+      // Si el rol es PERSONERO, únicamente se envían 'acts' y 'act_evidence'
+      final rawPendingOps = await db.getPendingSyncOperations();
+      final pendingOps = isPersonero
+          ? rawPendingOps.where((op) => op.entityType == 'acts' || op.entityType == 'act_evidence').toList()
+          : rawPendingOps;
+
       if (pendingOps.isNotEmpty) {
         final operationsPayload = pendingOps.map((op) {
           final Map<String, Object?> parsedPayload =
@@ -162,7 +182,7 @@ class SyncEngine {
   }
 
   /// Descarga y actualiza localmente en SQLite los catálogos, mesas y personeros desde el servidor backend (PostgreSQL)
-  Future<Map<String, int>> pullLatestDataFromBackend() async {
+  Future<Map<String, int>> pullLatestDataFromBackend({bool isPersonero = false}) async {
     final response = await apiClient.get<Map<String, Object?>>('/sync/pull');
 
     if (response.statusCode == 200 && response.data != null) {
@@ -222,37 +242,39 @@ class SyncEngine {
       }
 
       // 2b. Autodetectar si hay personeros en la BD local SQLite que NO existen en la respuesta del backend
-      // (por ejemplo si fueron sincronizados previamente en un entorno local y ahora se conecta al VPS)
-      final serverDnis = personeroCompanions.map((p) => p.dni.value).toSet();
-      final allLocalPersoneros = await db.getAllPersoneros();
+      // Solo para usuarios con rol ADMIN o DIRECTOR
+      if (!isPersonero) {
+        final serverDnis = personeroCompanions.map((p) => p.dni.value).toSet();
+        final allLocalPersoneros = await db.getAllPersoneros();
 
-      for (final localP in allLocalPersoneros) {
-        if (!serverDnis.contains(localP.dni)) {
-          final existingOps = await (db.select(db.localSyncOperationsTable)
-                ..where((t) => t.entityId.equals(localP.dni)))
-              .get();
+        for (final localP in allLocalPersoneros) {
+          if (!serverDnis.contains(localP.dni)) {
+            final existingOps = await (db.select(db.localSyncOperationsTable)
+                  ..where((t) => t.entityId.equals(localP.dni)))
+                .get();
 
-          final hasPending = existingOps.any((op) => op.status == 'PENDING' || op.status == 'PROCESSING');
+            final hasPending = existingOps.any((op) => op.status == 'PENDING' || op.status == 'PROCESSING');
 
-          if (!hasPending) {
-            await db.enqueueSyncOperation(
-              LocalSyncOperationsTableCompanion.insert(
-                clientOperationId: const Uuid().v4(),
-                entityType: 'personeros',
-                entityId: localP.dni,
-                operation: const Value('CREATE'),
-                payloadJson: jsonEncode({
-                  'document_number': localP.dni,
-                  'first_name': localP.firstName,
-                  'last_name': localP.lastName,
-                  'name': '${localP.firstName} ${localP.lastName}'.trim(),
-                  'polling_station_code': localP.pollingStationCode,
-                  'phone_number': localP.phoneNumber,
-                  'email': localP.email ?? 'personero_${localP.dni}@conteoya.pe',
-                }),
-                status: const Value('PENDING'),
-              ),
-            );
+            if (!hasPending) {
+              await db.enqueueSyncOperation(
+                LocalSyncOperationsTableCompanion.insert(
+                  clientOperationId: const Uuid().v4(),
+                  entityType: 'personeros',
+                  entityId: localP.dni,
+                  operation: const Value('CREATE'),
+                  payloadJson: jsonEncode({
+                    'document_number': localP.dni,
+                    'first_name': localP.firstName,
+                    'last_name': localP.lastName,
+                    'name': '${localP.firstName} ${localP.lastName}'.trim(),
+                    'polling_station_code': localP.pollingStationCode,
+                    'phone_number': localP.phoneNumber,
+                    'email': localP.email ?? 'personero_${localP.dni}@conteoya.pe',
+                  }),
+                  status: const Value('PENDING'),
+                ),
+              );
+            }
           }
         }
       }
