@@ -404,12 +404,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               pass: 'Director123!',
                               color: AppColors.info,
                             ),
-                            _buildRoleChip(
-                              label: 'Admin',
-                              email: 'admin@conteoya.pe',
-                              pass: 'Admin123!',
-                              color: AppColors.warning,
-                            ),
                           ],
                         ),
                       ],

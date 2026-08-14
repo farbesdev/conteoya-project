@@ -213,7 +213,8 @@ class UserController extends Controller
             'password' => 'nullable|string|min:6',
         ]);
 
-        $newPassword = !empty($validated['password']) ? $validated['password'] : 'Personero123!';
+        $defaultPassword = str_contains($user->email, 'puertoinca') ? 'Puertoinca123!' : 'Personero123!';
+        $newPassword = !empty($validated['password']) ? $validated['password'] : $defaultPassword;
 
         $user->password = Hash::make($newPassword);
         $user->save();

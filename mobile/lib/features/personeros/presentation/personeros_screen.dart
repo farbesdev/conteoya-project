@@ -302,7 +302,10 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
   }
 
   void _showResetPasswordModal(BuildContext context, {required PersoneroModel personero}) {
-    final passwordController = TextEditingController(text: 'Personero123!');
+    final defaultPass = (personero.email ?? '').toLowerCase().contains('puertoinca') || personero.dni == '44001122'
+        ? 'Puertoinca123!'
+        : 'Personero123!';
+    final passwordController = TextEditingController(text: defaultPass);
     bool isSaving = false;
 
     showDialog<void>(
@@ -356,8 +359,8 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                   ),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.refresh_rounded, color: AppColors.accent),
-                    tooltip: 'Restablecer a Personero123!',
-                    onPressed: () => passwordController.text = 'Personero123!',
+                    tooltip: 'Restablecer a contraseña por defecto',
+                    onPressed: () => passwordController.text = defaultPass,
                   ),
                 ),
               ),
