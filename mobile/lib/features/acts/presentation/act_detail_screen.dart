@@ -238,7 +238,10 @@ class ActDetailScreen extends ConsumerWidget {
             child: Row(
               children: [
                 PartyLogoWidget(
-                  logoUrl: null,
+                  logoUrl: res.politicalOrganizationId != null
+                      ? 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/${res.politicalOrganizationId}.png'
+                      : null,
+                  partyId: res.politicalOrganizationId,
                   name: res.politicalOrganizationName ?? 'Organización ${index + 1}',
                   size: 36,
                 ),

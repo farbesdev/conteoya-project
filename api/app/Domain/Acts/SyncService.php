@@ -202,16 +202,22 @@ class SyncService
 
             $roleModel = \App\Models\Role::where('name', 'PERSONERO')->first();
 
-            $user = \App\Models\User::updateOrCreate(
-                ['email' => $email],
-                [
+            $user = \App\Models\User::where('email', $email)->first();
+
+            if (!$user) {
+                $user = \App\Models\User::create([
+                    'email'     => $email,
                     'name'      => $name,
                     'password'  => \Illuminate\Support\Facades\Hash::make('Personero123!'),
                     'role'      => 'PERSONERO',
                     'role_id'   => $roleModel ? $roleModel->id : 3,
                     'is_active' => true,
-                ]
-            );
+                ]);
+            } else {
+                $user->update([
+                    'name' => $name,
+                ]);
+            }
 
             $personero = Personero::updateOrCreate(
                 ['document_number' => $docNumber],

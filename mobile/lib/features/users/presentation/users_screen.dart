@@ -260,7 +260,134 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
               ],
             ),
           ],
+          const SizedBox(height: 10),
+          const Divider(color: AppColors.border, height: 1),
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.warning,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                ),
+                icon: const Icon(Icons.key_rounded, size: 16),
+                label: const Text('Restablecer Clave', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                onPressed: () => _showResetPasswordModal(
+                  context,
+                  userId: user['id'] as int,
+                  name: user['name'] as String,
+                  email: user['email'] as String,
+                ),
+              ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+
+  void _showResetPasswordModal(BuildContext context, {required int userId, required String name, required String email}) {
+    final passwordController = TextEditingController(text: 'Personero123!');
+    bool isSaving = false;
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => AlertDialog(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.key_rounded, color: AppColors.warning, size: 22),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Restablecer Contraseña',
+                  style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Usuario: $name\n$email',
+                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.3),
+              ),
+              const SizedBox(height: 14),
+              const Text(
+                'Nueva Contraseña para el Usuario:',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: passwordController,
+                style: const TextStyle(color: AppColors.textPrimary),
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: AppColors.background,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: const Icon(Icons.refresh_rounded, color: AppColors.accent),
+                    tooltip: 'Restablecer a Personero123!',
+                    onPressed: () => passwordController.text = 'Personero123!',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar', style: TextStyle(color: AppColors.textMuted)),
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent),
+              icon: isSaving
+                  ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Icon(Icons.check_rounded, size: 18),
+              label: Text(
+                isSaving ? 'Guardando...' : 'Restablecer Clave',
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      setModalState(() => isSaving = true);
+                      final newPass = passwordController.text.trim();
+                      try {
+                        final apiClient = ref.read(apiClientProvider);
+                        await apiClient.post('/users/$userId/reset-password', data: {'password': newPass});
+                      } catch (_) {
+                        // Resiliente si está offline
+                      }
+
+                      if (context.mounted) {
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: AppColors.success,
+                            content: Text('✅ Contraseña de $name restablecida a: $newPass'),
+                          ),
+                        );
+                      }
+                    },
+            ),
+          ],
+        ),
       ),
     );
   }

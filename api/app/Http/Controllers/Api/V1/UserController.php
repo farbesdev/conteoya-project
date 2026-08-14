@@ -196,4 +196,33 @@ class UserController extends Controller
 
         return response()->json(['message' => 'Usuario eliminado correctamente.']);
     }
+
+    /**
+     * Restablecer la contraseña de un usuario (solo ADMIN y DIRECTOR).
+     */
+    public function resetPassword(Request $request, $id)
+    {
+        $currentUser = $request->user();
+        if (!$currentUser->isAdmin() && !$currentUser->isDirector()) {
+            return response()->json(['message' => 'No autorizado para restablecer contraseñas.'], 403);
+        }
+
+        $user = User::findOrFail($id);
+
+        $validated = $request->validate([
+            'password' => 'nullable|string|min:6',
+        ]);
+
+        $newPassword = !empty($validated['password']) ? $validated['password'] : 'Personero123!';
+
+        $user->password = Hash::make($newPassword);
+        $user->save();
+
+        return response()->json([
+            'message' => "Contraseña del usuario {$user->name} restablecida correctamente.",
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'new_password' => $newPassword,
+        ]);
+    }
 }

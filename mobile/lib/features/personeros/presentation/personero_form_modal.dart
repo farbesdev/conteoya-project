@@ -167,15 +167,16 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text(
-                    _isEditing ? 'Editar Personero' : 'Agregar Personero',
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      _isEditing ? 'Editar Personero' : 'Agregar Personero',
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                  const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close, color: AppColors.textMuted),
                     onPressed: () => Navigator.pop(context),

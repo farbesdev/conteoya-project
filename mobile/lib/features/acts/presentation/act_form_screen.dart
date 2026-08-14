@@ -395,12 +395,14 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                       children: [
                         Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 22),
                         SizedBox(width: 8),
-                        Text(
-                          'Advertencias de Consistencia Numérica',
-                          style: TextStyle(
-                            color: AppColors.warning,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                        Expanded(
+                          child: Text(
+                            'Advertencias de Consistencia Numérica',
+                            style: TextStyle(
+                              color: AppColors.warning,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
                       ],
@@ -545,6 +547,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                           // Logo oficial de la Organización Política
                           PartyLogoWidget(
                             logoUrl: logoUrl,
+                            partyId: party['id'] as int?,
                             name: name,
                             shortName: shortName,
                             size: 44,
@@ -773,12 +776,14 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             children: [
               Icon(icon, color: AppColors.accent, size: 20),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],

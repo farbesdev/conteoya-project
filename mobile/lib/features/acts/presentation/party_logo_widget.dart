@@ -5,6 +5,7 @@ class PartyLogoWidget extends StatelessWidget {
   final String? logoUrl;
   final String name;
   final String? shortName;
+  final int? partyId;
   final double size;
 
   const PartyLogoWidget({
@@ -12,6 +13,7 @@ class PartyLogoWidget extends StatelessWidget {
     required this.logoUrl,
     required this.name,
     this.shortName,
+    this.partyId,
     this.size = 42,
   });
 
@@ -26,7 +28,13 @@ class PartyLogoWidget extends StatelessWidget {
             .take(3)
             .join();
 
-    final hasValidUrl = logoUrl != null && logoUrl!.trim().startsWith('http');
+    final String? resolvedUrl = (logoUrl != null && logoUrl!.trim().startsWith('http'))
+        ? logoUrl!.trim()
+        : (partyId != null
+            ? 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/$partyId.png'
+            : null);
+
+    final hasValidUrl = resolvedUrl != null;
 
     return Container(
       width: size,
@@ -46,7 +54,7 @@ class PartyLogoWidget extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: hasValidUrl
           ? Image.network(
-              logoUrl!,
+              resolvedUrl,
               width: size,
               height: size,
               fit: BoxFit.contain,

@@ -25,6 +25,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
 
         // Personero, Users & Mesas
         Route::get('/personero/polling-stations', [PersoneroController::class, 'pollingStations']);
+        Route::post('/users/{id}/reset-password', [\App\Http\Controllers\Api\V1\UserController::class, 'resetPassword']);
         Route::apiResource('users', \App\Http\Controllers\Api\V1\UserController::class);
 
         // Catálogos Electorales y Ubigeos (Alto Rendimiento & Caching)

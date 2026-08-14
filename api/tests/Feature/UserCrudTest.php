@@ -48,4 +48,24 @@ class UserCrudTest extends TestCase
         $this->assertDatabaseHas('users', ['email' => 'carlos@conteoya.pe', 'role' => 'PERSONERO']);
         $this->assertDatabaseHas('personeros', ['document_number' => '44556677']);
     }
+
+    public function test_admin_can_reset_user_password()
+    {
+        $roleAdmin = Role::where('name', 'ADMIN')->first();
+        $admin = User::factory()->create(['role' => Role::ADMIN, 'role_id' => $roleAdmin->id]);
+        $targetUser = User::factory()->create(['role' => Role::PERSONERO, 'password' => \Illuminate\Support\Facades\Hash::make('OldPassword123!')]);
+
+        $response = $this->actingAs($admin)
+            ->postJson("/api/v1/users/{$targetUser->id}/reset-password", [
+                'password' => 'NewPassword123!',
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'user_id' => $targetUser->id,
+                'new_password' => 'NewPassword123!',
+            ]);
+
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('NewPassword123!', $targetUser->fresh()->password));
+    }
 }
