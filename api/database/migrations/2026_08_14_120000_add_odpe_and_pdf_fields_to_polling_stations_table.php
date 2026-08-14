@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('polling_stations', function (Blueprint $table) {
+            $table->string('code', 10)->nullable()->change();
             $table->foreignId('electoral_location_id')->nullable()->change();
             $table->string('odpe', 100)->nullable()->after('status');
             $table->string('pdf_file', 255)->nullable()->after('odpe');

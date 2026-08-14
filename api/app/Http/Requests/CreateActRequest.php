@@ -24,8 +24,16 @@ class CreateActRequest extends FormRequest
 
         if ($user->role === Role::PERSONERO) {
             $stationCode = $this->input('polling_station_code');
+            $stationId = $this->input('polling_station_id');
             return $user->personero?->pollingStations()
-                ->where('polling_stations.code', $stationCode)
+                ->where(function ($q) use ($stationCode, $stationId) {
+                    if ($stationId) {
+                        $q->where('polling_stations.id', $stationId);
+                    }
+                    if ($stationCode) {
+                        $q->orWhere('polling_stations.code', $stationCode);
+                    }
+                })
                 ->exists() ?? false;
         }
 
@@ -41,7 +49,8 @@ class CreateActRequest extends FormRequest
     {
         return [
             'client_operation_id'                 => ['nullable', 'uuid'],
-            'polling_station_code'                => ['required', 'string', 'exists:polling_stations,code'],
+            'polling_station_id'                  => ['required_without:polling_station_code', 'nullable', 'integer', 'exists:polling_stations,id'],
+            'polling_station_code'                => ['required_without:polling_station_id', 'nullable', 'string', 'exists:polling_stations,code'],
             'election_id'                         => ['required', 'integer', 'exists:elections,id'],
             'electoral_level_id'                  => ['required', 'integer', 'exists:electoral_levels,id'],
             'act_code'                            => ['nullable', 'string', 'max:20'],

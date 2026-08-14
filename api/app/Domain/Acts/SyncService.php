@@ -151,7 +151,14 @@ class SyncService
             return ['deleted' => true];
         }
 
-        $station = PollingStation::where('code', $payload['polling_station_code'])->firstOrFail();
+        $station = PollingStation::where(function ($q) use ($payload) {
+            if (!empty($payload['polling_station_id'])) {
+                $q->where('id', $payload['polling_station_id']);
+            }
+            if (!empty($payload['polling_station_code'])) {
+                $q->orWhere('code', $payload['polling_station_code']);
+            }
+        })->firstOrFail();
 
         // Validar ownership de mesa solo para rol PERSONERO
         if ($personero) {

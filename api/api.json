@@ -2839,8 +2839,17 @@
                         ],
                         "format": "uuid"
                     },
+                    "polling_station_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
                     "polling_station_code": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "election_id": {
                         "type": "integer"
@@ -2966,7 +2975,6 @@
                     }
                 },
                 "required": [
-                    "polling_station_code",
                     "election_id",
                     "electoral_level_id",
                     "totals",

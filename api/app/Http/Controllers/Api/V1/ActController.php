@@ -40,7 +40,14 @@ class ActController extends Controller
             return response()->json(['message' => 'El usuario no tiene perfil de personero.'], 403);
         }
 
-        $station = PollingStation::where('code', $request->input('polling_station_code'))->firstOrFail();
+        $station = PollingStation::where(function ($q) use ($request) {
+            if ($request->filled('polling_station_id')) {
+                $q->where('id', $request->input('polling_station_id'));
+            }
+            if ($request->filled('polling_station_code')) {
+                $q->orWhere('code', $request->input('polling_station_code'));
+            }
+        })->firstOrFail();
 
         $totalsDTO = ActTotalsDTO::fromArray($request->input('totals'));
         $results   = $request->input('results', []);

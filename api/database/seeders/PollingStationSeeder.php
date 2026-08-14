@@ -52,10 +52,7 @@ class PollingStationSeeder extends Seeder
 
         $count = 0;
         foreach ($rows as $row) {
-            $code = (string) ($row['codigo_mesa'] ?? '');
-            if (empty($code)) {
-                continue;
-            }
+            $code = !empty($row['codigo_mesa']) ? (string) $row['codigo_mesa'] : null;
 
             $batch[] = [
                 'code'              => $code,
