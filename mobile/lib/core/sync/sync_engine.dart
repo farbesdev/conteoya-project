@@ -64,7 +64,7 @@ class SyncEngine {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final sessionJson = prefs.getString('user_session');
+      final sessionJson = prefs.getString('conteoya_user_session');
       String userRole = 'PERSONERO';
       if (sessionJson != null) {
         try {

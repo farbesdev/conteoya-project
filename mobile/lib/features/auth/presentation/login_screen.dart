@@ -56,58 +56,60 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             Text('Configurar Servidor', style: TextStyle(color: AppColors.textPrimary, fontSize: 18)),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Dirección API del Backend:',
-              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: urlController,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-              decoration: InputDecoration(
-                hintText: 'https://api.unifact.net.pe/api/v1',
-                hintStyle: const TextStyle(color: AppColors.textMuted),
-                filled: true,
-                fillColor: AppColors.background,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: const BorderSide(color: AppColors.border),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Dirección API del Backend:',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: urlController,
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: 'https://api.unifact.net.pe/api/v1',
+                  hintStyle: const TextStyle(color: AppColors.textMuted),
+                  filled: true,
+                  fillColor: AppColors.background,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Preajustes rápidos:',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                ActionChip(
-                  label: const Text('VPS (api.unifact.net.pe)', style: TextStyle(fontSize: 11)),
-                  onPressed: () => urlController.text = 'https://api.unifact.net.pe/api/v1',
-                ),
-                ActionChip(
-                  label: const Text('Herd (api_conteoya.test)', style: TextStyle(fontSize: 11)),
-                  onPressed: () => urlController.text = 'http://api_conteoya.test/api/v1',
-                ),
-                ActionChip(
-                  label: const Text('IP Local (172.26.58.101)', style: TextStyle(fontSize: 11)),
-                  onPressed: () => urlController.text = 'http://172.26.58.101/api/v1',
-                ),
-                ActionChip(
-                  label: const Text('Localhost (127.0.0.1:8000)', style: TextStyle(fontSize: 11)),
-                  onPressed: () => urlController.text = 'http://127.0.0.1:8000/api/v1',
-                ),
-              ],
-            ),
-          ],
+              const SizedBox(height: 12),
+              const Text(
+                'Preajustes rápidos:',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  ActionChip(
+                    label: const Text('VPS (api.unifact.net.pe)', style: TextStyle(fontSize: 11)),
+                    onPressed: () => urlController.text = 'https://api.unifact.net.pe/api/v1',
+                  ),
+                  ActionChip(
+                    label: const Text('Herd (api_conteoya.test)', style: TextStyle(fontSize: 11)),
+                    onPressed: () => urlController.text = 'http://api_conteoya.test/api/v1',
+                  ),
+                  ActionChip(
+                    label: const Text('IP Local (172.26.58.101)', style: TextStyle(fontSize: 11)),
+                    onPressed: () => urlController.text = 'http://172.26.58.101/api/v1',
+                  ),
+                  ActionChip(
+                    label: const Text('Localhost (127.0.0.1:8000)', style: TextStyle(fontSize: 11)),
+                    onPressed: () => urlController.text = 'http://127.0.0.1:8000/api/v1',
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(

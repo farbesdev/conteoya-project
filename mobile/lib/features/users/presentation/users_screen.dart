@@ -365,6 +365,9 @@ class _UserFormModalState extends ConsumerState<UserFormModal> {
     final mesasAsync = ref.watch(mesasStreamProvider);
 
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
