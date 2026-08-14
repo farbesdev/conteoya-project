@@ -48,6 +48,13 @@ class SyncController extends Controller
                 }
             }
         }
+        $personero = $user->personero;
+
+        $device = null;
+        if ($request->has('device_uuid')) {
+            $device = Device::where('device_uuid', $request->input('device_uuid'))->first();
+        }
+
         $results = $this->syncService->processBatch(
             personero: $personero,
             device: $device,
