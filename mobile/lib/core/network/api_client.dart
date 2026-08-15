@@ -14,8 +14,8 @@ class ApiClient {
             Dio(
               BaseOptions(
                 baseUrl: baseUrl ?? defaultProductionUrl,
-                connectTimeout: const Duration(seconds: 20),
-                receiveTimeout: const Duration(seconds: 20),
+                connectTimeout: const Duration(seconds: 30),
+                receiveTimeout: const Duration(seconds: 60), // 60s: primer pull puede tardar si VPS está cargado
                 headers: {
                   'Accept': 'application/json',
                   'Content-Type': 'application/json',

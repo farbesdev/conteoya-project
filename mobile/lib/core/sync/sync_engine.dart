@@ -32,7 +32,8 @@ class SyncEngine {
   }) : connectivity = connectivity ?? Connectivity();
 
   void start() {
-    // Sincronización periódica cada 30 segundos
+    // Ciclo de PUSH: Enviar actas pendientes cada 30 segundos
+    // Es eficiente: si no hay operaciones PENDING, termina en <10ms
     _periodicTimer = Timer.periodic(const Duration(seconds: 30), (_) => syncPendingOperations());
 
     // Escuchar cambios de conectividad
@@ -46,8 +47,24 @@ class SyncEngine {
       }
     });
 
-    // Intento inicial
+    // Intento inicial (push + pull si no se hizo recientemente)
     syncPendingOperations();
+  }
+
+  /// Retorna true si el pull está habilitado según el cooldown de 5 minutos
+  Future<bool> _shouldPull() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastPullMs = prefs.getInt('sync_last_pull_at');
+    if (lastPullMs == null) return true;
+    final elapsed = DateTime.now().millisecondsSinceEpoch - lastPullMs;
+    // Pull máximo una vez cada 5 minutos (300,000 ms) para no saturar el VPS
+    return elapsed >= 300000;
+  }
+
+  /// Persiste el timestamp del último pull exitoso
+  Future<void> _savePullTimestamp() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('sync_last_pull_at', DateTime.now().millisecondsSinceEpoch);
   }
 
   void stop() {
@@ -55,7 +72,9 @@ class SyncEngine {
     _connectivitySubscription?.cancel();
   }
 
-  /// Ejecuta un ciclo de sincronización de operaciones pendientes (push) y luego descarga datos del servidor (pull)
+  /// Ejecuta un ciclo de sincronización:
+  /// - Push: siempre envía operaciones PENDING (rápido si no hay nada)
+  /// - Pull: solo si pasaron más de 5 minutos desde el último pull exitoso
   Future<Map<String, int>> syncPendingOperations() async {
     if (_isSyncing) return {'polling_stations': 0, 'personeros': 0, 'political_organizations': 0};
     _isSyncing = true;
@@ -74,8 +93,14 @@ class SyncEngine {
 
       final isPersonero = userRole == 'PERSONERO';
 
-      // 1. SINCRONIZACIÓN DESCENDENTE (PULL): Descargar mesas, personeros y catálogos actualizados desde el VPS
-      final pullMetrics = await pullLatestDataFromBackend(isPersonero: isPersonero);
+      // 1. SINCRONIZACIÓN DESCENDENTE (PULL): Descargar mesas/catálogos del VPS
+      // Solo se ejecuta si pasaron más de 5 minutos desde el último pull exitoso.
+      // Evita saturar el VPS con N queries pesadas por cada ciclo de 30s.
+      Map<String, int> pullMetrics = {'polling_stations': 0, 'personeros': 0, 'political_organizations': 0};
+      if (await _shouldPull()) {
+        pullMetrics = await pullLatestDataFromBackend(isPersonero: isPersonero);
+        await _savePullTimestamp();
+      }
 
       // 2. SINCRONIZACIÓN ASCENDENTE (PUSH): Enviar operaciones pendientes al VPS (POST /api/v1/sync)
       // Si el rol es PERSONERO, únicamente se envían 'acts' y 'act_evidence'
@@ -189,20 +214,6 @@ class SyncEngine {
       }
       if (stationCompanions.isNotEmpty) {
         await db.savePollingStations(stationCompanions);
-
-        // Eliminar mesas locales que ya no existen en el servidor (salvo operaciones locales pendientes)
-        if (!isPersonero) {
-          final serverCodes = stationCompanions.map((s) => s.code.value).toSet();
-          final allLocalStations = await db.getAllPollingStations();
-          final pendingOps = await db.getPendingSyncOperations();
-          final pendingEntityIds = pendingOps.map((op) => op.entityId).toSet();
-
-          for (final localS in allLocalStations) {
-            if (!serverCodes.contains(localS.code) && !pendingEntityIds.contains(localS.code)) {
-              await db.deletePollingStationByCode(localS.code);
-            }
-          }
-        }
       }
 
       // 2. Descargar y upsert de Personeros

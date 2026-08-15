@@ -279,36 +279,16 @@ class AppDatabase extends _$AppDatabase {
     return into(localPollingStationsTable).insertOnConflictUpdate(station);
   }
 
-  Future<void> savePollingStations(List<LocalPollingStationsTableCompanion> stations) async {
-    for (final station in stations) {
-      final code = station.code.value;
-      final existing = await (select(localPollingStationsTable)..where((t) => t.code.equals(code))).getSingleOrNull();
-      if (existing != null) {
-        await (update(localPollingStationsTable)..where((t) => t.code.equals(code))).write(station);
-      } else {
-        await into(localPollingStationsTable).insert(station, mode: InsertMode.insertOrReplace);
-      }
-    }
+  Future<void> savePollingStations(List<LocalPollingStationsTableCompanion> stations) {
+    return batch((b) {
+      b.insertAllOnConflictUpdate(localPollingStationsTable, stations);
+    });
   }
 
-  Future<void> savePersoneros(List<LocalPersonerosTableCompanion> personeros) async {
-    for (final personero in personeros) {
-      final dni = personero.dni.value;
-      final existing = await (select(localPersonerosTable)..where((t) => t.dni.equals(dni))).getSingleOrNull();
-      if (existing != null) {
-        await (update(localPersonerosTable)..where((t) => t.dni.equals(dni))).write(
-          LocalPersonerosTableCompanion(
-            firstName: personero.firstName,
-            lastName: personero.lastName,
-            pollingStationCode: personero.pollingStationCode,
-            phoneNumber: personero.phoneNumber,
-            email: personero.email,
-          ),
-        );
-      } else {
-        await into(localPersonerosTable).insert(personero, mode: InsertMode.insertOrReplace);
-      }
-    }
+  Future<void> savePersoneros(List<LocalPersonerosTableCompanion> personeros) {
+    return batch((b) {
+      b.insertAllOnConflictUpdate(localPersonerosTable, personeros);
+    });
   }
 
   // ─── DAOs para Organizaciones Políticas ────────────────────────────────────
