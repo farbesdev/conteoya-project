@@ -59,9 +59,11 @@ class AppServiceProvider extends ServiceProvider
             });
         });
 
-        // Limiter de Ingesta Masiva / Sincronización para Personeros (60 peticiones por minuto por IP)
+        // Limiter de Ingesta / Sincronización: 20 req/min por IP
+        // Con caché Redis en /sync/pull (TTL 120s), 20/min es más que suficiente.
+        // La caché absorbe los reintentos periódicos del SyncEngine móvil.
         RateLimiter::for('ingestion', function (Request $request) {
-            return Limit::perMinute(60)->by($request->ip());
+            return Limit::perMinute(20)->by($request->ip());
         });
 
         // Limiter específico para registro de actas y evidencias

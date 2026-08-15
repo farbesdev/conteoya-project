@@ -115,4 +115,53 @@ class CatalogController extends Controller
 
         return response()->json($lists);
     }
+
+    /**
+     * Catálogo de mesas de votación con búsqueda en tiempo real, filtros y paginación.
+     */
+    public function pollingStations(Request $request)
+    {
+        $query = \Illuminate\Support\Facades\DB::table('polling_stations')
+            ->join('electoral_locations', 'polling_stations.electoral_location_id', '=', 'electoral_locations.id')
+            ->join('districts', 'electoral_locations.district_code', '=', 'districts.code')
+            ->join('provinces', 'districts.province_code', '=', 'provinces.code')
+            ->join('departments', 'districts.department_code', '=', 'departments.code')
+            ->select([
+                'polling_stations.id',
+                'polling_stations.code',
+                'electoral_locations.name as location_name',
+                'electoral_locations.address',
+                'districts.code as district_code',
+                'districts.name as district_name',
+                'provinces.name as province_name',
+                'departments.name as department_name',
+                'polling_stations.registered_voters',
+                'polling_stations.status',
+            ]);
+
+        if ($request->filled('department_code')) {
+            $query->where('departments.code', $request->query('department_code'));
+        }
+        if ($request->filled('province_code')) {
+            $query->where('provinces.code', $request->query('province_code'));
+        }
+        if ($request->filled('district_code')) {
+            $query->where('districts.code', $request->query('district_code'));
+        }
+        if ($request->filled('search')) {
+            $search = $request->query('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('polling_stations.code', 'like', "%{$search}%")
+                  ->orWhere('electoral_locations.name', 'like', "%{$search}%")
+                  ->orWhere('districts.name', 'like', "%{$search}%");
+            });
+        }
+
+        $perPage = (int) $request->query('per_page', 20);
+        $perPage = min(max($perPage, 1), 100);
+
+        $results = $query->orderBy('polling_stations.code')->paginate($perPage);
+
+        return response()->json($results);
+    }
 }

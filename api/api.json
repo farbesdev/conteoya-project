@@ -863,6 +863,60 @@
                 }
             }
         },
+        "/v1/polling-stations": {
+            "get": {
+                "operationId": "catalog.pollingStations",
+                "summary": "Cat\u00e1logo de mesas de votaci\u00f3n con b\u00fasqueda en tiempo real, filtros y paginaci\u00f3n",
+                "tags": [
+                    "Catalog"
+                ],
+                "parameters": [
+                    {
+                        "name": "department_code",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "province_code",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "district_code",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LengthAwarePaginator"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/acts/{act}/evidence/upload-url": {
             "post": {
                 "operationId": "evidence.requestUploadUrl",
@@ -1153,6 +1207,36 @@
                     "Motor de Sincronizaci\u00f3n (Offline-First)",
                     "Sync"
                 ],
+                "parameters": [
+                    {
+                        "name": "department_code",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "province_code",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "district_code",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "",
@@ -1171,101 +1255,7 @@
                                                 "polling_stations": {
                                                     "type": "array",
                                                     "items": {
-                                                        "type": "object",
-                                                        "properties": {
-                                                            "id": {
-                                                                "type": "string"
-                                                            },
-                                                            "code": {
-                                                                "type": "string"
-                                                            },
-                                                            "location_name": {
-                                                                "anyOf": [
-                                                                    {
-                                                                        "type": "string"
-                                                                    },
-                                                                    {
-                                                                        "type": "string",
-                                                                        "enum": [
-                                                                            "LOCAL DE VOTACI\u00d3N"
-                                                                        ]
-                                                                    }
-                                                                ]
-                                                            },
-                                                            "address": {
-                                                                "type": "string"
-                                                            },
-                                                            "district_code": {
-                                                                "anyOf": [
-                                                                    {
-                                                                        "type": "string"
-                                                                    },
-                                                                    {
-                                                                        "type": "string",
-                                                                        "enum": [
-                                                                            "000000"
-                                                                        ]
-                                                                    }
-                                                                ]
-                                                            },
-                                                            "district_name": {
-                                                                "anyOf": [
-                                                                    {
-                                                                        "type": "string"
-                                                                    },
-                                                                    {
-                                                                        "type": "string",
-                                                                        "enum": [
-                                                                            "DISTRITO"
-                                                                        ]
-                                                                    }
-                                                                ]
-                                                            },
-                                                            "province_name": {
-                                                                "anyOf": [
-                                                                    {
-                                                                        "type": "string"
-                                                                    },
-                                                                    {
-                                                                        "type": "string",
-                                                                        "enum": [
-                                                                            "PROVINCIA"
-                                                                        ]
-                                                                    }
-                                                                ]
-                                                            },
-                                                            "department_name": {
-                                                                "anyOf": [
-                                                                    {
-                                                                        "type": "string"
-                                                                    },
-                                                                    {
-                                                                        "type": "string",
-                                                                        "enum": [
-                                                                            "DEPARTAMENTO"
-                                                                        ]
-                                                                    }
-                                                                ]
-                                                            },
-                                                            "registered_voters": {
-                                                                "type": "string"
-                                                            },
-                                                            "status": {
-                                                                "type": "string"
-                                                            }
-                                                        },
-                                                        "required": [
-                                                            "id",
-                                                            "code",
-                                                            "location_name",
-                                                            "address",
-                                                            "district_code",
-                                                            "district_name",
-                                                            "province_name",
-                                                            "department_name",
-                                                            "registered_voters",
-                                                            "status"
-                                                        ]
+                                                        "type": "object"
                                                     }
                                                 },
                                                 "personeros": {
@@ -1274,7 +1264,7 @@
                                                         "type": "object",
                                                         "properties": {
                                                             "id": {
-                                                                "type": "string"
+                                                                "type": "integer"
                                                             },
                                                             "dni": {
                                                                 "type": "string"
@@ -1284,33 +1274,16 @@
                                                                 "type": "string"
                                                             },
                                                             "name": {
-                                                                "anyOf": [
-                                                                    {
-                                                                        "type": "string"
-                                                                    },
-                                                                    {
-                                                                        "type": "string",
-                                                                        "enum": [
-                                                                            "Personero Registrado"
-                                                                        ]
-                                                                    }
-                                                                ]
+                                                                "type": "string"
                                                             },
                                                             "polling_station_code": {
-                                                                "anyOf": [
-                                                                    {
-                                                                        "type": "string"
-                                                                    },
-                                                                    {
-                                                                        "type": "string",
-                                                                        "enum": [
-                                                                            "030390"
-                                                                        ]
-                                                                    }
-                                                                ]
+                                                                "type": "string"
                                                             },
                                                             "phone_number": {
-                                                                "type": "string"
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
                                                             },
                                                             "email": {
                                                                 "type": "string"
@@ -1334,7 +1307,7 @@
                                                         "type": "object",
                                                         "properties": {
                                                             "id": {
-                                                                "type": "string"
+                                                                "type": "integer"
                                                             },
                                                             "code": {
                                                                 "type": "string"
@@ -1343,10 +1316,16 @@
                                                                 "type": "string"
                                                             },
                                                             "short_name": {
-                                                                "type": "string"
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
                                                             },
                                                             "logo_url": {
-                                                                "type": "string"
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
                                                             },
                                                             "order_index": {
                                                                 "anyOf": [
@@ -1460,7 +1439,7 @@
                                     "type": "object",
                                     "properties": {
                                         "personero_id": {
-                                            "type": "string"
+                                            "type": "integer"
                                         },
                                         "document_number": {
                                             "type": "string"
@@ -1892,7 +1871,7 @@
                                             "type": "string"
                                         },
                                         "user_id": {
-                                            "type": "string"
+                                            "type": "integer"
                                         },
                                         "email": {
                                             "type": "string"
@@ -2461,10 +2440,10 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "act_id": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "storage_provider": {
                         "type": "string"
@@ -2476,22 +2455,25 @@
                         "type": "string"
                     },
                     "file_size_bytes": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "sha256_hash": {
                         "type": "string"
                     },
                     "width_px": {
-                        "type": "string"
-                    },
-                    "height_px": {
-                        "type": "string"
-                    },
-                    "captured_at": {
                         "type": [
-                            "string",
+                            "integer",
                             "null"
                         ]
+                    },
+                    "height_px": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "captured_at": {
+                        "type": "string"
                     },
                     "created_at": {
                         "type": [
@@ -2519,34 +2501,40 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "act_code": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "status": {
                         "type": "string"
                     },
                     "election_id": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "electoral_level_id": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "polling_station_id": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "polling_station": {
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "string"
+                                "type": "integer"
                             },
                             "code": {
-                                "type": "string"
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
                             },
                             "registered_voters": {
-                                "type": "string"
+                                "type": "integer"
                             }
                         },
                         "required": [
@@ -2559,7 +2547,7 @@
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "string"
+                                "type": "integer"
                             },
                             "document_number": {
                                 "type": "string"
@@ -2575,15 +2563,28 @@
                         ]
                     },
                     "captured_at": {
-                        "type": [
-                            "string",
-                            "null"
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "string"
+                            }
                         ]
                     },
                     "confirmed_at": {
-                        "type": [
-                            "string",
-                            "null"
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "type": "string"
+                            }
                         ]
                     },
                     "totals": {
@@ -2609,15 +2610,31 @@
                         "type": "string"
                     },
                     "created_at": {
-                        "type": [
-                            "string",
-                            "null"
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "type": "string"
+                            }
                         ]
                     },
                     "updated_at": {
-                        "type": [
-                            "string",
-                            "null"
+                        "anyOf": [
+                            {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            {
+                                "type": "null"
+                            },
+                            {
+                                "type": "string"
+                            }
                         ]
                     }
                 },
@@ -2639,25 +2656,34 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "political_organization_id": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "political_organization": {
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "string"
+                                "type": "integer"
                             },
                             "name": {
                                 "type": "string"
                             },
                             "short_name": {
-                                "type": "string"
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
                             },
                             "logo_url": {
-                                "type": "string"
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
                             }
                         },
                         "required": [
@@ -2668,22 +2694,31 @@
                         ]
                     },
                     "electoral_list_id": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "candidate_id": {
-                        "type": "string"
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
                     },
                     "candidate": {
                         "type": "object",
                         "properties": {
                             "id": {
-                                "type": "string"
+                                "type": "integer"
                             },
                             "full_name": {
                                 "type": "string"
                             },
                             "photo_url": {
-                                "type": "string"
+                                "type": [
+                                    "string",
+                                    "null"
+                                ]
                             }
                         },
                         "required": [
@@ -2693,7 +2728,7 @@
                         ]
                     },
                     "votes": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "source": {
                         "type": "string"
@@ -2720,25 +2755,25 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "registered_voters": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "voters_who_voted": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "total_votes": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "blank_votes": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "null_votes": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "challenged_votes": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "is_valid_total": {
                         "type": "boolean"
@@ -2983,63 +3018,407 @@
                 "title": "CreateActRequest"
             },
             "Department": {
-                "type": "array",
-                "items": {
-                    "type": "string"
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
                 },
-                "minItems": 0,
-                "maxItems": 0,
-                "additionalItems": false,
+                "required": [
+                    "code",
+                    "name",
+                    "created_at",
+                    "updated_at"
+                ],
                 "title": "Department"
             },
             "District": {
-                "type": "array",
-                "items": {
-                    "type": "string"
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "province_code": {
+                        "type": "string"
+                    },
+                    "department_code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
                 },
-                "minItems": 0,
-                "maxItems": 0,
-                "additionalItems": false,
+                "required": [
+                    "code",
+                    "province_code",
+                    "department_code",
+                    "name",
+                    "created_at",
+                    "updated_at"
+                ],
                 "title": "District"
             },
             "Election": {
-                "type": "array",
-                "items": {
-                    "type": "string"
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "date": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
                 },
-                "minItems": 0,
-                "maxItems": 0,
-                "additionalItems": false,
+                "required": [
+                    "id",
+                    "code",
+                    "name",
+                    "date",
+                    "status",
+                    "created_at",
+                    "updated_at"
+                ],
                 "title": "Election"
             },
             "ElectoralList": {
-                "type": "array",
-                "items": {
-                    "type": "string"
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "jee_solicitud_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "political_organization_id": {
+                        "type": "integer"
+                    },
+                    "electoral_level_id": {
+                        "type": "integer"
+                    },
+                    "department_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "province_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "district_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
                 },
-                "minItems": 0,
-                "maxItems": 0,
-                "additionalItems": false,
+                "required": [
+                    "id",
+                    "jee_solicitud_id",
+                    "political_organization_id",
+                    "electoral_level_id",
+                    "department_code",
+                    "province_code",
+                    "district_code",
+                    "status",
+                    "created_at",
+                    "updated_at"
+                ],
                 "title": "ElectoralList"
             },
-            "PoliticalOrganization": {
-                "type": "array",
-                "items": {
-                    "type": "string"
+            "LengthAwarePaginator": {
+                "type": "object",
+                "properties": {
+                    "current_page": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "first_page_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "from": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1
+                    },
+                    "last_page_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "last_page": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "links": {
+                        "type": "array",
+                        "description": "Generated paginator links.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "url": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ]
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "active": {
+                                    "type": "boolean"
+                                }
+                            },
+                            "required": [
+                                "url",
+                                "label",
+                                "active"
+                            ]
+                        }
+                    },
+                    "next_page_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "path": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "description": "Base path for paginator generated URLs."
+                    },
+                    "per_page": {
+                        "type": "integer",
+                        "description": "Number of items shown per page.",
+                        "minimum": 0
+                    },
+                    "prev_page_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "to": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "description": "Number of the last item in the slice.",
+                        "minimum": 1
+                    },
+                    "total": {
+                        "type": "integer",
+                        "description": "Total number of items being paginated.",
+                        "minimum": 0
+                    }
                 },
-                "minItems": 0,
-                "maxItems": 0,
-                "additionalItems": false,
+                "required": [
+                    "current_page",
+                    "data",
+                    "first_page_url",
+                    "from",
+                    "last_page_url",
+                    "last_page",
+                    "links",
+                    "next_page_url",
+                    "path",
+                    "per_page",
+                    "prev_page_url",
+                    "to",
+                    "total"
+                ],
+                "title": "LengthAwarePaginator"
+            },
+            "PoliticalOrganization": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "jee_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "short_name": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "org_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "logo_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "local_logo_url": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "jee_id",
+                    "name",
+                    "short_name",
+                    "org_type",
+                    "logo_url",
+                    "local_logo_url",
+                    "created_at",
+                    "updated_at"
+                ],
                 "title": "PoliticalOrganization"
             },
             "Province": {
-                "type": "array",
-                "items": {
-                    "type": "string"
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "department_code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
                 },
-                "minItems": 0,
-                "maxItems": 0,
-                "additionalItems": false,
+                "required": [
+                    "code",
+                    "department_code",
+                    "name",
+                    "created_at",
+                    "updated_at"
+                ],
                 "title": "Province"
             },
             "RecognizeActRequest": {
@@ -3185,7 +3564,7 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "client_operation_id": {
                         "type": "string"
@@ -3203,10 +3582,13 @@
                         "type": "string"
                     },
                     "attempts": {
-                        "type": "string"
+                        "type": "integer"
                     },
                     "last_error": {
-                        "type": "string"
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     },
                     "processed_at": {
                         "type": [
@@ -3236,13 +3618,62 @@
                 "title": "SyncOperationResource"
             },
             "User": {
-                "type": "array",
-                "items": {
-                    "type": "string"
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "email_verified_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "role": {
+                        "type": "string"
+                    },
+                    "is_active": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "role_id": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ]
+                    }
                 },
-                "minItems": 0,
-                "maxItems": 0,
-                "additionalItems": false,
+                "required": [
+                    "id",
+                    "name",
+                    "email",
+                    "email_verified_at",
+                    "role",
+                    "is_active",
+                    "created_at",
+                    "updated_at",
+                    "role_id"
+                ],
                 "title": "User"
             }
         },

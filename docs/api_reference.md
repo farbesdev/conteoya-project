@@ -493,8 +493,23 @@ Garantiza procesamiento idempotente por `client_operation_id`.
 
 ---
 
+### `GET /api/v1/polling-stations`
+Consulta paginada y búsqueda en tiempo real de mesas de votación. Ideal para selectores y administradores sin sobrecargar la memoria móvil.
+
+**Query Parameters:**
+- `search` *(opcional)*: Búsqueda por código de mesa (ej. `040104`), nombre de local o distrito.
+- `department_code` *(opcional)*: Filtrar por código de departamento (ej. `10`).
+- `province_code` *(opcional)*: Filtrar por código de provincia.
+- `district_code` *(opcional)*: Filtrar por código de distrito (ubigeo).
+- `page` *(opcional)*: Número de página (default: 1).
+- `per_page` *(opcional)*: Cantidad por página (default: 20, max: 100).
+
+---
+
 ### `GET /api/v1/sync/pull`
 Descarga actualizaciones del servidor al dispositivo (catálogos, cambios de estado de actas, asignaciones de mesas). Usado por el `SyncEngine` móvil.
+- Para **PERSONERO**: Devuelve únicamente las mesas asignadas.
+- Para **ADMIN / DIRECTOR**: Soporta filtros opcionales de ámbito territorial (`department_code`, `province_code`, `district_code`, `search`, `limit`). Utiliza consultas optimizadas con `JOIN` indexados evitando sobrecarga de memoria en el VPS.
 
 ---
 

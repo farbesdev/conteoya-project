@@ -10,6 +10,8 @@ use App\Models\Device;
 use App\Models\SyncOperation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @tags Motor de Sincronización (Offline-First)
@@ -87,78 +89,135 @@ class SyncController extends Controller
     {
         $user = $request->user();
 
-        // 1. Obtener mesas (Si es Personero solo las suyas, si es Admin/Director todas)
-        $pollingStationsQuery = \App\Models\PollingStation::with(['electoralLocation.district.province.department']);
-        if ($user->role === 'PERSONERO' && $user->personero) {
-            $stationIds = $user->personero->pollingStations()->pluck('polling_stations.id');
-            $pollingStationsQuery->whereIn('id', $stationIds);
+        // Construir clave de caché por usuario + filtros activos para granularidad correcta
+        $filterKey = implode('_', array_filter([
+            $request->query('department_code', ''),
+            $request->query('province_code', ''),
+            $request->query('district_code', ''),
+            $request->query('search', ''),
+        ]));
+        $cacheKey = "sync:pull:u{$user->id}:{$filterKey}";
+
+        // Si el cliente envía X-Force-Refresh: 1 (pull manual), se invalida la caché.
+        if ($request->header('X-Force-Refresh') === '1') {
+            try {
+                Cache::forget($cacheKey);
+            } catch (\Throwable) {
+                // Redis no disponible — continuar sin error
+            }
         }
 
-        $pollingStations = $pollingStationsQuery->get()->map(function ($station) {
-            $loc = $station->electoralLocation;
-            $dist = $loc?->district;
-            $prov = $dist?->province;
-            $dept = $prov?->department;
+        // Construir el payload (con caché Redis si está disponible, sin ella si no lo está)
+        $buildPayload = function () use ($user, $request) {
+            // 1. Mesas — LEFT JOINs para que mesas con electoral_location_id=NULL
+            //    también sean devueltas (caso real: JEE seeds sin relación configurada)
+            $pollingStationsQuery = DB::table('polling_stations')
+                ->leftJoin('electoral_locations', 'polling_stations.electoral_location_id', '=', 'electoral_locations.id')
+                ->leftJoin('districts', 'electoral_locations.district_code', '=', 'districts.code')
+                ->leftJoin('provinces', 'districts.province_code', '=', 'provinces.code')
+                ->leftJoin('departments', 'districts.department_code', '=', 'departments.code')
+                ->select([
+                    'polling_stations.id',
+                    'polling_stations.code',
+                    DB::raw("COALESCE(electoral_locations.name, '') as location_name"),
+                    DB::raw("COALESCE(electoral_locations.address, '') as address"),
+                    DB::raw("COALESCE(districts.code, '') as district_code"),
+                    DB::raw("COALESCE(districts.name, '') as district_name"),
+                    DB::raw("COALESCE(provinces.name, '') as province_name"),
+                    DB::raw("COALESCE(departments.name, '') as department_name"),
+                    'polling_stations.registered_voters',
+                    'polling_stations.status',
+                ]);
+
+            if ($user->role === 'PERSONERO' && $user->personero) {
+                // Personero: solo sus mesas asignadas (generalmente 1-5 mesas — payload < 5 KB)
+                $stationIds = $user->personero->pollingStations()->pluck('polling_stations.id');
+                $pollingStationsQuery->whereIn('polling_stations.id', $stationIds);
+            } else {
+                // Admin / Director: filtros geográficos opcionales
+                if ($request->filled('department_code')) {
+                    $pollingStationsQuery->where('departments.code', $request->query('department_code'));
+                }
+                if ($request->filled('province_code')) {
+                    $pollingStationsQuery->where('provinces.code', $request->query('province_code'));
+                }
+                if ($request->filled('district_code')) {
+                    $pollingStationsQuery->where('districts.code', $request->query('district_code'));
+                }
+                if ($request->filled('search')) {
+                    $search = $request->query('search');
+                    $pollingStationsQuery->where(function ($q) use ($search) {
+                        $q->where('polling_stations.code', 'like', "%{$search}%")
+                          ->orWhere('electoral_locations.name', 'like', "%{$search}%");
+                    });
+                }
+
+                // Límite reducido a 200 por defecto (máximo 2000) para no saturar el VPS.
+                // El cliente puede enviar ?limit=500&department_code=10 para ampliar.
+                $limit = (int) $request->query('limit', 200);
+                $limit = min(max($limit, 1), 2000);
+                $pollingStationsQuery->limit($limit);
+            }
+
+            $pollingStations = $pollingStationsQuery->orderBy('polling_stations.code')->get();
+
+            // 2. Personeros
+            $personerosQuery = \App\Models\Personero::with(['user', 'pollingStations']);
+            if ($user->role === 'PERSONERO' && $user->personero) {
+                $personerosQuery->where('id', $user->personero->id);
+            }
+
+            $personeros = $personerosQuery->get()->map(function ($p) {
+                $stationCode = $p->pollingStations->first()?->code ?? '';
+                $fullName = $p->user?->name ?? 'Personero Registrado';
+                $parts = explode(' ', trim($fullName));
+                $firstName = $parts[0] ?? 'Personero';
+                $lastName = count($parts) > 1 ? implode(' ', array_slice($parts, 1)) : ' ';
+
+                return [
+                    'id'                   => $p->id,
+                    'dni'                  => $p->document_number,
+                    'first_name'           => $firstName,
+                    'last_name'            => $lastName,
+                    'name'                 => $fullName,
+                    'polling_station_code' => $stationCode,
+                    'phone_number'         => $p->phone_number,
+                    'email'                => $p->user?->email,
+                ];
+            });
+
+            // 3. Organizaciones políticas
+            $organizations = \App\Models\PoliticalOrganization::orderBy('name')->get()->map(function ($org) {
+                return [
+                    'id'          => $org->id,
+                    'code'        => $org->code,
+                    'name'        => $org->name,
+                    'short_name'  => $org->short_name,
+                    'logo_url'    => $org->logo_url,
+                    'order_index' => $org->order_index ?? 0,
+                ];
+            });
 
             return [
-                'id'                => $station->id,
-                'code'              => $station->code,
-                'location_name'     => $loc?->name ?? 'LOCAL DE VOTACIÓN',
-                'address'           => $loc?->address,
-                'district_code'     => $dist?->code ?? '000000',
-                'district_name'     => $dist?->name ?? 'DISTRITO',
-                'province_name'     => $prov?->name ?? 'PROVINCIA',
-                'department_name'   => $dept?->name ?? 'DEPARTAMENTO',
-                'registered_voters' => $station->registered_voters,
-                'status'            => $station->status,
+                'polling_stations'        => $pollingStations,
+                'personeros'              => $personeros,
+                'political_organizations' => $organizations,
+                'server_time'             => now()->toIso8601String(),
             ];
-        });
+        };
 
-        // 2. Obtener personeros y usuarios (Si es Personero solo el suyo, si es Admin/Director todos)
-        $personerosQuery = \App\Models\Personero::with(['user', 'pollingStations']);
-        if ($user->role === 'PERSONERO' && $user->personero) {
-            $personerosQuery->where('id', $user->personero->id);
+        // Intentar usar Redis como caché (TTL 120s). Si Redis no está disponible,
+        // ejecutar la query directamente sin caché para no lanzar HTTP 500.
+        try {
+            $payload = Cache::remember($cacheKey, 120, $buildPayload);
+        } catch (\Throwable) {
+            // Redis no disponible en el VPS — fallback a consulta directa
+            $payload = $buildPayload();
         }
-
-        $personeros = $personerosQuery->get()->map(function ($p) {
-            $stationCode = $p->pollingStations->first()?->code ?? '030390';
-            $fullName = $p->user?->name ?? 'Personero Registrado';
-            $parts = explode(' ', trim($fullName));
-            $firstName = $parts[0] ?? 'Personero';
-            $lastName = count($parts) > 1 ? implode(' ', array_slice($parts, 1)) : ' ';
-
-            return [
-                'id'                   => $p->id,
-                'dni'                  => $p->document_number,
-                'first_name'           => $firstName,
-                'last_name'            => $lastName,
-                'name'                 => $fullName,
-                'polling_station_code' => $stationCode,
-                'phone_number'         => $p->phone_number,
-                'email'                => $p->user?->email,
-            ];
-        });
-
-        // 3. Obtener organizaciones políticas del catálogo maestro
-        $organizations = \App\Models\PoliticalOrganization::orderBy('name')->get()->map(function ($org) {
-            return [
-                'id'          => $org->id,
-                'code'        => $org->code,
-                'name'        => $org->name,
-                'short_name'  => $org->short_name,
-                'logo_url'    => $org->logo_url,
-                'order_index' => $org->order_index ?? 0,
-            ];
-        });
 
         return response()->json([
             'message' => 'Sincronización descendente completada.',
-            'data' => [
-                'polling_stations'       => $pollingStations,
-                'personeros'             => $personeros,
-                'political_organizations' => $organizations,
-                'server_time'            => now()->toIso8601String(),
-            ],
+            'data'    => $payload,
         ]);
     }
 
