@@ -389,7 +389,18 @@ class SyncService
         }
 
         $voters = (int)($payload['registered_voters'] ?? 300);
-        $locationId = \App\Models\ElectoralLocation::value('id') ?? 1;
+        $location = \App\Models\ElectoralLocation::first();
+        if (!$location) {
+            $department = \App\Models\Department::firstOrCreate(['code' => '15'], ['name' => 'LIMA']);
+            $province = \App\Models\Province::firstOrCreate(['code' => '1501'], ['name' => 'LIMA', 'department_code' => '15']);
+            $district = \App\Models\District::firstOrCreate(['code' => '150101'], ['name' => 'LIMA', 'province_code' => '1501', 'department_code' => '15']);
+            $location = \App\Models\ElectoralLocation::create([
+                'code'          => '150101-01',
+                'name'          => $payload['location_name'] ?? 'LOCAL DE VOTACIÓN PRINCIPAL',
+                'address'       => 'AV. PRINCIPAL 123',
+                'district_code' => $district->code,
+            ]);
+        }
 
         if ($station) {
             $station->update([
@@ -399,7 +410,7 @@ class SyncService
         } else {
             $station = PollingStation::create([
                 'code'                  => $code,
-                'electoral_location_id' => $locationId,
+                'electoral_location_id' => $location->id,
                 'registered_voters'     => $voters,
                 'status'                => $payload['status'] ?? 'ACTIVE',
             ]);
