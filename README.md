@@ -54,7 +54,9 @@ Permite a los personeros registrar resultados de actas electorales mediante una 
 
 ---
 
-## 📁 Estructura del Proyecto
+## 📁 Estructura del Proyecto (Ecosistema Multi-App)
+
+> 💡 **Nota de Estructura:** Este repositorio **no es un monorepo formal** (no utiliza workspaces ni herramientas de monorepo como Nx o Turborepo); se trata de un **conjunto de aplicaciones y módulos independientes agrupados dentro del mismo espacio de trabajo del proyecto** para coordinar el backend, la aplicación móvil y la documentación centralizada.
 
 ```text
 conteoya-project/
@@ -133,9 +135,21 @@ flutter run
 
 ---
 
-## 📡 API & Documentación OpenAPI
+## 📚 Documentación Técnica Integral
 
-La API está versionada bajo `/api/v1` y documentada automáticamente con **Dedoc Scramble**.
+El proyecto cuenta con un compendio de documentación estructurado bajo los estándares **arc42** y **Diátaxis Framework**, organizado en 7 módulos temáticos:
+
+| Módulo | Descripción |
+|---|---|
+| [**`00-arquitectura/`**](docs/00-arquitectura/vision-general.md) | Visión general, metas de calidad, restricciones, topología cloud y registro de ADRs. |
+| [**`01-modulos/`**](docs/01-modulos/api-backend.md) | Arquitectura del Backend Laravel 12, App Móvil Flutter, Base de Datos PostgreSQL 16 y Sync Engine. |
+| [**`02-integraciones/`**](docs/02-integraciones/cloudflare-r2.md) | Storage privado Cloudflare R2 y Adaptador OCR/IA (Human-in-the-Loop). |
+| [**`03-guias/`**](docs/03-guias/instalacion-local.md) | Tutorial de instalación local, How-To de ingesta de actas y consulta de cédulas. |
+| [**`04-plantillas/`**](docs/04-plantillas/plantilla-adr.md) | Plantilla estándar para Registro de Decisiones de Arquitectura (ADRs). |
+| [**`05-seguridad/`**](docs/05-seguridad/control-acceso-auditoria.md) | Matriz RBAC, verificación de ownership de mesa, idempotencia y auditoría. |
+| [**`06-glosario/`**](docs/06-glosario/terminos-electorales.md) | Terminología del proceso electoral ERM 2026, ubigeos y siglas. |
+
+👉 Consulta el índice maestro detallado en [**`docs/README.md`**](docs/README.md).
 
 ```bash
 # Documentación interactiva (servidor corriendo)
@@ -144,8 +158,6 @@ http://localhost:8000/docs/api
 # Exportar OpenAPI JSON
 php artisan scramble:export
 ```
-
-Ver [docs/api_reference.md](docs/api_reference.md) para la referencia completa de endpoints.
 
 ---
 

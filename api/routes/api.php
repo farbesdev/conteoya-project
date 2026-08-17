@@ -36,6 +36,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::get('/elections', [CatalogController::class, 'elections']);
         Route::get('/political-organizations', [CatalogController::class, 'politicalOrganizations']);
         Route::get('/electoral-lists', [CatalogController::class, 'electoralLists']);
+        Route::get('/ballot-template', [CatalogController::class, 'ballotTemplate']);
 
         // Fase 1: Ingesta de Actas Electorales
         Route::middleware(['throttle:acts', 'idempotent'])->group(function () {

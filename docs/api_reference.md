@@ -353,6 +353,71 @@ GET /api/v1/electoral-lists?electoral_level_id=3&district_code=150101&page=1
 
 ---
 
+### `GET /api/v1/ballot-template`
+
+Obtiene la plantilla estructurada de la cédula electoral (mesa, organizaciones, listas y candidatos) para una mesa de votación y nivel electoral específicos. Utiliza la vista y procedimiento almacenado PostgreSQL optimizado `v_electoral_ballot_lists` / `fn_get_polling_station_ballot`.
+
+**Query Parameters**
+
+| Parámetro | Tipo | Requerido | Descripción |
+|-----------|------|-----------|-------------|
+| `polling_station_code` | `string` | ✅ | Código de la mesa de sufragio (ej: `"030390"`) |
+| `electoral_level_id` | `integer` | ✅ | ID del nivel electoral (ej: `1` para Regional, `3` para Provincial) |
+
+**Ejemplo de request**
+
+```
+GET /api/v1/ballot-template?polling_station_code=030390&electoral_level_id=1
+```
+
+**Respuesta `200 OK`**
+
+```json
+{
+  "data": {
+    "station": {
+      "id": 1,
+      "code": "030390",
+      "registered_voters": 300,
+      "status": "ACTIVE",
+      "department_name": "LIMA",
+      "province_name": "LIMA",
+      "district_name": "LIMA",
+      "location_name": null
+    },
+    "electoral_level": {
+      "id": 1,
+      "code": "REGIONAL_GOBERNADOR",
+      "name": "Gobernador y Vicegobernador Regional",
+      "has_preferential_vote": false
+    },
+    "lists": [
+      {
+        "electoral_list_id": 4,
+        "political_organization_id": 4,
+        "political_organization_name": "ACCIÓN POPULAR",
+        "political_organization_short_name": "AP",
+        "logo_url": "https://.../4.png",
+        "local_logo_url": "4.webp",
+        "candidates": [
+          {
+            "candidate_id": 101,
+            "candidate_name": "JUAN PEREZ",
+            "candidate_document": "12345678",
+            "photo_url": "https://.../foto.png",
+            "local_photo_url": "12345678/foto.webp",
+            "position": "GOBERNADOR REGIONAL",
+            "list_number": 1
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+---
+
 ## 🗳️ Fase 1 — Ingesta de Actas, Evidencias y Sincronización
 
 ### `POST /api/v1/acts`
