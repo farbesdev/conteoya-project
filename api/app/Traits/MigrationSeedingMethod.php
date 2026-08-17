@@ -141,7 +141,7 @@ trait MigrationSeedingMethod
 
             $inserted = DB::select($sql, $row);
 
-            if (! empty($inserted)) {
+            if (!empty($inserted)) {
                 return (int) $inserted[0]->{$returning};
             }
         } else {
@@ -286,7 +286,7 @@ trait MigrationSeedingMethod
                     foreach ($chunk as $row) {
                         $conditions = $this->buildConditionsFromRow($columns, $row, $conflictColumns);
                         $id = $this->selectGetFirstValue($table, $conditions, $returning);
-                        if (! in_array($id, $ids)) {
+                        if (!in_array($id, $ids)) {
                             $ids[] = $id;
                         }
                     }
@@ -328,7 +328,7 @@ trait MigrationSeedingMethod
                     }, $conflictValues);
                     $idsFromChunk = $this->selectWhereIn($table, $conflictColumns[0], $flatValues, $returning);
                     foreach ($idsFromChunk as $id) {
-                        if (! in_array($id, $ids)) {
+                        if (!in_array($id, $ids)) {
                             $ids[] = $id;
                         }
                     }
@@ -336,7 +336,7 @@ trait MigrationSeedingMethod
                     foreach ($chunk as $row) {
                         $conditions = $this->buildConditionsFromRow($columns, $row, $conflictColumns);
                         $id = $this->selectGetFirstValue($table, $conditions, $returning);
-                        if (! in_array($id, $ids)) {
+                        if (!in_array($id, $ids)) {
                             $ids[] = $id;
                         }
                     }
@@ -366,7 +366,6 @@ trait MigrationSeedingMethod
         $conflictColumn = $options['conflictColumn'] ?? 'code';
         $chunkSize = $options['chunkSize'] ?? 500;
         $verbose = $options['verbose'] ?? true;
-
         $isPg = $this->isPostgres();
         $isSqlite = $this->isSqlite();
 
@@ -473,7 +472,7 @@ trait MigrationSeedingMethod
                 $this->q($keyColumn)
             );
 
-            $pgArray = '{'.implode(',', $keyValues).'}';
+            $pgArray = '{' . implode(',', $keyValues) . '}';
             $rows = DB::select($sql, [$pgArray]);
         } else {
             $placeholders = implode(',', array_fill(0, count($keyValues), '?'));
@@ -742,7 +741,7 @@ trait MigrationSeedingMethod
 
             $rows = DB::select($sql, $bindings);
 
-            if (! empty($rows)) {
+            if (!empty($rows)) {
                 return $rows[0];
             }
 
@@ -845,7 +844,7 @@ trait MigrationSeedingMethod
                 $values[] = $val;
             }
 
-            $rowFragments[] = '('.implode(', ', $placeholders).')';
+            $rowFragments[] = '(' . implode(', ', $placeholders) . ')';
         }
 
         return [
@@ -871,7 +870,7 @@ trait MigrationSeedingMethod
     {
         $result = $this->selectGetFirst($table, $conditions, $this->q($field));
 
-        if (! $result) {
+        if (!$result) {
             throw new \Exception(sprintf('[MigrationMethods] Row not found in "%s" for given conditions', $table));
         }
 
@@ -883,7 +882,7 @@ trait MigrationSeedingMethod
         if (method_exists($this, 'getOutput') && $this->getOutput()) {
             $this->getOutput()->writeln($message);
         } else {
-            echo $message.PHP_EOL;
+            echo $message . PHP_EOL;
         }
     }
 }

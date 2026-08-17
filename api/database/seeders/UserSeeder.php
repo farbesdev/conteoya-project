@@ -70,6 +70,8 @@ class UserSeeder extends Seeder
             ]
         );
 
+        $this->command->info('✅  Usuario PERSONERO creado: personero@conteoya.pe / Personero123!');
+
         // Crear perfil de personero asociado
         $personeroDemo = Personero::updateOrCreate(
             ['user_id' => $personeroUser->id],
@@ -78,6 +80,8 @@ class UserSeeder extends Seeder
                 'phone_number'    => '+51 987 654 321',
             ]
         );
+
+        $this->command->info('✅  Perfil Personero creado: DNI 12345678 / Juan Pérez Demo');
 
         // ─── MESA LIMA CERCADO (Mesa 030390 para personero demo) ─────────────
         // Asegurar que existan los registros geográficos necesarios
