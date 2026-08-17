@@ -117,24 +117,30 @@ class JeeDatabaseSeeder extends Seeder
             $localLogoUrl = null;
 
             if (!empty($row['logo_url'])) {
-                try {
-                    $rawContent = @file_get_contents($row['logo_url']);
-                    if ($rawContent) {
-                        $image = @imagecreatefromstring($rawContent);
-                        if ($image !== false) {
-                            ob_start();
-                            imagewebp($image, null, 85);
-                            $webpData = ob_get_clean();
-                            imagedestroy($image);
+                $filename = $row['id'] . '.webp';
+                $disk     = Storage::disk('political_organizationals');
 
-                            $filename = $row['id'] . '.webp';
-                            Storage::disk('political_organizationals')->put($filename, $webpData);
-                            // Guardar ruta relativa local
-                            $localLogoUrl = $filename;
+                if ($disk->exists($filename)) {
+                    // Archivo ya descargado previamente — reutilizar sin volver a descargar
+                    $localLogoUrl = $filename;
+                } else {
+                    try {
+                        $rawContent = @file_get_contents($row['logo_url']);
+                        if ($rawContent !== false && $rawContent !== '') {
+                            $image = @imagecreatefromstring($rawContent);
+                            if ($image !== false) {
+                                ob_start();
+                                imagewebp($image, null, 85);
+                                $webpData = ob_get_clean();
+                                imagedestroy($image);
+
+                                $disk->put($filename, $webpData);
+                                $localLogoUrl = $filename;
+                            }
                         }
+                    } catch (\Throwable $e) {
+                        $this->command->warn("Error logo org " . $row['id'] . ": " . $e->getMessage());
                     }
-                } catch (\Throwable $e) {
-                    $this->command->warn("Error logo org " . $row['id'] . ": " . $e->getMessage());
                 }
             }
 
@@ -205,24 +211,30 @@ class JeeDatabaseSeeder extends Seeder
             $docNumber = $row['id_hoja_vida'] ?: ('JEE_' . $row['id']);
 
             if (!empty($row['photo_url'])) {
-                try {
-                    $rawContent = @file_get_contents($row['photo_url']);
-                    if ($rawContent) {
-                        $image = @imagecreatefromstring($rawContent);
-                        if ($image !== false) {
-                            ob_start();
-                            imagewebp($image, null, 85);
-                            $webpData = ob_get_clean();
-                            imagedestroy($image);
+                $filename = "$docNumber/foto.webp";
+                $disk     = Storage::disk('candidates');
 
-                            $filename = "$docNumber/foto.webp";
-                            Storage::disk('candidates')->put($filename, $webpData);
-                            // Guardar ruta relativa local
-                            $localPhotoUrl = $filename;
+                if ($disk->exists($filename)) {
+                    // Foto ya descargada previamente — reutilizar sin volver a descargar
+                    $localPhotoUrl = $filename;
+                } else {
+                    try {
+                        $rawContent = @file_get_contents($row['photo_url']);
+                        if ($rawContent !== false && $rawContent !== '') {
+                            $image = @imagecreatefromstring($rawContent);
+                            if ($image !== false) {
+                                ob_start();
+                                imagewebp($image, null, 85);
+                                $webpData = ob_get_clean();
+                                imagedestroy($image);
+
+                                $disk->put($filename, $webpData);
+                                $localPhotoUrl = $filename;
+                            }
                         }
+                    } catch (\Throwable $e) {
+                        $this->command->warn("Error foto candidato " . $row['id'] . ": " . $e->getMessage());
                     }
-                } catch (\Throwable $e) {
-                    $this->command->warn("Error foto candidato " . $row['id'] . ": " . $e->getMessage());
                 }
             }
 
