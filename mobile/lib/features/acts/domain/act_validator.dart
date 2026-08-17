@@ -72,4 +72,68 @@ class ActValidator {
       warnings: warnings,
     );
   }
+
+  static ActValidationResult validateMunicipal({
+    required int registeredVoters,
+    required int votersWhoVoted,
+    required int provTotalVotes,
+    required int provBlankVotes,
+    required int provNullVotes,
+    required int provChallengedVotes,
+    required List<int> provCandidateVotes,
+    required int distTotalVotes,
+    required int distBlankVotes,
+    required int distNullVotes,
+    required int distChallengedVotes,
+    required List<int> distCandidateVotes,
+  }) {
+    final warnings = <ActWarning>[];
+
+    // 1. Verificación Total Provincial
+    final sumProvCandidates = provCandidateVotes.fold<int>(0, (prev, elem) => prev + elem);
+    final expectedProvTotal = sumProvCandidates + provBlankVotes + provNullVotes + provChallengedVotes;
+    if (expectedProvTotal != provTotalVotes) {
+      warnings.add(ActWarning(
+        code: 'PROV_TOTAL_MISMATCH',
+        message: 'Provincial: La suma de votos ($expectedProvTotal) difiere del total emitido declarado ($provTotalVotes).',
+      ));
+    }
+
+    // 2. Verificación Total Distrital
+    final sumDistCandidates = distCandidateVotes.fold<int>(0, (prev, elem) => prev + elem);
+    final expectedDistTotal = sumDistCandidates + distBlankVotes + distNullVotes + distChallengedVotes;
+    if (expectedDistTotal != distTotalVotes) {
+      warnings.add(ActWarning(
+        code: 'DIST_TOTAL_MISMATCH',
+        message: 'Distrital: La suma de votos ($expectedDistTotal) difiere del total emitido declarado ($distTotalVotes).',
+      ));
+    }
+
+    // 3. Asistencia vs Electores Hábiles
+    if (votersWhoVoted > registeredVoters) {
+      warnings.add(ActWarning(
+        code: 'VOTERS_EXCEED_REGISTERED',
+        message: 'Los ciudadanos que votaron ($votersWhoVoted) superan los electores hábiles ($registeredVoters).',
+      ));
+    }
+
+    if (provTotalVotes > registeredVoters) {
+      warnings.add(ActWarning(
+        code: 'PROV_VOTES_EXCEED_REGISTERED',
+        message: 'El total de votos provincial ($provTotalVotes) supera los electores hábiles ($registeredVoters).',
+      ));
+    }
+
+    if (distTotalVotes > registeredVoters) {
+      warnings.add(ActWarning(
+        code: 'DIST_VOTES_EXCEED_REGISTERED',
+        message: 'El total de votos distrital ($distTotalVotes) supera los electores hábiles ($registeredVoters).',
+      ));
+    }
+
+    return ActValidationResult(
+      isValid: warnings.isEmpty,
+      warnings: warnings,
+    );
+  }
 }

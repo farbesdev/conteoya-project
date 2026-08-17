@@ -302,10 +302,43 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
+<<<<<<< HEAD
   Future<void> savePersoneros(List<LocalPersonerosTableCompanion> personeros) {
     return batch((b) {
       b.insertAllOnConflictUpdate(localPersonerosTable, personeros);
     });
+=======
+  Future<void> savePersoneros(List<LocalPersonerosTableCompanion> personeros) async {
+    for (final personero in personeros) {
+      final dni = personero.dni.value;
+      final existing = await (select(localPersonerosTable)..where((t) => t.dni.equals(dni))).getSingleOrNull();
+      if (existing != null) {
+        await (update(localPersonerosTable)..where((t) => t.dni.equals(dni))).write(
+          LocalPersonerosTableCompanion(
+            firstName: personero.firstName,
+            lastName: personero.lastName,
+            pollingStationCode: personero.pollingStationCode,
+            phoneNumber: personero.phoneNumber,
+            email: personero.email,
+          ),
+        );
+      } else {
+        // Usar insert con modo insertOrIgnore para evitar duplicados por dni en dispositivos nuevos.
+        // No usamos insertOrReplace porque tiene conflicto en id (PK autoincremental), no en dni.
+        await customInsert(
+          'INSERT OR IGNORE INTO local_personeros_table (dni, first_name, last_name, polling_station_code, phone_number, email) VALUES (?, ?, ?, ?, ?, ?)',
+          variables: [
+            Variable.withString(dni),
+            Variable.withString(personero.firstName.value),
+            Variable.withString(personero.lastName.value),
+            Variable.withString(personero.pollingStationCode.value),
+            Variable(personero.phoneNumber.value),
+            Variable(personero.email.value),
+          ],
+        );
+      }
+    }
+>>>>>>> 47e70eac9ab86b9b3697583651fc13d4bba83b9b
   }
 
   // ─── DAOs para Organizaciones Políticas ────────────────────────────────────
@@ -435,7 +468,7 @@ class AppDatabase extends _$AppDatabase {
     try {
       final personeroCount = await (select(localPersonerosTable)..limit(1)).get();
       if (personeroCount.isEmpty) {
-        await into(localPersonerosTable).insert(
+        await into(localPersonerosTable).insertOnConflictUpdate(
           LocalPersonerosTableCompanion.insert(
             dni: '44001122',
             firstName: 'Personero',
@@ -446,7 +479,7 @@ class AppDatabase extends _$AppDatabase {
           ),
         );
 
-        await into(localPersonerosTable).insert(
+        await into(localPersonerosTable).insertOnConflictUpdate(
           LocalPersonerosTableCompanion.insert(
             dni: '12345678',
             firstName: 'Juan',
