@@ -438,6 +438,25 @@ El esquema físico de PostgreSQL está definido y versionado mediante **migracio
 | `2026_08_09_165708_create_conteoya_tables` | Esquema completo: geografía, catálogo electoral, personeros, actas, sync, auditoría |
 | `2026_08_10_102628_create_roles_table` | Tabla `roles` + FK `role_id` en `users` |
 | `2026_08_10_220000_make_device_id_nullable_in_sync_operations_table` | `sync_operations.device_id` pasa a ser nullable |
+| `2026_08_13_153500_make_personero_id_nullable_in_sync_operations_table` | `sync_operations.personero_id` pasa a ser nullable |
+| `2026_08_14_120000_add_odpe_and_pdf_fields_to_polling_stations_table` | Soporte directo de ubigeos, ODPE y PDF en `polling_stations` |
+| `2026_08_17_130000_create_electoral_ballot_views_and_procedures` | Vistas SQL (`v_polling_stations_ubigeo`, `v_electoral_ballot_lists`) y función almacenada (`fn_get_polling_station_ballot`) |
+
+---
+
+## 7. Vistas SQL y Funciones Almacenadas (PostgreSQL 16)
+
+### `v_polling_stations_ubigeo`
+Vista normalizada que desacopla la mesa de sufragio de la necesidad de un registro en `electoral_locations`. Combina dinámicamente ubigeos normalizados por código o por nombre con fallback a las columnas directas de `polling_stations`.
+
+### `v_electoral_ballot_lists`
+Vista relacional que cruza cada mesa de sufragio (`polling_stations`) con las listas electorales (`electoral_lists`), organizaciones políticas (`political_organizations`) y candidatos (`candidates`/`candidacies`) que postulan en dicha circunscripción según el tipo de nivel electoral (Regional, Provincial, Distrital).
+
+### `fn_get_polling_station_ballot(p_station_code VARCHAR, p_level_id BIGINT)`
+Función almacenada (`PL/pgSQL`, `STABLE`) que computa y retorna en formato `JSONB` de alto rendimiento toda la estructura de la cédula de votación lista para ingesta de actas electorales:
+- Datos de la mesa (`id`, `code`, `registered_voters`, `status`, ubigeos).
+- Datos del nivel electoral (`id`, `code`, `name`, `has_preferential_vote`).
+- Array de organizaciones políticas participantes, listas oficiales y sus candidatos ordenados por número de lista.
 
 Para aplicar el esquema desde cero:
 
@@ -445,3 +464,4 @@ Para aplicar el esquema desde cero:
 cd api/
 php artisan migrate:fresh --seed
 ```
+

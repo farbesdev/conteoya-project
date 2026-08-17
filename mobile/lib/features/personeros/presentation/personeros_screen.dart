@@ -246,37 +246,43 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
           const SizedBox(height: 8),
 
           // Fila Inferior: Acciones [Editar], [Clave] y [Eliminar]
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.warning,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            reverse: true,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.warning,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  icon: const Icon(Icons.key_rounded, size: 15),
+                  label: const Text('Clave', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  onPressed: () => _showResetPasswordModal(context, personero: personero),
                 ),
-                icon: const Icon(Icons.key_rounded, size: 16),
-                label: const Text('Clave', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                onPressed: () => _showResetPasswordModal(context, personero: personero),
-              ),
-              const SizedBox(width: 4),
-              TextButton.icon(
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textSecondary,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                const SizedBox(width: 2),
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.textSecondary,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  icon: const Icon(Icons.edit_outlined, size: 15),
+                  label: const Text('Editar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  onPressed: () => PersoneroFormModal.show(context, personeroToEdit: personero),
                 ),
-                icon: const Icon(Icons.edit_outlined, size: 16),
-                label: const Text('Editar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                onPressed: () => PersoneroFormModal.show(context, personeroToEdit: personero),
-              ),
-              const SizedBox(width: 4),
-              TextButton.icon(
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.danger,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                ),
-                icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                label: const Text('Eliminar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                onPressed: () {
+                const SizedBox(width: 2),
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.danger,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  icon: const Icon(Icons.delete_outline_rounded, size: 15),
+                  label: const Text('Eliminar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  onPressed: () {
                   DeletePersoneroDialog.show(
                     context,
                     personeroName: personero.fullName,

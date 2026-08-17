@@ -117,51 +117,81 @@ class CatalogController extends Controller
     }
 
     /**
-     * Catálogo de mesas de votación con búsqueda en tiempo real, filtros y paginación.
+     * Retorna la plantilla estructurada de la cédula electoral (mesa, organizaciones, listas y candidatos)
+     * para el registro de actas electorales mediante consulta a la vista/procedimiento de base de datos.
      */
-    public function pollingStations(Request $request)
+    public function ballotTemplate(Request $request)
     {
-        $query = \Illuminate\Support\Facades\DB::table('polling_stations')
-            ->join('electoral_locations', 'polling_stations.electoral_location_id', '=', 'electoral_locations.id')
-            ->join('districts', 'electoral_locations.district_code', '=', 'districts.code')
-            ->join('provinces', 'districts.province_code', '=', 'provinces.code')
-            ->join('departments', 'districts.department_code', '=', 'departments.code')
-            ->select([
-                'polling_stations.id',
-                'polling_stations.code',
-                'electoral_locations.name as location_name',
-                'electoral_locations.address',
-                'districts.code as district_code',
-                'districts.name as district_name',
-                'provinces.name as province_name',
-                'departments.name as department_name',
-                'polling_stations.registered_voters',
-                'polling_stations.status',
-            ]);
+        $request->validate([
+            'polling_station_code' => 'required|string',
+            'electoral_level_id' => 'required|integer',
+        ]);
 
-        if ($request->filled('department_code')) {
-            $query->where('departments.code', $request->query('department_code'));
+        $stationCode = $request->query('polling_station_code');
+        $levelId = (int) $request->query('electoral_level_id');
+
+        // Consultar directamente usando DB::select / DB::table para compatibilidad tanto con PostgreSQL como SQLite
+        $driver = config('database.default');
+
+        if ($driver === 'pgsql') {
+            $result = \Illuminate\Support\Facades\DB::select(
+                "SELECT fn_get_polling_station_ballot(?, ?) AS ballot",
+                [$stationCode, $levelId]
+            );
+            $ballotData = isset($result[0]->ballot) ? json_decode($result[0]->ballot, true) : null;
+            return response()->json(['data' => $ballotData]);
         }
-        if ($request->filled('province_code')) {
-            $query->where('provinces.code', $request->query('province_code'));
-        }
-        if ($request->filled('district_code')) {
-            $query->where('districts.code', $request->query('district_code'));
-        }
-        if ($request->filled('search')) {
-            $search = $request->query('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('polling_stations.code', 'like', "%{$search}%")
-                  ->orWhere('electoral_locations.name', 'like', "%{$search}%")
-                  ->orWhere('districts.name', 'like', "%{$search}%");
+
+        // Fallback de compatibilidad relacional estándar
+        $station = \App\Models\PollingStation::where('code', $stationCode)->firstOrFail();
+        $level = \App\Models\ElectoralLevel::findOrFail($levelId);
+
+        $lists = ElectoralList::where('electoral_level_id', $levelId)
+            ->with(['politicalOrganization', 'candidacies.candidate'])
+            ->where('status', 'INSCRITO')
+            ->get()
+            ->map(function ($list) {
+                return [
+                    'electoral_list_id' => $list->id,
+                    'political_organization_id' => $list->political_organization_id,
+                    'political_organization_name' => $list->political_organization?->name,
+                    'political_organization_short_name' => $list->political_organization?->short_name,
+                    'logo_url' => $list->political_organization?->logo_url,
+                    'local_logo_url' => $list->political_organization?->local_logo_url,
+                    'candidates' => $list->candidacies->map(function ($c) {
+                        return [
+                            'candidate_id' => $c->candidate_id,
+                            'candidate_name' => $c->candidate?->full_name,
+                            'candidate_document' => $c->candidate?->document_number,
+                            'photo_url' => $c->candidate?->photo_url,
+                            'local_photo_url' => $c->candidate?->local_photo_url,
+                            'position' => $c->position,
+                            'list_number' => $c->list_number,
+                        ];
+                    }),
+                ];
             });
-        }
 
-        $perPage = (int) $request->query('per_page', 20);
-        $perPage = min(max($perPage, 1), 100);
-
-        $results = $query->orderBy('polling_stations.code')->paginate($perPage);
-
-        return response()->json($results);
+        return response()->json([
+            'data' => [
+                'station' => [
+                    'id' => $station->id,
+                    'code' => $station->code,
+                    'registered_voters' => $station->registered_voters,
+                    'status' => $station->status,
+                    'department_name' => $station->department_name,
+                    'province_name' => $station->province_name,
+                    'district_name' => $station->district_name,
+                ],
+                'electoral_level' => [
+                    'id' => $level->id,
+                    'code' => $level->code,
+                    'name' => $level->name,
+                    'has_preferential_vote' => $level->has_preferential_vote,
+                ],
+                'lists' => $lists,
+            ]
+        ]);
     }
 }
+
