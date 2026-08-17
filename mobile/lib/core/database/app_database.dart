@@ -355,90 +355,82 @@ class AppDatabase extends _$AppDatabase {
   Future<void> seedInitialDataIfEmpty() async {
     try {
       // Sembrar/Actualizar Mesas Iniciales (Lima y Puerto Inca, Huánuco)
-      await batch((b) {
-        b.insertAllOnConflictUpdate(localPollingStationsTable, [
-          LocalPollingStationsTableCompanion.insert(
-            code: '030390',
-            locationName: 'I.E. NUESTRA SEÑORA DE GUADALUPE',
-            districtCode: const Value('150101'),
-            districtName: const Value('LIMA - CERCADO'),
-            provinceName: const Value('LIMA'),
-            departmentName: const Value('LIMA'),
-            registeredVoters: const Value(300),
-          ),
-          LocalPollingStationsTableCompanion.insert(
-            code: '030391',
-            locationName: 'I.E. NUESTRA SEÑORA DE GUADALUPE',
-            districtCode: const Value('150101'),
-            districtName: const Value('LIMA - CERCADO'),
-            provinceName: const Value('LIMA'),
-            departmentName: const Value('LIMA'),
-            registeredVoters: const Value(300),
-          ),
-          LocalPollingStationsTableCompanion.insert(
-            code: '030392',
-            locationName: 'I.E. PEDRO A. LABARTHE',
-            districtCode: const Value('150115'),
-            districtName: const Value('LA VICTORIA'),
-            provinceName: const Value('LIMA'),
-            departmentName: const Value('LIMA'),
-            registeredVoters: const Value(295),
-          ),
-          LocalPollingStationsTableCompanion.insert(
-            code: '030393',
-            locationName: 'I.E. ALFONSO UGARTE',
-            districtCode: const Value('150131'),
-            districtName: const Value('SAN ISIDRO'),
-            provinceName: const Value('LIMA'),
-            departmentName: const Value('LIMA'),
-            registeredVoters: const Value(310),
-          ),
-          // Mesas de Puerto Inca - Huánuco
-          LocalPollingStationsTableCompanion.insert(
-            code: '040101',
-            locationName: 'I.E. AGROPECUARIO PUERTO INCA',
-            districtCode: const Value('001272'),
-            districtName: const Value('PUERTO INCA'),
-            provinceName: const Value('PUERTO INCA'),
-            departmentName: const Value('HUÁNUCO'),
-            registeredVoters: const Value(280),
-          ),
-          LocalPollingStationsTableCompanion.insert(
-            code: '040102',
-            locationName: 'I.E. 32223 CODO DEL POZUZO',
-            districtCode: const Value('001274'),
-            districtName: const Value('CODO DEL POZUZO'),
-            provinceName: const Value('PUERTO INCA'),
-            departmentName: const Value('HUÁNUCO'),
-            registeredVoters: const Value(290),
-          ),
-          LocalPollingStationsTableCompanion.insert(
-            code: '040103',
-            locationName: 'I.E. TOURNAVISTA',
-            districtCode: const Value('001272'),
-            districtName: const Value('TOURNAVISTA'),
-            provinceName: const Value('PUERTO INCA'),
-            departmentName: const Value('HUÁNUCO'),
-            registeredVoters: const Value(275),
-          ),
-          LocalPollingStationsTableCompanion.insert(
-            code: '040104',
-            locationName: 'I.E. YUYAPICHIS',
-            districtCode: const Value('001275'),
-            districtName: const Value('YUYAPICHIS'),
-            provinceName: const Value('PUERTO INCA'),
-            departmentName: const Value('HUÁNUCO'),
-            registeredVoters: const Value(305),
-          ),
-        ]);
-      });
-    } catch (_) {
-      try {
-        final m = createMigrator();
-        await m.drop(localPollingStationsTable);
-        await m.createTable(localPollingStationsTable);
-      } catch (_) {}
-    }
+      await savePollingStations([
+        LocalPollingStationsTableCompanion.insert(
+          code: '030390',
+          locationName: 'I.E. NUESTRA SEÑORA DE GUADALUPE',
+          districtCode: const Value('150101'),
+          districtName: const Value('LIMA - CERCADO'),
+          provinceName: const Value('LIMA'),
+          departmentName: const Value('LIMA'),
+          registeredVoters: const Value(300),
+        ),
+        LocalPollingStationsTableCompanion.insert(
+          code: '030391',
+          locationName: 'I.E. NUESTRA SEÑORA DE GUADALUPE',
+          districtCode: const Value('150101'),
+          districtName: const Value('LIMA - CERCADO'),
+          provinceName: const Value('LIMA'),
+          departmentName: const Value('LIMA'),
+          registeredVoters: const Value(300),
+        ),
+        LocalPollingStationsTableCompanion.insert(
+          code: '030392',
+          locationName: 'I.E. PEDRO A. LABARTHE',
+          districtCode: const Value('150115'),
+          districtName: const Value('LA VICTORIA'),
+          provinceName: const Value('LIMA'),
+          departmentName: const Value('LIMA'),
+          registeredVoters: const Value(295),
+        ),
+        LocalPollingStationsTableCompanion.insert(
+          code: '030393',
+          locationName: 'I.E. ALFONSO UGARTE',
+          districtCode: const Value('150131'),
+          districtName: const Value('SAN ISIDRO'),
+          provinceName: const Value('LIMA'),
+          departmentName: const Value('LIMA'),
+          registeredVoters: const Value(310),
+        ),
+        // Mesas de Puerto Inca - Huánuco
+        LocalPollingStationsTableCompanion.insert(
+          code: '040101',
+          locationName: 'I.E. AGROPECUARIO PUERTO INCA',
+          districtCode: const Value('001272'),
+          districtName: const Value('PUERTO INCA'),
+          provinceName: const Value('PUERTO INCA'),
+          departmentName: const Value('HUÁNUCO'),
+          registeredVoters: const Value(280),
+        ),
+        LocalPollingStationsTableCompanion.insert(
+          code: '040102',
+          locationName: 'I.E. 32223 CODO DEL POZUZO',
+          districtCode: const Value('001274'),
+          districtName: const Value('CODO DEL POZUZO'),
+          provinceName: const Value('PUERTO INCA'),
+          departmentName: const Value('HUÁNUCO'),
+          registeredVoters: const Value(290),
+        ),
+        LocalPollingStationsTableCompanion.insert(
+          code: '040103',
+          locationName: 'I.E. TOURNAVISTA',
+          districtCode: const Value('001272'),
+          districtName: const Value('TOURNAVISTA'),
+          provinceName: const Value('PUERTO INCA'),
+          departmentName: const Value('HUÁNUCO'),
+          registeredVoters: const Value(275),
+        ),
+        LocalPollingStationsTableCompanion.insert(
+          code: '040104',
+          locationName: 'I.E. YUYAPICHIS',
+          districtCode: const Value('001275'),
+          districtName: const Value('YUYAPICHIS'),
+          provinceName: const Value('PUERTO INCA'),
+          departmentName: const Value('HUÁNUCO'),
+          registeredVoters: const Value(305),
+        ),
+      ]);
+    } catch (_) {}
 
     try {
       final personeroCount = await (select(localPersonerosTable)..limit(1)).get();

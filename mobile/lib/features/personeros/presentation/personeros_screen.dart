@@ -283,24 +283,25 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                   icon: const Icon(Icons.delete_outline_rounded, size: 15),
                   label: const Text('Eliminar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                   onPressed: () {
-                  DeletePersoneroDialog.show(
-                    context,
-                    personeroName: personero.fullName,
-                    onConfirm: () async {
-                      await ref.read(personerosRepositoryProvider).deletePersonero(personero.id);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            backgroundColor: AppColors.danger,
-                            content: Text('Personero eliminado del sistema.'),
-                          ),
-                        );
-                      }
-                    },
-                  );
-                },
-              ),
-            ],
+                    DeletePersoneroDialog.show(
+                      context,
+                      personeroName: personero.fullName,
+                      onConfirm: () async {
+                        await ref.read(personerosRepositoryProvider).deletePersonero(personero.id);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              backgroundColor: AppColors.danger,
+                              content: Text('Personero eliminado del sistema.'),
+                            ),
+                          );
+                        }
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ],
       ),
