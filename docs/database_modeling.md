@@ -26,26 +26,313 @@ En la fase de análisis conceptual se identifican las entidades clave agrupadas 
 
 ```mermaid
 erDiagram
-    GEOGRAPHY ||--|{ POLLING_STATION : "alberga"
-    ELECTION ||--|{ ELECTORAL_LEVEL : "define"
-    POLITICAL_ORGANIZATION ||--|{ ELECTORAL_LIST : "postula"
-    ELECTORAL_LIST ||--|{ CANDIDACY : "contiene"
-    CANDIDATE ||--|{ CANDIDACY : "asume"
-    ELECTORAL_LEVEL ||--|{ ELECTORAL_LIST : "compite en"
+    departments ||--|{ provinces : "contiene"
+    departments ||--|{ districts : "contiene"
+    provinces ||--|{ districts : "contiene"
+    districts ||--|{ electoral_locations : "alberga"
+    electoral_locations ||--|{ polling_stations : "pertenece"
     
-    POLLING_STATION ||--|{ ACT : "genera"
-    ELECTION ||--|{ ACT : "corresponde a"
-    ELECTORAL_LEVEL ||--|{ ACT : "evalúa"
+    elections ||--|{ electoral_levels : "define"
+    political_organizations ||--|{ electoral_lists : "postula"
+    electoral_levels ||--|{ electoral_lists : "clasifica"
+    departments ||--o{ electoral_lists : "delimita"
+    provinces ||--o{ electoral_lists : "delimita"
+    districts ||--o{ electoral_lists : "delimita"
     
-    USER ||--|| PERSONERO : "es"
-    PERSONERO }|--|{ POLLING_STATION : "asignado a"
+    candidates ||--|{ candidacies : "postula en"
+    electoral_lists ||--|{ candidacies : "integra"
     
-    ACT ||--|{ ACT_RESULT : "registra"
-    ACT ||--|| ACT_TOTALS : "consolida"
-    ACT ||--|{ ACT_EVIDENCE : "respalda"
+    roles ||--|{ users : "asigna"
+    users ||--o| personeros : "es"
+    personeros ||--|{ devices : "registra"
+    personeros ||--|{ personero_polling_station : "asigna"
+    polling_stations ||--|{ personero_polling_station : "asigna"
     
-    ELECTORAL_LIST ||--o{ ACT_RESULT : "recibe votos"
-    CANDIDACY ||--o{ ACT_RESULT : "recibe votos preferenciales"
+    elections ||--|{ acts : "corresponde"
+    electoral_levels ||--|{ acts : "evalua"
+    polling_stations ||--|{ acts : "registra"
+    personeros ||--|{ acts : "captura"
+    
+    acts ||--|| act_totals : "consolida"
+    acts ||--|{ act_results : "desglosa"
+    political_organizations ||--o{ act_results : "recibe"
+    electoral_lists ||--o{ act_results : "recibe"
+    candidates ||--o{ act_results : "recibe"
+    
+    acts ||--|{ act_evidence : "respalda"
+    devices ||--o{ act_evidence : "captura"
+    acts ||--o{ ocr_ai_extractions : "procesa"
+    act_evidence ||--o{ ocr_ai_extractions : "analiza"
+    
+    personeros ||--o{ sync_operations : "sincroniza"
+    devices ||--o{ sync_operations : "envia"
+    users ||--o{ audit_logs : "audita"
+
+    departments {
+        string code PK
+        string name
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    provinces {
+        string code PK
+        string department_code FK
+        string name
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    districts {
+        string code PK
+        string province_code FK
+        string department_code FK
+        string name
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    electoral_locations {
+        bigint id PK
+        string district_code FK
+        string name
+        string address
+        decimal latitude
+        decimal longitude
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    polling_stations {
+        bigint id PK
+        bigint electoral_location_id FK
+        string code
+        int registered_voters
+        string status
+        string odpe
+        string pdf_file
+        int pdf_page
+        string department_name
+        string province_name
+        string district_name
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    elections {
+        bigint id PK
+        string code
+        string name
+        date date
+        string status
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    electoral_levels {
+        bigint id PK
+        bigint election_id FK
+        string code
+        string name
+        boolean has_preferential_vote
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    political_organizations {
+        bigint id PK
+        int jee_id
+        string name
+        string short_name
+        string org_type
+        text logo_url
+        text local_logo_url
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    electoral_lists {
+        bigint id PK
+        int jee_solicitud_id
+        bigint political_organization_id FK
+        bigint electoral_level_id FK
+        string department_code FK
+        string province_code FK
+        string district_code FK
+        string status
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    candidates {
+        bigint id PK
+        int jee_candidate_id
+        string id_hoja_vida
+        string document_number
+        string full_name
+        text photo_url
+        text local_photo_url
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    candidacies {
+        bigint id PK
+        bigint electoral_list_id FK
+        bigint candidate_id FK
+        string position
+        int list_number
+        string status
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    roles {
+        bigint id PK
+        string name
+        string display_name
+        text description
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    users {
+        bigint id PK
+        bigint role_id FK
+        string name
+        string email
+        timestamp email_verified_at
+        string password
+        string role
+        boolean is_active
+        string remember_token
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    personeros {
+        bigint id PK
+        bigint user_id FK
+        string document_number
+        string phone_number
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    devices {
+        bigint id PK
+        bigint personero_id FK
+        string device_uuid
+        string device_model
+        string os_version
+        string app_version
+        timestamp last_active_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    personero_polling_station {
+        bigint id PK
+        bigint personero_id FK
+        bigint polling_station_id FK
+        timestamp assigned_at
+    }
+
+    acts {
+        bigint id PK
+        bigint election_id FK
+        bigint electoral_level_id FK
+        bigint polling_station_id FK
+        string act_code
+        string status
+        bigint captured_by_personero_id FK
+        timestamp captured_at
+        timestamp confirmed_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    act_totals {
+        bigint id PK
+        bigint act_id FK
+        int registered_voters
+        int voters_who_voted
+        int total_votes
+        int blank_votes
+        int null_votes
+        int challenged_votes
+        boolean is_valid_total
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    act_results {
+        bigint id PK
+        bigint act_id FK
+        bigint political_organization_id FK
+        bigint electoral_list_id FK
+        bigint candidate_id FK
+        int votes
+        string source
+        decimal confidence
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    act_evidence {
+        bigint id PK
+        bigint act_id FK
+        bigint device_id FK
+        string storage_provider
+        text object_key
+        string file_mime
+        bigint file_size_bytes
+        string sha256_hash
+        int width_px
+        int height_px
+        timestamp captured_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ocr_ai_extractions {
+        bigint id PK
+        bigint act_id FK
+        bigint act_evidence_id FK
+        string provider_name
+        jsonb raw_response_json
+        jsonb extracted_data_json
+        timestamp processed_at
+    }
+
+    sync_operations {
+        bigint id PK
+        uuid client_operation_id
+        bigint device_id FK
+        bigint personero_id FK
+        string entity_type
+        string entity_id
+        string operation
+        jsonb payload
+        int attempts
+        string status
+        text last_error
+        timestamp processed_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    audit_logs {
+        bigint id PK
+        bigint user_id FK
+        string action
+        string entity_type
+        string entity_id
+        string ip_address
+        text user_agent
+        jsonb payload
+        timestamp created_at
+    }
 ```
 
 ### Entidades Identificadas por Dominio:

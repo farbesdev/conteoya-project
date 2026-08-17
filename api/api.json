@@ -1144,7 +1144,7 @@
         },
         "/v1/polling-stations": {
             "get": {
-                "operationId": "pollingStation.index",
+                "operationId": "polling-stations.index",
                 "description": "Permite consultar y buscar mesas electorales con paginaci\u00f3n de alto rendimiento.\nSoporta filtrado por texto libre (`search`), c\u00f3digo de mesa, departamento, provincia o distrito.",
                 "summary": "Listar y Buscar Mesas Electorales (Paginaci\u00f3n y Filtros para Admin / Director)",
                 "tags": [
@@ -1161,7 +1161,7 @@
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "const": "Lista paginada de mesas electorales obtendida exitosamente."
+                                            "const": "Lista paginada de mesas electorales obtenida exitosamente."
                                         },
                                         "data": {
                                             "type": "array",
@@ -1295,6 +1295,657 @@
                                         "message",
                                         "data",
                                         "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "polling-stations.store",
+                "summary": "Crear Nueva Mesa Electoral (Solo Admin o Director)",
+                "tags": [
+                    "Mesas Electorales",
+                    "PollingStation"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "maxLength": 10
+                                    },
+                                    "registered_voters": {
+                                        "type": "integer",
+                                        "minimum": 1
+                                    },
+                                    "status": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "enum": [
+                                            "ACTIVE",
+                                            "INACTIVE",
+                                            null
+                                        ]
+                                    },
+                                    "location_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "code",
+                                    "registered_voters"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Mesa electoral creada exitosamente."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "location_name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "LOCAL DE VOTACI\u00d3N"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "address": {
+                                                    "type": "string"
+                                                },
+                                                "district_code": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "000000"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "district_name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "DISTRITO"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "province_name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "PROVINCIA"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "department_name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "DEPARTAMENTO"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "registered_voters": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "code",
+                                                "location_name",
+                                                "address",
+                                                "district_code",
+                                                "district_name",
+                                                "province_name",
+                                                "department_name",
+                                                "registered_voters",
+                                                "status"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "No autorizado para crear mesas electorales."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/polling-stations/{id}": {
+            "get": {
+                "operationId": "polling-stations.show",
+                "summary": "Obtener Detalles de una Mesa Electoral por ID",
+                "tags": [
+                    "Mesas Electorales",
+                    "PollingStation"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Mesa electoral obtenida exitosamente."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "location_name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "LOCAL DE VOTACI\u00d3N"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "address": {
+                                                    "type": "string"
+                                                },
+                                                "district_code": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "000000"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "district_name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "DISTRITO"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "province_name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "PROVINCIA"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "department_name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "DEPARTAMENTO"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "registered_voters": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "code",
+                                                "location_name",
+                                                "address",
+                                                "district_code",
+                                                "district_name",
+                                                "province_name",
+                                                "department_name",
+                                                "registered_voters",
+                                                "status"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Mesa electoral no encontrada."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "polling-stations.update",
+                "summary": "Actualizar Mesa Electoral (Solo Admin o Director)",
+                "tags": [
+                    "Mesas Electorales",
+                    "PollingStation"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "code": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 10
+                                    },
+                                    "registered_voters": {
+                                        "type": [
+                                            "integer",
+                                            "null"
+                                        ],
+                                        "minimum": 1
+                                    },
+                                    "status": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "enum": [
+                                            "ACTIVE",
+                                            "INACTIVE",
+                                            null
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Mesa electoral actualizada exitosamente."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "location_name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "LOCAL DE VOTACI\u00d3N"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "address": {
+                                                    "type": "string"
+                                                },
+                                                "district_code": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "000000"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "district_name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "DISTRITO"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "province_name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "PROVINCIA"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "department_name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "DEPARTAMENTO"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "registered_voters": {
+                                                    "type": "string"
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "code",
+                                                "location_name",
+                                                "address",
+                                                "district_code",
+                                                "district_name",
+                                                "province_name",
+                                                "department_name",
+                                                "registered_voters",
+                                                "status"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Mesa electoral no encontrada."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "No autorizado para actualizar mesas electorales."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "polling-stations.destroy",
+                "summary": "Eliminar Mesa Electoral (Solo Admin o Director)",
+                "tags": [
+                    "Mesas Electorales",
+                    "PollingStation"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Mesa electoral eliminada exitosamente."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Mesa electoral no encontrada."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "No autorizado para eliminar mesas electorales."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
                                     ]
                                 }
                             }

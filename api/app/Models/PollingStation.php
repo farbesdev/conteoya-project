@@ -23,4 +23,10 @@ class PollingStation extends Model
     {
         return $this->belongsTo(ElectoralLocation::class, 'electoral_location_id');
     }
+
+    public function personeros()
+    {
+        return $this->belongsToMany(Personero::class, 'personero_polling_station', 'polling_station_id', 'personero_id')
+                    ->withPivot('assigned_at');
+    }
 }
