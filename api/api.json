@@ -863,6 +863,238 @@
                 }
             }
         },
+        "/v1/ballot-template": {
+            "get": {
+                "operationId": "catalog.ballotTemplate",
+                "summary": "Retorna la plantilla estructurada de la c\u00e9dula electoral (mesa, organizaciones, listas y candidatos)\npara el registro de actas electorales mediante consulta a la vista/procedimiento de base de datos",
+                "tags": [
+                    "Catalog"
+                ],
+                "parameters": [
+                    {
+                        "name": "polling_station_code",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "electoral_level_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "station": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "string"
+                                                                },
+                                                                "code": {
+                                                                    "type": "string"
+                                                                },
+                                                                "registered_voters": {
+                                                                    "type": "string"
+                                                                },
+                                                                "status": {
+                                                                    "type": "string"
+                                                                },
+                                                                "department_name": {
+                                                                    "type": "string"
+                                                                },
+                                                                "province_name": {
+                                                                    "type": "string"
+                                                                },
+                                                                "district_name": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "id",
+                                                                "code",
+                                                                "registered_voters",
+                                                                "status",
+                                                                "department_name",
+                                                                "province_name",
+                                                                "district_name"
+                                                            ]
+                                                        },
+                                                        "electoral_level": {
+                                                            "type": "object",
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "string"
+                                                                },
+                                                                "code": {
+                                                                    "type": "string"
+                                                                },
+                                                                "name": {
+                                                                    "type": "string"
+                                                                },
+                                                                "has_preferential_vote": {
+                                                                    "type": "string"
+                                                                }
+                                                            },
+                                                            "required": [
+                                                                "id",
+                                                                "code",
+                                                                "name",
+                                                                "has_preferential_vote"
+                                                            ]
+                                                        },
+                                                        "lists": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "object",
+                                                                "properties": {
+                                                                    "electoral_list_id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "political_organization_id": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "political_organization_name": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "political_organization_short_name": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "logo_url": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "local_logo_url": {
+                                                                        "type": [
+                                                                            "string",
+                                                                            "null"
+                                                                        ]
+                                                                    },
+                                                                    "candidates": {
+                                                                        "type": "array",
+                                                                        "items": {
+                                                                            "type": "object",
+                                                                            "properties": {
+                                                                                "candidate_id": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "candidate_name": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "candidate_document": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "photo_url": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "local_photo_url": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "position": {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                "list_number": {
+                                                                                    "type": "string"
+                                                                                }
+                                                                            },
+                                                                            "required": [
+                                                                                "candidate_id",
+                                                                                "candidate_name",
+                                                                                "candidate_document",
+                                                                                "photo_url",
+                                                                                "local_photo_url",
+                                                                                "position",
+                                                                                "list_number"
+                                                                            ]
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "electoral_list_id",
+                                                                    "political_organization_id",
+                                                                    "political_organization_name",
+                                                                    "political_organization_short_name",
+                                                                    "logo_url",
+                                                                    "local_logo_url",
+                                                                    "candidates"
+                                                                ]
+                                                            }
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "station",
+                                                        "electoral_level",
+                                                        "lists"
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "null"
+                                                },
+                                                {
+                                                    "type": "object"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Mesa o nivel electoral no encontrado"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/acts/{act}/evidence/upload-url": {
             "post": {
                 "operationId": "evidence.requestUploadUrl",

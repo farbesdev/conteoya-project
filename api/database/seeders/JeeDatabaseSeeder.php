@@ -101,6 +101,7 @@ class JeeDatabaseSeeder extends Seeder
         );
 
         $levelsMap = [
+            'REGIONAL' => $levelRegionalGov->id,
             'GOBERNADOR REGIONAL' => $levelRegionalGov->id,
             'CONSEJERO REGIONAL' => $levelRegionalCons->id,
             'MUNICIPAL PROVINCIAL' => $levelProvincial->id,
