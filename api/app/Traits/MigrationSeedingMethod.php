@@ -27,6 +27,7 @@ trait MigrationSeedingMethod
         }
 
         $conflictColumns = $options['conflictColumns'] ?? ['external_id'];
+        $chunkSize       = $options['chunkSize'] ?? 500;
         $isPg = $this->isPostgres();
         $isSqlite = $this->isSqlite();
 
@@ -362,6 +363,9 @@ trait MigrationSeedingMethod
             return ['total' => 0, 'chunks' => 0];
         }
 
+        $conflictColumn = $options['conflictColumn'] ?? 'code';
+        $chunkSize      = $options['chunkSize'] ?? 500;
+        $verbose        = $options['verbose'] ?? true;
         $isPg = $this->isPostgres();
         $isSqlite = $this->isSqlite();
 
