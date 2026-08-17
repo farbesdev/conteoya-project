@@ -71,13 +71,46 @@ class UserSeeder extends Seeder
         );
 
         // Crear perfil de personero asociado
-        Personero::updateOrCreate(
+        $personeroDemo = Personero::updateOrCreate(
             ['user_id' => $personeroUser->id],
             [
                 'document_number' => '12345678',
                 'phone_number'    => '+51 987 654 321',
             ]
         );
+
+        // ─── MESA LIMA CERCADO (Mesa 030390 para personero demo) ─────────────
+        // Asegurar que existan los registros geográficos necesarios
+        \Illuminate\Support\Facades\DB::table('departments')->updateOrInsert(
+            ['code' => '15'],
+            ['name' => 'LIMA', 'updated_at' => now(), 'created_at' => now()]
+        );
+        \Illuminate\Support\Facades\DB::table('provinces')->updateOrInsert(
+            ['code' => '1501'],
+            ['department_code' => '15', 'name' => 'LIMA', 'updated_at' => now(), 'created_at' => now()]
+        );
+        \Illuminate\Support\Facades\DB::table('districts')->updateOrInsert(
+            ['code' => '150101'],
+            ['province_code' => '1501', 'department_code' => '15', 'name' => 'LIMA', 'updated_at' => now(), 'created_at' => now()]
+        );
+
+        $electoralLocationDemo = \App\Models\ElectoralLocation::firstOrCreate(
+            ['name' => 'I.E. NUESTRA SEÑORA DE GUADALUPE', 'district_code' => '150101'],
+            ['address' => 'Jr. Azángaro 1075, Lima Cercado']
+        );
+
+        $mesaLima = \App\Models\PollingStation::firstOrCreate(
+            ['code' => '030390'],
+            [
+                'electoral_location_id' => $electoralLocationDemo->id,
+                'registered_voters'     => 300,
+                'status'                => 'ACTIVE',
+            ]
+        );
+
+        $personeroDemo->pollingStations()->sync([$mesaLima->id]);
+
+        $this->command->info('✅  Mesa 030390 asignada al personero demo: personero@conteoya.pe');
 
         // ─── PERSONERO PUERTO INCA (YUYAPICHIS) ──────────────────────────────
         $puertoIncaUser = User::updateOrCreate(

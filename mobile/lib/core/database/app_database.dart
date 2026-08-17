@@ -317,7 +317,19 @@ class AppDatabase extends _$AppDatabase {
           ),
         );
       } else {
-        await into(localPersonerosTable).insert(personero, mode: InsertMode.insertOrReplace);
+        // Usar insert con modo insertOrIgnore para evitar duplicados por dni en dispositivos nuevos.
+        // No usamos insertOrReplace porque tiene conflicto en id (PK autoincremental), no en dni.
+        await customInsert(
+          'INSERT OR IGNORE INTO local_personeros_table (dni, first_name, last_name, polling_station_code, phone_number, email) VALUES (?, ?, ?, ?, ?, ?)',
+          variables: [
+            Variable.withString(dni),
+            Variable.withString(personero.firstName.value),
+            Variable.withString(personero.lastName.value),
+            Variable.withString(personero.pollingStationCode.value),
+            Variable(personero.phoneNumber.value),
+            Variable(personero.email.value),
+          ],
+        );
       }
     }
   }
@@ -449,7 +461,7 @@ class AppDatabase extends _$AppDatabase {
     try {
       final personeroCount = await (select(localPersonerosTable)..limit(1)).get();
       if (personeroCount.isEmpty) {
-        await into(localPersonerosTable).insert(
+        await into(localPersonerosTable).insertOnConflictUpdate(
           LocalPersonerosTableCompanion.insert(
             dni: '44001122',
             firstName: 'Personero',
@@ -460,7 +472,7 @@ class AppDatabase extends _$AppDatabase {
           ),
         );
 
-        await into(localPersonerosTable).insert(
+        await into(localPersonerosTable).insertOnConflictUpdate(
           LocalPersonerosTableCompanion.insert(
             dni: '12345678',
             firstName: 'Juan',
