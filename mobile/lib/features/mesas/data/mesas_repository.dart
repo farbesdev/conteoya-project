@@ -2,13 +2,72 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/network/api_client.dart';
 import '../../../core/database/app_database.dart';
 import '../domain/mesa_model.dart';
 
 class MesasRepository {
   final AppDatabase db;
+  final ApiClient? apiClient;
 
-  MesasRepository({required this.db});
+  MesasRepository({required this.db, this.apiClient});
+
+  /// Consulta mesas paginadas del backend API (para Admin/Director) y las guarda en SQLite local
+  Future<bool> fetchRemotePollingStations({
+    String search = '',
+    int page = 1,
+    int perPage = 10,
+  }) async {
+    if (apiClient == null) return false;
+    try {
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'per_page': perPage,
+      };
+      if (search.trim().isNotEmpty) {
+        queryParams['search'] = search.trim();
+      }
+      final response = await apiClient!.get<Map<String, Object?>>(
+        '/polling-stations',
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final dataList = response.data!['data'] as List<Object?>? ?? [];
+        final meta = response.data!['meta'] as Map<String, Object?>? ?? {};
+        final hasMore = (meta['has_more'] as bool?) ?? false;
+
+        final stationCompanions = <LocalPollingStationsTableCompanion>[];
+        for (final item in dataList) {
+          if (item is Map<String, Object?>) {
+            final code = item['code'] as String?;
+            if (code != null) {
+              stationCompanions.add(
+                LocalPollingStationsTableCompanion.insert(
+                  code: code,
+                  locationName: item['location_name']?.toString() ?? 'LOCAL DE VOTACIÓN',
+                  districtCode: Value(item['district_code']?.toString() ?? '000000'),
+                  districtName: Value(item['district_name']?.toString() ?? 'DISTRITO'),
+                  provinceName: Value(item['province_name']?.toString() ?? 'PROVINCIA'),
+                  departmentName: Value(item['department_name']?.toString() ?? 'DEPARTAMENTO'),
+                  registeredVoters: Value((item['registered_voters'] as int?) ?? 300),
+                  status: Value(item['status']?.toString() ?? 'ACTIVE'),
+                ),
+              );
+            }
+          }
+        }
+
+        if (stationCompanions.isNotEmpty) {
+          await db.savePollingStations(stationCompanions);
+        }
+        return hasMore;
+      }
+    } catch (_) {
+      // Si falla la red (modo offline), se maneja silenciosamente
+    }
+    return false;
+  }
 
   /// Emite la lista reactiva de todas las mesas enriquecidas con su personero y estado de actas
   Stream<List<MesaModel>> watchMesasWithDetails() {

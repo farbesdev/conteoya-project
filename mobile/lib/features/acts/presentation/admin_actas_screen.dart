@@ -17,12 +17,74 @@ class AdminActasScreen extends ConsumerStatefulWidget {
 
 class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   String _searchQuery = '';
+  int _currentPage = 1;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      _loadNextPage();
+    }
+  }
+
+  Future<void> _loadNextPage() async {
+    if (_isLoadingMore || !_hasMore) return;
+    setState(() => _isLoadingMore = true);
+
+    final repo = ref.read(mesasRepositoryProvider);
+    final nextPage = _currentPage + 1;
+    final hasMore = await repo.fetchRemotePollingStations(
+      search: _searchQuery,
+      page: nextPage,
+      perPage: 10,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isLoadingMore = false;
+        _currentPage = nextPage;
+        _hasMore = hasMore;
+      });
+    }
+  }
+
+  Future<void> _onSearchChanged(String val) async {
+    final query = val.trim().toLowerCase();
+    setState(() {
+      _searchQuery = query;
+      _currentPage = 1;
+      _hasMore = true;
+    });
+
+    if (query.length >= 2 || query.isEmpty) {
+      final repo = ref.read(mesasRepositoryProvider);
+      final hasMore = await repo.fetchRemotePollingStations(
+        search: query,
+        page: 1,
+        perPage: 10,
+      );
+      if (mounted) {
+        setState(() {
+          _hasMore = hasMore;
+        });
+      }
+    }
   }
 
   void _showMesaPickerForActa(List<MesaModel> mesas) {
@@ -131,7 +193,7 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
             child: TextField(
               controller: _searchController,
               style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-              onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
+              onChanged: _onSearchChanged,
               decoration: InputDecoration(
                 hintText: 'Buscar por código de mesa, local o distrito...',
                 hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
@@ -141,7 +203,7 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
                         icon: const Icon(Icons.clear, color: AppColors.textMuted, size: 18),
                         onPressed: () {
                           _searchController.clear();
-                          setState(() => _searchQuery = '');
+                          _onSearchChanged('');
                         },
                       )
                     : null,
@@ -164,7 +226,7 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
             ),
           ),
 
-          // Listado de Mesas y Estado de Actas
+          // Listado de Mesas con Scroll Infinito
           Expanded(
             child: mesasAsync.when(
               data: (mesas) {
@@ -175,7 +237,7 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
                       m.districtName.toLowerCase().contains(_searchQuery);
                 }).toList();
 
-                if (filtered.isEmpty) {
+                if (filtered.isEmpty && !_isLoadingMore) {
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(32),
@@ -220,9 +282,18 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
                 }
 
                 return ListView.builder(
+                  controller: _scrollController,
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                  itemCount: filtered.length,
+                  itemCount: filtered.length + (_isLoadingMore ? 1 : 0),
                   itemBuilder: (context, index) {
+                    if (index == filtered.length) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2),
+                        ),
+                      );
+                    }
                     final mesa = filtered[index];
                     return _buildMesaCard(context, mesa);
                   },

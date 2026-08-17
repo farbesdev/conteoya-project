@@ -87,11 +87,19 @@ class SyncController extends Controller
     {
         $user = $request->user();
 
-        // 1. Obtener mesas (Si es Personero solo las suyas, si es Admin/Director todas)
+        // 1. Obtener mesas (Si es Personero solo las suyas; si es Admin/Director solo asignadas o máximo 10 iniciales)
         $pollingStationsQuery = \App\Models\PollingStation::with(['electoralLocation.district.province.department']);
         if ($user->role === 'PERSONERO' && $user->personero) {
             $stationIds = $user->personero->pollingStations()->pluck('polling_stations.id');
             $pollingStationsQuery->whereIn('id', $stationIds);
+        } else {
+            // Admin / Director: limit de 10 mesas en sync/pull inicial para evitar congelar servidor (usar /api/v1/polling-stations para búsqueda/paginación)
+            if ($user->personero && $user->personero->pollingStations()->exists()) {
+                $stationIds = $user->personero->pollingStations()->pluck('polling_stations.id');
+                $pollingStationsQuery->whereIn('id', $stationIds);
+            } else {
+                $pollingStationsQuery->limit(10);
+            }
         }
 
         $pollingStations = $pollingStationsQuery->get()->map(function ($station) {
