@@ -387,10 +387,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           runSpacing: 8,
                           children: [
                             _buildRoleChip(
-                              label: 'Puerto Inca',
-                              email: 'personero.puertoinca@conteoya.pe',
-                              pass: 'Puertoinca123!',
-                              color: AppColors.accent,
+                              label: 'Admin',
+                              email: 'admin@conteoya.pe',
+                              pass: 'Admin123!',
+                              color: AppColors.danger,
+                            ),
+                            _buildRoleChip(
+                              label: 'Director',
+                              email: 'director@conteoya.pe',
+                              pass: 'Director123!',
+                              color: AppColors.info,
                             ),
                             _buildRoleChip(
                               label: 'Personero',
@@ -399,10 +405,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               color: AppColors.accent,
                             ),
                             _buildRoleChip(
-                              label: 'Director',
-                              email: 'director@conteoya.pe',
-                              pass: 'Director123!',
-                              color: AppColors.info,
+                              label: 'Puerto Inca',
+                              email: 'personero.puertoinca@conteoya.pe',
+                              pass: 'Puertoinca123!',
+                              color: AppColors.accent,
                             ),
                           ],
                         ),

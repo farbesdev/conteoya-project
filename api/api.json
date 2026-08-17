@@ -1142,6 +1142,170 @@
                 }
             }
         },
+        "/v1/polling-stations": {
+            "get": {
+                "operationId": "pollingStation.index",
+                "description": "Permite consultar y buscar mesas electorales con paginaci\u00f3n de alto rendimiento.\nSoporta filtrado por texto libre (`search`), c\u00f3digo de mesa, departamento, provincia o distrito.",
+                "summary": "Listar y Buscar Mesas Electorales (Paginaci\u00f3n y Filtros para Admin / Director)",
+                "tags": [
+                    "Mesas Electorales",
+                    "PollingStation"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Lista paginada de mesas electorales obtendida exitosamente."
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "code": {
+                                                        "type": "string"
+                                                    },
+                                                    "location_name": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "LOCAL DE VOTACI\u00d3N"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    "address": {
+                                                        "type": "string"
+                                                    },
+                                                    "district_code": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "000000"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    "district_name": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "DISTRITO"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    "province_name": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "PROVINCIA"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    "department_name": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "DEPARTAMENTO"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    "registered_voters": {
+                                                        "type": "string"
+                                                    },
+                                                    "status": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "code",
+                                                    "location_name",
+                                                    "address",
+                                                    "district_code",
+                                                    "district_name",
+                                                    "province_name",
+                                                    "department_name",
+                                                    "registered_voters",
+                                                    "status"
+                                                ]
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer"
+                                                },
+                                                "last_page": {
+                                                    "type": "integer"
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                },
+                                                "has_more": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "last_page",
+                                                "per_page",
+                                                "total",
+                                                "has_more"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/sync": {
             "post": {
                 "operationId": "sync.sync",

@@ -41,7 +41,8 @@ final personerosRepositoryProvider = Provider<PersonerosRepository>((ref) {
 
 final mesasRepositoryProvider = Provider<MesasRepository>((ref) {
   final db = ref.watch(appDatabaseProvider);
-  return MesasRepository(db: db);
+  final apiClient = ref.watch(apiClientProvider);
+  return MesasRepository(db: db, apiClient: apiClient);
 });
 
 // Streams Reactivos
