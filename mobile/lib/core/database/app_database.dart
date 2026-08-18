@@ -22,7 +22,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -31,11 +31,7 @@ class AppDatabase extends _$AppDatabase {
         },
         onUpgrade: (m, from, to) async {
           final migrator = createMigrator();
-          if (from < 5) {
-            try {
-              await migrator.drop(localPersonerosTable);
-              await migrator.createTable(localPersonerosTable);
-            } catch (_) {}
+          if (from < 6) {
             try {
               await migrator.drop(localPollingStationsTable);
               await migrator.createTable(localPollingStationsTable);
