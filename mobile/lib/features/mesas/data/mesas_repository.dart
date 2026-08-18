@@ -12,13 +12,14 @@ class MesasRepository {
 
   MesasRepository({required this.db, this.apiClient});
 
-  /// Consulta mesas paginadas del backend API (para Admin/Director) y las guarda en SQLite local
-  Future<bool> fetchRemotePollingStations({
+  /// Consulta mesas paginadas del backend API (para Admin/Director) de forma remota/en memoria
+  /// Retorna las mesas obtenidas y si hay más páginas, sin persistir paginación en SQLite local.
+  Future<({List<MesaModel> items, bool hasMore})> fetchRemotePollingStations({
     String search = '',
     int page = 1,
     int perPage = 10,
   }) async {
-    if (apiClient == null) return false;
+    if (apiClient == null) return (items: <MesaModel>[], hasMore: false);
     try {
       final queryParams = <String, dynamic>{
         'page': page,
@@ -37,36 +38,51 @@ class MesasRepository {
         final meta = response.data!['meta'] as Map<String, Object?>? ?? {};
         final hasMore = (meta['has_more'] as bool?) ?? false;
 
-        final stationCompanions = <LocalPollingStationsTableCompanion>[];
+        final personeros = await db.getAllPersoneros();
+        final personerosByStation = {for (var p in personeros) p.pollingStationCode: p};
+        final allActs = await (db.select(db.localActsTable)).get();
+
+        final items = <MesaModel>[];
         for (final item in dataList) {
           if (item is Map<String, Object?>) {
-            final code = item['code'] as String?;
-            if (code != null) {
-              stationCompanions.add(
-                LocalPollingStationsTableCompanion.insert(
+            final code = item['code']?.toString();
+            if (code != null && code.isNotEmpty) {
+              final personero = personerosByStation[code];
+              final regionalAct = allActs.cast<LocalAct?>().firstWhere(
+                    (a) => a?.pollingStationCode == code && a?.electoralLevelId == 1,
+                    orElse: () => null,
+                  );
+              final municipalAct = allActs.cast<LocalAct?>().firstWhere(
+                    (a) => a?.pollingStationCode == code && (a?.electoralLevelId == 2 || a?.electoralLevelId == 3),
+                    orElse: () => null,
+                  );
+
+              items.add(
+                MesaModel(
+                  id: (item['id'] as int?) ?? 0,
                   code: code,
                   locationName: item['location_name']?.toString() ?? 'LOCAL DE VOTACIÓN',
-                  districtCode: Value(item['district_code']?.toString() ?? '000000'),
-                  districtName: Value(item['district_name']?.toString() ?? 'DISTRITO'),
-                  provinceName: Value(item['province_name']?.toString() ?? 'PROVINCIA'),
-                  departmentName: Value(item['department_name']?.toString() ?? 'DEPARTAMENTO'),
-                  registeredVoters: Value((item['registered_voters'] as int?) ?? 300),
-                  status: Value(item['status']?.toString() ?? 'ACTIVE'),
+                  districtCode: item['district_code']?.toString() ?? '000000',
+                  districtName: item['district_name']?.toString() ?? 'DISTRITO',
+                  provinceName: item['province_name']?.toString() ?? 'PROVINCIA',
+                  departmentName: item['department_name']?.toString() ?? 'DEPARTAMENTO',
+                  registeredVoters: (item['registered_voters'] as int?) ?? 300,
+                  status: item['status']?.toString() ?? 'ACTIVE',
+                  assignedPersoneroName: personero != null ? '${personero.firstName} ${personero.lastName}' : null,
+                  assignedPersoneroDni: personero?.dni,
+                  regionalStatus: ActRegistrationStatus.fromDbStatus(regionalAct?.status),
+                  municipalStatus: ActRegistrationStatus.fromDbStatus(municipalAct?.status),
                 ),
               );
             }
           }
         }
-
-        if (stationCompanions.isNotEmpty) {
-          await db.savePollingStations(stationCompanions);
-        }
-        return hasMore;
+        return (items: items, hasMore: hasMore);
       }
     } catch (_) {
       // Si falla la red (modo offline), se maneja silenciosamente
     }
-    return false;
+    return (items: <MesaModel>[], hasMore: false);
   }
 
   /// Emite la lista reactiva de todas las mesas enriquecidas con su personero y estado de actas

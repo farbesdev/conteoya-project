@@ -23,6 +23,9 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
   bool _isLoadingMore = false;
   bool _hasMore = true;
 
+  // Lista en memoria para paginación y búsqueda remota
+  List<MesaModel>? _remoteMesas;
+
   @override
   void initState() {
     super.initState();
@@ -49,7 +52,7 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
 
     final repo = ref.read(mesasRepositoryProvider);
     final nextPage = _currentPage + 1;
-    final hasMore = await repo.fetchRemotePollingStations(
+    final result = await repo.fetchRemotePollingStations(
       search: _searchQuery,
       page: nextPage,
       perPage: 10,
@@ -58,8 +61,14 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
     if (mounted) {
       setState(() {
         _isLoadingMore = false;
-        _currentPage = nextPage;
-        _hasMore = hasMore;
+        if (result.items.isNotEmpty) {
+          _currentPage = nextPage;
+          final current = _remoteMesas ?? ref.read(mesasStreamProvider).value ?? [];
+          final existingCodes = current.map((m) => m.code).toSet();
+          final newUniqueItems = result.items.where((m) => !existingCodes.contains(m.code)).toList();
+          _remoteMesas = [...current, ...newUniqueItems];
+        }
+        _hasMore = result.hasMore;
       });
     }
   }
@@ -72,16 +81,25 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
       _hasMore = true;
     });
 
-    if (query.length >= 2 || query.isEmpty) {
+    if (query.isEmpty) {
+      // Al limpiar la búsqueda, vuelve al estado inicial local
+      setState(() {
+        _remoteMesas = null;
+      });
+      return;
+    }
+
+    if (query.length >= 2) {
       final repo = ref.read(mesasRepositoryProvider);
-      final hasMore = await repo.fetchRemotePollingStations(
+      final result = await repo.fetchRemotePollingStations(
         search: query,
         page: 1,
         perPage: 10,
       );
       if (mounted) {
         setState(() {
-          _hasMore = hasMore;
+          _remoteMesas = result.items;
+          _hasMore = result.hasMore;
         });
       }
     }
@@ -229,9 +247,10 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
           // Listado de Mesas con Scroll Infinito
           Expanded(
             child: mesasAsync.when(
-              data: (mesas) {
-                final filtered = mesas.where((m) {
-                  if (_searchQuery.isEmpty) return true;
+              data: (localMesas) {
+                final displayMesas = _remoteMesas ?? localMesas;
+                final filtered = displayMesas.where((m) {
+                  if (_searchQuery.isEmpty || _remoteMesas != null) return true;
                   return m.code.toLowerCase().contains(_searchQuery) ||
                       m.locationName.toLowerCase().contains(_searchQuery) ||
                       m.districtName.toLowerCase().contains(_searchQuery);
