@@ -144,6 +144,7 @@ class SyncController extends Controller
                 'polling_station_code' => $stationCode,
                 'phone_number'         => $p->phone_number,
                 'email'                => $p->user?->email,
+                'is_active'            => $p->user?->is_active ?? false,
             ];
         });
 

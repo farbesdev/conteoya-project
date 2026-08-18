@@ -26,6 +26,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         // Personero, Users & Mesas
         Route::apiResource('polling-stations', \App\Http\Controllers\Api\V1\PollingStationController::class);
         Route::get('/personero/polling-stations', [PersoneroController::class, 'pollingStations']);
+        Route::patch('/personeros/{personero}/toggle-access', [\App\Http\Controllers\Api\V1\PersoneroAccessController::class, 'toggleAccess']);
         Route::post('/users/{id}/reset-password', [\App\Http\Controllers\Api\V1\UserController::class, 'resetPassword']);
         Route::apiResource('users', \App\Http\Controllers\Api\V1\UserController::class);
 
