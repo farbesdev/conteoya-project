@@ -246,11 +246,12 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
           const SizedBox(height: 8),
 
           // Fila Inferior: Acciones [Editar], [Clave] y [Eliminar]
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            reverse: true,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+          SizedBox(
+            width: double.infinity,
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              spacing: 2,
+              runSpacing: 4,
               children: [
                 TextButton.icon(
                   style: TextButton.styleFrom(
@@ -262,7 +263,6 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                   label: const Text('Clave', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                   onPressed: () => _showResetPasswordModal(context, personero: personero),
                 ),
-                const SizedBox(width: 2),
                 TextButton.icon(
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.textSecondary,
@@ -273,7 +273,6 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                   label: const Text('Editar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                   onPressed: () => PersoneroFormModal.show(context, personeroToEdit: personero),
                 ),
-                const SizedBox(width: 2),
                 TextButton.icon(
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.danger,
