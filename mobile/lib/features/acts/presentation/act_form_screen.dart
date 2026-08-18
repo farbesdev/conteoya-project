@@ -586,23 +586,69 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
   Future<void> _saveAct({required bool isConfirmation}) async {
     setState(() => _isSaving = true);
     final db = ref.read(appDatabaseProvider);
-    final clientOpId = const Uuid().v4();
 
     final registered = int.tryParse(_registeredVotersController.text) ?? 0;
     final voters = int.tryParse(_votersWhoVotedController.text) ?? 0;
+    final status = isConfirmation ? 'READY_TO_SYNC' : 'DRAFT';
+
+    try {
+      if (_selectedLevelId == 2) {
+        // ── ACTA MUNICIPAL: Genera DOS actas separadas (Provincial + Distrital) ──
+        await _saveMunicipalActs(
+          db: db,
+          registered: registered,
+          voters: voters,
+          status: status,
+          isConfirmation: isConfirmation,
+        );
+      } else {
+        // ── ACTA REGIONAL: Flujo estándar ──
+        await _saveRegionalAct(
+          db: db,
+          registered: registered,
+          voters: voters,
+          status: status,
+          isConfirmation: isConfirmation,
+        );
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isConfirmation
+                  ? 'Acta confirmada y encolada para sincronización.'
+                  : 'Borrador guardado localmente.',
+            ),
+            backgroundColor: isConfirmation ? AppColors.success : AppColors.info,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } finally {
+      setState(() => _isSaving = false);
+    }
+  }
+
+  /// Guarda el acta REGIONAL (electoral_level_id = 1) en SQLite y encola sync.
+  Future<void> _saveRegionalAct({
+    required AppDatabase db,
+    required int registered,
+    required int voters,
+    required String status,
+    required bool isConfirmation,
+  }) async {
     final total = int.tryParse(_totalVotesController.text) ?? 0;
     final blank = int.tryParse(_blankVotesController.text) ?? 0;
     final nullVotes = int.tryParse(_nullVotesController.text) ?? 0;
     final challenged = int.tryParse(_challengedVotesController.text) ?? 0;
+    final clientOpId = const Uuid().v4();
 
-    final status = isConfirmation ? 'READY_TO_SYNC' : 'DRAFT';
-
-    // 1. Guardar en SQLite local (Drift)
     await db.saveCompleteAct(
       act: LocalActsTableCompanion(
         clientActUuid: drift.Value(_clientActUuid),
         electionId: drift.Value(widget.electionId),
-        electoralLevelId: drift.Value(_selectedLevelId),
+        electoralLevelId: const drift.Value(1),
         pollingStationCode: drift.Value(widget.pollingStationCode),
         status: drift.Value(status),
         capturedAt: drift.Value(DateTime.now()),
@@ -630,7 +676,6 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       }).toList(),
     );
 
-    // 2. Si hay fotografía, registrar evidencia local
     if (_capturedPhoto != null && _photoSha256 != null) {
       await db.into(db.localActEvidenceTable).insert(
         LocalActEvidenceTableCompanion(
@@ -644,13 +689,13 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       );
     }
 
-    // 3. Si se confirma, encolar operación de sincronización
     if (isConfirmation) {
       final payload = {
         'client_act_uuid': _clientActUuid,
         'election_id': widget.electionId,
-        'electoral_level_id': _selectedLevelId,
+        'electoral_level_id': 1,
         'polling_station_code': widget.pollingStationCode,
+        'status': 'CONFIRMED',
         'totals': {
           'registered_voters': registered,
           'voters_who_voted': voters,
@@ -658,7 +703,6 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
           'blank_votes': blank,
           'null_votes': nullVotes,
           'challenged_votes': challenged,
-          'is_valid_total': _validationResult.isValid,
         },
         'results': _partyEntries.map((p) {
           final votes = int.tryParse(p.votesController.text) ?? 0;
@@ -678,26 +722,211 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
           entityType: const drift.Value('acts'),
           entityId: drift.Value(_clientActUuid),
           payloadJson: drift.Value(jsonEncode(payload)),
-          checksum: drift.Value(_photoSha256 ?? ''),
+          checksum: drift.Value(_photoSha256 ?? jsonEncode(payload).hashCode.toString()),
           status: const drift.Value('PENDING'),
         ),
       );
     }
+  }
 
-    setState(() => _isSaving = false);
+  /// Guarda DOS actas MUNICIPALES separadas (Provincial id=2 + Distrital id=3)
+  /// en SQLite y encola DOS sync operations independientes con UUID distintos.
+  Future<void> _saveMunicipalActs({
+    required AppDatabase db,
+    required int registered,
+    required int voters,
+    required String status,
+    required bool isConfirmation,
+  }) async {
+    // Totales Provinciales
+    final provTotal = int.tryParse(_provTotalVotesController.text) ?? 0;
+    final provBlank = int.tryParse(_provBlankVotesController.text) ?? 0;
+    final provNull = int.tryParse(_provNullVotesController.text) ?? 0;
+    final provChallenged = int.tryParse(_provChallengedVotesController.text) ?? 0;
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            isConfirmation
-                ? 'Acta confirmada y encolada para sincronización.'
-                : 'Borrador guardado localmente.',
-          ),
-          backgroundColor: isConfirmation ? AppColors.success : AppColors.info,
+    // Totales Distritales
+    final distTotal = int.tryParse(_distTotalVotesController.text) ?? 0;
+    final distBlank = int.tryParse(_distBlankVotesController.text) ?? 0;
+    final distNull = int.tryParse(_distNullVotesController.text) ?? 0;
+    final distChallenged = int.tryParse(_distChallengedVotesController.text) ?? 0;
+
+    // UUID separado para el acta distrital (el provincial usa _clientActUuid)
+    final clientActUuidDist = const Uuid().v4();
+    final clientOpIdProv = const Uuid().v4();
+    final clientOpIdDist = const Uuid().v4();
+
+    // ── 1. Acta Municipal PROVINCIAL (electoral_level_id = 2) ────────────────
+    final provResults = _partyEntries
+        .where((p) => p.isProvincialAdmitted)
+        .map((p) {
+          final votes = int.tryParse(p.votesProvincialController.text) ?? 0;
+          return LocalActResultsTableCompanion(
+            clientActUuid: drift.Value(_clientActUuid),
+            politicalOrganizationId: drift.Value(p.id),
+            politicalOrganizationName: drift.Value(p.name),
+            votes: drift.Value(votes),
+            source: drift.Value(p.source),
+            confidence: drift.Value(p.confidence),
+          );
+        })
+        .toList();
+
+    await db.saveCompleteAct(
+      act: LocalActsTableCompanion(
+        clientActUuid: drift.Value(_clientActUuid),
+        electionId: drift.Value(widget.electionId),
+        electoralLevelId: const drift.Value(2),
+        pollingStationCode: drift.Value(widget.pollingStationCode),
+        status: drift.Value(status),
+        capturedAt: drift.Value(DateTime.now()),
+      ),
+      totals: LocalActTotalsTableCompanion(
+        clientActUuid: drift.Value(_clientActUuid),
+        registeredVoters: drift.Value(registered),
+        votersWhoVoted: drift.Value(voters),
+        totalVotes: drift.Value(provTotal),
+        blankVotes: drift.Value(provBlank),
+        nullVotes: drift.Value(provNull),
+        challengedVotes: drift.Value(provChallenged),
+        isValidTotal: drift.Value(_validationResult.isValid),
+      ),
+      results: provResults,
+    );
+
+    // ── 2. Acta Municipal DISTRITAL (electoral_level_id = 3) ─────────────────
+    final distResults = _partyEntries
+        .where((p) => p.isDistritalAdmitted)
+        .map((p) {
+          final votes = int.tryParse(p.votesDistritalController.text) ?? 0;
+          return LocalActResultsTableCompanion(
+            clientActUuid: drift.Value(clientActUuidDist),
+            politicalOrganizationId: drift.Value(p.id),
+            politicalOrganizationName: drift.Value(p.name),
+            votes: drift.Value(votes),
+            source: drift.Value(p.source),
+            confidence: drift.Value(p.confidence),
+          );
+        })
+        .toList();
+
+    await db.saveCompleteAct(
+      act: LocalActsTableCompanion(
+        clientActUuid: drift.Value(clientActUuidDist),
+        electionId: drift.Value(widget.electionId),
+        electoralLevelId: const drift.Value(3),
+        pollingStationCode: drift.Value(widget.pollingStationCode),
+        status: drift.Value(status),
+        capturedAt: drift.Value(DateTime.now()),
+      ),
+      totals: LocalActTotalsTableCompanion(
+        clientActUuid: drift.Value(clientActUuidDist),
+        registeredVoters: drift.Value(registered),
+        votersWhoVoted: drift.Value(voters),
+        totalVotes: drift.Value(distTotal),
+        blankVotes: drift.Value(distBlank),
+        nullVotes: drift.Value(distNull),
+        challengedVotes: drift.Value(distChallenged),
+        isValidTotal: drift.Value(_validationResult.isValid),
+      ),
+      results: distResults,
+    );
+
+    // ── 3. Evidencia fotográfica (asociada al acta provincial como primaria) ──
+    if (_capturedPhoto != null && _photoSha256 != null) {
+      await db.into(db.localActEvidenceTable).insert(
+        LocalActEvidenceTableCompanion(
+          clientActUuid: drift.Value(_clientActUuid),
+          localFilePath: drift.Value(_capturedPhoto!.path),
+          sha256Hash: drift.Value(_photoSha256!),
+          fileSizeBytes: drift.Value(_capturedPhoto!.lengthSync()),
+          isUploaded: const drift.Value(false),
+          capturedAt: drift.Value(DateTime.now()),
         ),
       );
-      Navigator.pop(context);
+    }
+
+    if (isConfirmation) {
+      // ── SyncOperation Provincial ──────────────────────────────────────────
+      final provSyncPayload = {
+        'client_act_uuid': _clientActUuid,
+        'election_id': widget.electionId,
+        'electoral_level_id': 2,
+        'polling_station_code': widget.pollingStationCode,
+        'status': 'CONFIRMED',
+        'totals': {
+          'registered_voters': registered,
+          'voters_who_voted': voters,
+          'total_votes': provTotal,
+          'blank_votes': provBlank,
+          'null_votes': provNull,
+          'challenged_votes': provChallenged,
+        },
+        'results': _partyEntries
+            .where((p) => p.isProvincialAdmitted)
+            .map((p) {
+              final votes = int.tryParse(p.votesProvincialController.text) ?? 0;
+              return {
+                'political_organization_id': p.id,
+                'political_organization_name': p.name,
+                'votes': votes,
+                'source': p.source,
+                'confidence': p.confidence,
+              };
+            })
+            .toList(),
+      };
+
+      await db.into(db.localSyncOperationsTable).insert(
+        LocalSyncOperationsTableCompanion(
+          clientOperationId: drift.Value(clientOpIdProv),
+          entityType: const drift.Value('acts'),
+          entityId: drift.Value(_clientActUuid),
+          payloadJson: drift.Value(jsonEncode(provSyncPayload)),
+          checksum: drift.Value(_photoSha256 ?? jsonEncode(provSyncPayload).hashCode.toString()),
+          status: const drift.Value('PENDING'),
+        ),
+      );
+
+      // ── SyncOperation Distrital ───────────────────────────────────────────
+      final distSyncPayload = {
+        'client_act_uuid': clientActUuidDist,
+        'election_id': widget.electionId,
+        'electoral_level_id': 3,
+        'polling_station_code': widget.pollingStationCode,
+        'status': 'CONFIRMED',
+        'totals': {
+          'registered_voters': registered,
+          'voters_who_voted': voters,
+          'total_votes': distTotal,
+          'blank_votes': distBlank,
+          'null_votes': distNull,
+          'challenged_votes': distChallenged,
+        },
+        'results': _partyEntries
+            .where((p) => p.isDistritalAdmitted)
+            .map((p) {
+              final votes = int.tryParse(p.votesDistritalController.text) ?? 0;
+              return {
+                'political_organization_id': p.id,
+                'political_organization_name': p.name,
+                'votes': votes,
+                'source': p.source,
+                'confidence': p.confidence,
+              };
+            })
+            .toList(),
+      };
+
+      await db.into(db.localSyncOperationsTable).insert(
+        LocalSyncOperationsTableCompanion(
+          clientOperationId: drift.Value(clientOpIdDist),
+          entityType: const drift.Value('acts'),
+          entityId: drift.Value(clientActUuidDist),
+          payloadJson: drift.Value(jsonEncode(distSyncPayload)),
+          checksum: drift.Value(jsonEncode(distSyncPayload).hashCode.toString()),
+          status: const drift.Value('PENDING'),
+        ),
+      );
     }
   }
 

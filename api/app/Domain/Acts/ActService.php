@@ -21,12 +21,14 @@ class ActService
 
     /**
      * Crea o actualiza un acta con sus totales y resultados atómicamente.
+     *
+     * @param  ?Personero $personero  Puede ser null cuando el operador es ADMIN sin perfil de personero.
      */
     public function createOrUpdateAct(
         int $electionId,
         int $electoralLevelId,
         PollingStation $station,
-        Personero $personero,
+        ?Personero $personero,
         ActTotalsDTO $totalsDTO,
         array $results,
         ?string $actCode = null,
@@ -57,7 +59,7 @@ class ActService
                 [
                     'act_code'                 => $actCode,
                     'status'                   => $status,
-                    'captured_by_personero_id' => $personero->id,
+                    'captured_by_personero_id' => $personero?->id,
                     'captured_at'              => now(),
                     'confirmed_at'             => $status === 'CONFIRMED' || $status === 'SYNCED' ? now() : null,
                 ]
@@ -94,9 +96,9 @@ class ActService
             return $act;
         });
 
-        // Registrar en audit log
+        // Registrar en audit log (user_id puede ser null si no hay personero vinculado)
         AuditLog::create([
-            'user_id'     => $personero->user_id,
+            'user_id'     => $personero?->user_id,
             'action'      => 'INGEST_ACT',
             'entity_type' => 'acts',
             'entity_id'   => (string)$act->id,
