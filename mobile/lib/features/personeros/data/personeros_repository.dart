@@ -219,6 +219,26 @@ class PersonerosRepository {
     }
   }
 
+  Future<bool> togglePersoneroAccess(int id) async {
+    final existing = await (db.select(db.localPersonerosTable)..where((t) => t.id.equals(id))).getSingleOrNull();
+    if (existing == null) return false;
+
+    final newState = !existing.isActive;
+
+    await db.updatePersonero(
+      LocalPersonerosTableCompanion(
+        id: Value(existing.id),
+        dni: Value(existing.dni),
+        firstName: Value(existing.firstName),
+        lastName: Value(existing.lastName),
+        pollingStationCode: Value(existing.pollingStationCode),
+        isActive: Value(newState),
+      ),
+    );
+
+    return newState;
+  }
+
   PersoneroModel _mapToModel(LocalPersonero entity) {
     return PersoneroModel(
       id: entity.id,
@@ -228,6 +248,7 @@ class PersonerosRepository {
       pollingStationCode: entity.pollingStationCode,
       phoneNumber: entity.phoneNumber,
       email: entity.email,
+      isActive: entity.isActive,
       createdAt: entity.createdAt,
     );
   }

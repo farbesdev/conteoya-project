@@ -234,6 +234,7 @@ class SyncEngine {
                 pollingStationCode: stationCode,
                 phoneNumber: Value(item['phone_number']?.toString()),
                 email: Value(item['email']?.toString()),
+                isActive: Value(item['is_active'] == true),
               ),
             );
           }

@@ -6,6 +6,7 @@ class PersoneroModel {
   final String pollingStationCode;
   final String? phoneNumber;
   final String? email;
+  final bool isActive;
   final DateTime createdAt;
 
   const PersoneroModel({
@@ -16,6 +17,7 @@ class PersoneroModel {
     required this.pollingStationCode,
     this.phoneNumber,
     this.email,
+    this.isActive = false,
     required this.createdAt,
   });
 
@@ -29,6 +31,7 @@ class PersoneroModel {
     String? pollingStationCode,
     String? phoneNumber,
     String? email,
+    bool? isActive,
     DateTime? createdAt,
   }) {
     return PersoneroModel(
@@ -39,6 +42,7 @@ class PersoneroModel {
       pollingStationCode: pollingStationCode ?? this.pollingStationCode,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       email: email ?? this.email,
+      isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
     );
   }

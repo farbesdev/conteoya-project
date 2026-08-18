@@ -4320,6 +4320,21 @@ class $LocalPersonerosTableTable extends LocalPersonerosTable
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _isActiveMeta = const VerificationMeta(
+    'isActive',
+  );
+  @override
+  late final GeneratedColumn<bool> isActive = GeneratedColumn<bool>(
+    'is_active',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_active" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -4341,6 +4356,7 @@ class $LocalPersonerosTableTable extends LocalPersonerosTable
     pollingStationCode,
     phoneNumber,
     email,
+    isActive,
     createdAt,
   ];
   @override
@@ -4408,6 +4424,12 @@ class $LocalPersonerosTableTable extends LocalPersonerosTable
         email.isAcceptableOrUnknown(data['email']!, _emailMeta),
       );
     }
+    if (data.containsKey('is_active')) {
+      context.handle(
+        _isActiveMeta,
+        isActive.isAcceptableOrUnknown(data['is_active']!, _isActiveMeta),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -4451,6 +4473,10 @@ class $LocalPersonerosTableTable extends LocalPersonerosTable
         DriftSqlType.string,
         data['${effectivePrefix}email'],
       ),
+      isActive: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_active'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -4472,6 +4498,7 @@ class LocalPersonero extends DataClass implements Insertable<LocalPersonero> {
   final String pollingStationCode;
   final String? phoneNumber;
   final String? email;
+  final bool isActive;
   final DateTime createdAt;
   const LocalPersonero({
     required this.id,
@@ -4481,6 +4508,7 @@ class LocalPersonero extends DataClass implements Insertable<LocalPersonero> {
     required this.pollingStationCode,
     this.phoneNumber,
     this.email,
+    required this.isActive,
     required this.createdAt,
   });
   @override
@@ -4497,6 +4525,7 @@ class LocalPersonero extends DataClass implements Insertable<LocalPersonero> {
     if (!nullToAbsent || email != null) {
       map['email'] = Variable<String>(email);
     }
+    map['is_active'] = Variable<bool>(isActive);
     map['created_at'] = Variable<DateTime>(createdAt);
     return map;
   }
@@ -4514,6 +4543,7 @@ class LocalPersonero extends DataClass implements Insertable<LocalPersonero> {
       email: email == null && nullToAbsent
           ? const Value.absent()
           : Value(email),
+      isActive: Value(isActive),
       createdAt: Value(createdAt),
     );
   }
@@ -4533,6 +4563,7 @@ class LocalPersonero extends DataClass implements Insertable<LocalPersonero> {
       ),
       phoneNumber: serializer.fromJson<String?>(json['phoneNumber']),
       email: serializer.fromJson<String?>(json['email']),
+      isActive: serializer.fromJson<bool>(json['isActive']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
   }
@@ -4547,6 +4578,7 @@ class LocalPersonero extends DataClass implements Insertable<LocalPersonero> {
       'pollingStationCode': serializer.toJson<String>(pollingStationCode),
       'phoneNumber': serializer.toJson<String?>(phoneNumber),
       'email': serializer.toJson<String?>(email),
+      'isActive': serializer.toJson<bool>(isActive),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
   }
@@ -4559,6 +4591,7 @@ class LocalPersonero extends DataClass implements Insertable<LocalPersonero> {
     String? pollingStationCode,
     Value<String?> phoneNumber = const Value.absent(),
     Value<String?> email = const Value.absent(),
+    bool? isActive,
     DateTime? createdAt,
   }) => LocalPersonero(
     id: id ?? this.id,
@@ -4568,6 +4601,7 @@ class LocalPersonero extends DataClass implements Insertable<LocalPersonero> {
     pollingStationCode: pollingStationCode ?? this.pollingStationCode,
     phoneNumber: phoneNumber.present ? phoneNumber.value : this.phoneNumber,
     email: email.present ? email.value : this.email,
+    isActive: isActive ?? this.isActive,
     createdAt: createdAt ?? this.createdAt,
   );
   LocalPersonero copyWithCompanion(LocalPersonerosTableCompanion data) {
@@ -4583,6 +4617,7 @@ class LocalPersonero extends DataClass implements Insertable<LocalPersonero> {
           ? data.phoneNumber.value
           : this.phoneNumber,
       email: data.email.present ? data.email.value : this.email,
+      isActive: data.isActive.present ? data.isActive.value : this.isActive,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
   }
@@ -4597,6 +4632,7 @@ class LocalPersonero extends DataClass implements Insertable<LocalPersonero> {
           ..write('pollingStationCode: $pollingStationCode, ')
           ..write('phoneNumber: $phoneNumber, ')
           ..write('email: $email, ')
+          ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -4611,6 +4647,7 @@ class LocalPersonero extends DataClass implements Insertable<LocalPersonero> {
     pollingStationCode,
     phoneNumber,
     email,
+    isActive,
     createdAt,
   );
   @override
@@ -4624,6 +4661,7 @@ class LocalPersonero extends DataClass implements Insertable<LocalPersonero> {
           other.pollingStationCode == this.pollingStationCode &&
           other.phoneNumber == this.phoneNumber &&
           other.email == this.email &&
+          other.isActive == this.isActive &&
           other.createdAt == this.createdAt);
 }
 
@@ -4635,6 +4673,7 @@ class LocalPersonerosTableCompanion extends UpdateCompanion<LocalPersonero> {
   final Value<String> pollingStationCode;
   final Value<String?> phoneNumber;
   final Value<String?> email;
+  final Value<bool> isActive;
   final Value<DateTime> createdAt;
   const LocalPersonerosTableCompanion({
     this.id = const Value.absent(),
@@ -4644,6 +4683,7 @@ class LocalPersonerosTableCompanion extends UpdateCompanion<LocalPersonero> {
     this.pollingStationCode = const Value.absent(),
     this.phoneNumber = const Value.absent(),
     this.email = const Value.absent(),
+    this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   LocalPersonerosTableCompanion.insert({
@@ -4654,6 +4694,7 @@ class LocalPersonerosTableCompanion extends UpdateCompanion<LocalPersonero> {
     required String pollingStationCode,
     this.phoneNumber = const Value.absent(),
     this.email = const Value.absent(),
+    this.isActive = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : dni = Value(dni),
        firstName = Value(firstName),
@@ -4667,6 +4708,7 @@ class LocalPersonerosTableCompanion extends UpdateCompanion<LocalPersonero> {
     Expression<String>? pollingStationCode,
     Expression<String>? phoneNumber,
     Expression<String>? email,
+    Expression<bool>? isActive,
     Expression<DateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -4678,6 +4720,7 @@ class LocalPersonerosTableCompanion extends UpdateCompanion<LocalPersonero> {
         'polling_station_code': pollingStationCode,
       if (phoneNumber != null) 'phone_number': phoneNumber,
       if (email != null) 'email': email,
+      if (isActive != null) 'is_active': isActive,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -4690,6 +4733,7 @@ class LocalPersonerosTableCompanion extends UpdateCompanion<LocalPersonero> {
     Value<String>? pollingStationCode,
     Value<String?>? phoneNumber,
     Value<String?>? email,
+    Value<bool>? isActive,
     Value<DateTime>? createdAt,
   }) {
     return LocalPersonerosTableCompanion(
@@ -4700,6 +4744,7 @@ class LocalPersonerosTableCompanion extends UpdateCompanion<LocalPersonero> {
       pollingStationCode: pollingStationCode ?? this.pollingStationCode,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       email: email ?? this.email,
+      isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -4728,6 +4773,9 @@ class LocalPersonerosTableCompanion extends UpdateCompanion<LocalPersonero> {
     if (email.present) {
       map['email'] = Variable<String>(email.value);
     }
+    if (isActive.present) {
+      map['is_active'] = Variable<bool>(isActive.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -4744,6 +4792,7 @@ class LocalPersonerosTableCompanion extends UpdateCompanion<LocalPersonero> {
           ..write('pollingStationCode: $pollingStationCode, ')
           ..write('phoneNumber: $phoneNumber, ')
           ..write('email: $email, ')
+          ..write('isActive: $isActive, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -6952,6 +7001,7 @@ typedef $$LocalPersonerosTableTableCreateCompanionBuilder =
       required String pollingStationCode,
       Value<String?> phoneNumber,
       Value<String?> email,
+      Value<bool> isActive,
       Value<DateTime> createdAt,
     });
 typedef $$LocalPersonerosTableTableUpdateCompanionBuilder =
@@ -6963,6 +7013,7 @@ typedef $$LocalPersonerosTableTableUpdateCompanionBuilder =
       Value<String> pollingStationCode,
       Value<String?> phoneNumber,
       Value<String?> email,
+      Value<bool> isActive,
       Value<DateTime> createdAt,
     });
 
@@ -7007,6 +7058,11 @@ class $$LocalPersonerosTableTableFilterComposer
 
   ColumnFilters<String> get email => $composableBuilder(
     column: $table.email,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7060,6 +7116,11 @@ class $$LocalPersonerosTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get isActive => $composableBuilder(
+    column: $table.isActive,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -7099,6 +7160,9 @@ class $$LocalPersonerosTableTableAnnotationComposer
 
   GeneratedColumn<String> get email =>
       $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<bool> get isActive =>
+      $composableBuilder(column: $table.isActive, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -7154,6 +7218,7 @@ class $$LocalPersonerosTableTableTableManager
                 Value<String> pollingStationCode = const Value.absent(),
                 Value<String?> phoneNumber = const Value.absent(),
                 Value<String?> email = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => LocalPersonerosTableCompanion(
                 id: id,
@@ -7163,6 +7228,7 @@ class $$LocalPersonerosTableTableTableManager
                 pollingStationCode: pollingStationCode,
                 phoneNumber: phoneNumber,
                 email: email,
+                isActive: isActive,
                 createdAt: createdAt,
               ),
           createCompanionCallback:
@@ -7174,6 +7240,7 @@ class $$LocalPersonerosTableTableTableManager
                 required String pollingStationCode,
                 Value<String?> phoneNumber = const Value.absent(),
                 Value<String?> email = const Value.absent(),
+                Value<bool> isActive = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
               }) => LocalPersonerosTableCompanion.insert(
                 id: id,
@@ -7183,6 +7250,7 @@ class $$LocalPersonerosTableTableTableManager
                 pollingStationCode: pollingStationCode,
                 phoneNumber: phoneNumber,
                 email: email,
+                isActive: isActive,
                 createdAt: createdAt,
               ),
           withReferenceMapper: (p0) => p0

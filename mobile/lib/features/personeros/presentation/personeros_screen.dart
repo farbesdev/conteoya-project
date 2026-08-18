@@ -202,12 +202,15 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                       children: [
                         const Icon(Icons.badge_outlined, color: AppColors.textMuted, size: 14),
                         const SizedBox(width: 4),
-                        Text(
-                          'DNI: ${personero.dni}',
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 13,
-                            fontFamily: 'monospace',
+                        Flexible(
+                          child: Text(
+                            'DNI: ${personero.dni}',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                              fontFamily: 'monospace',
+                            ),
                           ),
                         ),
                       ],
@@ -245,62 +248,116 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
           const Divider(color: AppColors.border, height: 1),
           const SizedBox(height: 8),
 
-          // Fila Inferior: Acciones [Editar], [Clave] y [Eliminar]
-          SizedBox(
-            width: double.infinity,
-            child: Wrap(
-              alignment: WrapAlignment.end,
-              spacing: 2,
-              runSpacing: 4,
-              children: [
-                TextButton.icon(
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.warning,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    visualDensity: VisualDensity.compact,
+          // Fila Inferior: Switch de Acceso y Acciones [Editar], [Clave] y [Eliminar]
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // Switch de Acceso
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    personero.isActive ? 'Acceso Activo' : 'Acceso Inactivo',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: personero.isActive ? AppColors.success : AppColors.textMuted,
+                    ),
                   ),
-                  icon: const Icon(Icons.key_rounded, size: 15),
-                  label: const Text('Clave', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                  onPressed: () => _showResetPasswordModal(context, personero: personero),
-                ),
-                TextButton.icon(
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  icon: const Icon(Icons.edit_outlined, size: 15),
-                  label: const Text('Editar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                  onPressed: () => PersoneroFormModal.show(context, personeroToEdit: personero),
-                ),
-                TextButton.icon(
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.danger,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  icon: const Icon(Icons.delete_outline_rounded, size: 15),
-                  label: const Text('Eliminar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                  onPressed: () {
-                    DeletePersoneroDialog.show(
-                      context,
-                      personeroName: personero.fullName,
-                      onConfirm: () async {
-                        await ref.read(personerosRepositoryProvider).deletePersonero(personero.id);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              backgroundColor: AppColors.danger,
-                              content: Text('Personero eliminado del sistema.'),
-                            ),
-                          );
+                  SizedBox(
+                    height: 30,
+                    child: Switch(
+                      value: personero.isActive,
+                      activeColor: AppColors.success,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      onChanged: (val) async {
+                        try {
+                          final apiClient = ref.read(apiClientProvider);
+                          await apiClient.patch('/personeros/${personero.id}/toggle-access');
+                          await ref.read(personerosRepositoryProvider).togglePersoneroAccess(personero.id);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: val ? AppColors.success : AppColors.warning,
+                                content: Text(val ? 'Acceso habilitado para ${personero.firstName}.' : 'Acceso deshabilitado para ${personero.firstName}.'),
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: AppColors.danger,
+                                content: Text('Error al cambiar acceso. Verifica la conexión.'),
+                              ),
+                            );
+                          }
                         }
                       },
-                    );
-                  },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 8),
+              // Botones de Acción
+              Expanded(
+                child: Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 2,
+                  runSpacing: 4,
+                  children: [
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.warning,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      icon: const Icon(Icons.key_rounded, size: 15),
+                      label: const Text('Clave', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      onPressed: () => _showResetPasswordModal(context, personero: personero),
+                    ),
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.textSecondary,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      icon: const Icon(Icons.edit_outlined, size: 15),
+                      label: const Text('Editar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      onPressed: () => PersoneroFormModal.show(context, personeroToEdit: personero),
+                    ),
+                    TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.danger,
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      icon: const Icon(Icons.delete_outline_rounded, size: 15),
+                      label: const Text('Eliminar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                      onPressed: () {
+                        DeletePersoneroDialog.show(
+                          context,
+                          personeroName: personero.fullName,
+                          onConfirm: () async {
+                            await ref.read(personerosRepositoryProvider).deletePersonero(personero.id);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  backgroundColor: AppColors.danger,
+                                  content: Text('Personero eliminado del sistema.'),
+                                ),
+                              );
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),

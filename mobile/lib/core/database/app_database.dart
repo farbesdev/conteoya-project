@@ -22,7 +22,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -35,6 +35,11 @@ class AppDatabase extends _$AppDatabase {
             try {
               await migrator.drop(localPollingStationsTable);
               await migrator.createTable(localPollingStationsTable);
+            } catch (_) {}
+          }
+          if (from < 7) {
+            try {
+              await migrator.addColumn(localPersonerosTable, localPersonerosTable.isActive);
             } catch (_) {}
           }
         },
@@ -310,13 +315,14 @@ class AppDatabase extends _$AppDatabase {
             pollingStationCode: personero.pollingStationCode,
             phoneNumber: personero.phoneNumber,
             email: personero.email,
+            isActive: personero.isActive,
           ),
         );
       } else {
         // Usar insert con modo insertOrIgnore para evitar duplicados por dni en dispositivos nuevos.
         // No usamos insertOrReplace porque tiene conflicto en id (PK autoincremental), no en dni.
         await customInsert(
-          'INSERT OR IGNORE INTO local_personeros_table (dni, first_name, last_name, polling_station_code, phone_number, email) VALUES (?, ?, ?, ?, ?, ?)',
+          'INSERT OR IGNORE INTO local_personeros_table (dni, first_name, last_name, polling_station_code, phone_number, email, is_active) VALUES (?, ?, ?, ?, ?, ?, ?)',
           variables: [
             Variable.withString(dni),
             Variable.withString(personero.firstName.value),
@@ -324,6 +330,7 @@ class AppDatabase extends _$AppDatabase {
             Variable.withString(personero.pollingStationCode.value),
             Variable(personero.phoneNumber.value),
             Variable(personero.email.value),
+            Variable.withBool(personero.isActive.value),
           ],
         );
       }

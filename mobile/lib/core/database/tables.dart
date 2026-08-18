@@ -110,6 +110,7 @@ class LocalPersonerosTable extends Table {
   TextColumn get pollingStationCode => text()();
   TextColumn get phoneNumber => text().nullable()();
   TextColumn get email => text().nullable()();
+  BoolColumn get isActive => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 

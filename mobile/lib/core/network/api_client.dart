@@ -86,6 +86,14 @@ class ApiClient {
     return _dio.post<T>(path, data: data, queryParameters: queryParameters, options: options);
   }
 
+  Future<Response<T>> patch<T>(
+    String path, {
+    Object? data,
+    Map<String, Object?>? queryParameters,
+  }) {
+    return _dio.patch<T>(path, data: data, queryParameters: queryParameters);
+  }
+
   /// Sube un archivo binario a una URL presignada (Cloudflare R2) vía HTTP PUT
   Future<Response<void>> uploadToPresignedUrl({
     required String presignedUrl,
