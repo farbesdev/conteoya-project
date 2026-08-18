@@ -125,6 +125,7 @@ erDiagram
         string name
         date date
         string status
+        int jee_proceso_electoral_id
         timestamp created_at
         timestamp updated_at
     }
@@ -213,8 +214,26 @@ erDiagram
     personeros {
         bigint id PK
         bigint user_id FK
+        bigint election_id FK
+        bigint political_organization_id FK
         string document_number
+        string full_name
+        string first_name
+        string email
+        string personero_type
+        int id_tipo_personero
         string phone_number
+        string status
+        string expediente_ext
+        string codigo_declara
+        int jee_personero_declara_id
+        string political_organization_name
+        string jee_name
+        int jee_id
+        string department_name
+        string province_name
+        string district_name
+        string abogado_responsable
         timestamp created_at
         timestamp updated_at
     }

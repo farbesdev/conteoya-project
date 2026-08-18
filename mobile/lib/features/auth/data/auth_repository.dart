@@ -139,6 +139,9 @@ class AuthRepository {
       if (isConnectionError) {
         final localPersonero = await db!.getPersoneroByEmailOrDni(email);
         if (localPersonero != null) {
+          if (!localPersonero.isActive) {
+            throw Exception('Su cuenta se encuentra inhabilitada. Comuníquese con el Administrador.');
+          }
           final session = UserSession(
             id: localPersonero.id,
             name: '${localPersonero.firstName} ${localPersonero.lastName}',

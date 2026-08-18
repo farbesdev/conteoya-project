@@ -16,12 +16,128 @@ class PersonerosScreen extends ConsumerStatefulWidget {
 
 class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   String _searchQuery = '';
+  int _currentPage = 1;
+  int _totalCount = 0;
+  bool _isLoading = false;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+
+  // Lista en memoria para paginación y búsqueda remota
+  List<PersoneroModel>? _remotePersoneros;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadInitialData();
+    });
+  }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadInitialData() async {
+    setState(() => _isLoading = true);
+    final repo = ref.read(personerosRepositoryProvider);
+    final result = await repo.fetchRemotePersoneros(
+      search: _searchQuery,
+      page: 1,
+      perPage: 15,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _currentPage = 1;
+        _remotePersoneros = result.items;
+        _hasMore = result.hasMore;
+        _totalCount = result.total;
+      });
+    }
+  }
+
+  Future<void> _refresh() async {
+    final repo = ref.read(personerosRepositoryProvider);
+    final result = await repo.fetchRemotePersoneros(
+      search: _searchQuery,
+      page: 1,
+      perPage: 15,
+    );
+
+    if (mounted) {
+      setState(() {
+        _currentPage = 1;
+        _remotePersoneros = result.items;
+        _hasMore = result.hasMore;
+        _totalCount = result.total;
+      });
+    }
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      _loadNextPage();
+    }
+  }
+
+  Future<void> _loadNextPage() async {
+    if (_isLoadingMore || !_hasMore) return;
+    setState(() => _isLoadingMore = true);
+
+    final repo = ref.read(personerosRepositoryProvider);
+    final nextPage = _currentPage + 1;
+    final result = await repo.fetchRemotePersoneros(
+      search: _searchQuery,
+      page: nextPage,
+      perPage: 15,
+    );
+
+    if (mounted) {
+      setState(() {
+        _isLoadingMore = false;
+        if (result.items.isNotEmpty) {
+          _currentPage = nextPage;
+          final current = _remotePersoneros ?? [];
+          final existingIds = current.map((p) => p.id).toSet();
+          final newUnique = result.items.where((p) => !existingIds.contains(p.id)).toList();
+          _remotePersoneros = [...current, ...newUnique];
+        }
+        _hasMore = result.hasMore;
+        _totalCount = result.total;
+      });
+    }
+  }
+
+  Future<void> _onSearchChanged(String val) async {
+    final query = val.trim();
+    setState(() {
+      _searchQuery = query;
+      _currentPage = 1;
+      _hasMore = true;
+    });
+
+    final repo = ref.read(personerosRepositoryProvider);
+    final result = await repo.fetchRemotePersoneros(
+      search: query,
+      page: 1,
+      perPage: 15,
+    );
+
+    if (mounted) {
+      setState(() {
+        _remotePersoneros = result.items;
+        _hasMore = result.hasMore;
+        _totalCount = result.total;
+      });
+    }
   }
 
   @override
@@ -39,113 +155,79 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
               color: AppColors.primary,
               border: Border(bottom: BorderSide(color: AppColors.border)),
             ),
-            child: TextField(
-              controller: _searchController,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
-              onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
-              decoration: InputDecoration(
-                hintText: 'Buscar por DNI, nombre o mesa...',
-                hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
-                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, color: AppColors.textMuted, size: 18),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = '');
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: AppColors.surface,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _searchController,
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                  onSubmitted: _onSearchChanged,
+                  onChanged: (val) {
+                    if (val.isEmpty || val.length >= 2) {
+                      _onSearchChanged(val);
+                    }
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Buscar por DNI, nombres, apellidos o mesa...',
+                    hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                    prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, color: AppColors.textMuted, size: 18),
+                            onPressed: () {
+                              _searchController.clear();
+                              _onSearchChanged('');
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: AppColors.surface,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+                    ),
+                  ),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
-                ),
-              ),
+                if (_totalCount > 0) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Total: $_totalCount personeros registrados',
+                        style: const TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w600),
+                      ),
+                      if (_isLoading)
+                        const SizedBox(
+                          width: 12,
+                          height: 12,
+                          child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 1.5),
+                        ),
+                    ],
+                  ),
+                ],
+              ],
             ),
           ),
 
-          // Listado de Personeros
+          // Listado de Personeros con RefreshIndicator y Scroll Infinito
           Expanded(
-            child: personerosAsync.when(
-              data: (personeros) {
-                final filtered = personeros.where((p) {
-                  if (_searchQuery.isEmpty) return true;
-                  return p.dni.toLowerCase().contains(_searchQuery) ||
-                      p.fullName.toLowerCase().contains(_searchQuery) ||
-                      p.pollingStationCode.toLowerCase().contains(_searchQuery);
-                }).toList();
-
-                if (filtered.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.border),
-                            ),
-                            child: const Icon(
-                              Icons.people_outline_rounded,
-                              color: AppColors.textMuted,
-                              size: 48,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            _searchQuery.isNotEmpty
-                                ? 'No se encontraron personeros para "$_searchQuery"'
-                                : 'No hay personeros registrados.',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Presione el botón (+) para registrar un nuevo personero.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: AppColors.textMuted, fontSize: 13),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final personero = filtered[index];
-                    return _buildPersoneroCard(context, personero);
-                  },
-                );
-              },
-              loading: () => const Center(
-                child: CircularProgressIndicator(color: AppColors.accent),
-              ),
-              error: (e, _) => Center(
-                child: Text('Error al cargar personeros: $e', style: const TextStyle(color: AppColors.danger)),
-              ),
-            ),
+            child: _isLoading && (_remotePersoneros == null || _remotePersoneros!.isEmpty)
+                ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
+                : RefreshIndicator(
+                    onRefresh: _refresh,
+                    color: AppColors.accent,
+                    child: _buildPersonerosList(personerosAsync),
+                  ),
           ),
         ],
       ),
@@ -158,17 +240,128 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
           'Agregar Personero',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        onPressed: () => PersoneroFormModal.show(context),
+        onPressed: () async {
+          await PersoneroFormModal.show(context);
+          _refresh();
+        },
       ),
     );
   }
 
-  Widget _buildPersoneroCard(BuildContext context, PersoneroModel personero) {
+  Widget _buildPersonerosList(AsyncValue<List<PersoneroModel>> personerosAsync) {
+    // Si tenemos datos remotos de la API, usarlos con paginación
+    if (_remotePersoneros != null) {
+      if (_remotePersoneros!.isEmpty) {
+        return _buildEmptyView();
+      }
+
+      return ListView.builder(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+        itemCount: _remotePersoneros!.length + (_hasMore ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == _remotePersoneros!.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2),
+                ),
+              ),
+            );
+          }
+          final personero = _remotePersoneros![index];
+          return _buildPersoneroCard(context, personero, index: index);
+        },
+      );
+    }
+
+    // Fallback Offline a Drift SQLite local
+    return personerosAsync.when(
+      data: (personeros) {
+        final filtered = personeros.where((p) {
+          if (_searchQuery.isEmpty) return true;
+          return p.dni.toLowerCase().contains(_searchQuery) ||
+              p.fullName.toLowerCase().contains(_searchQuery) ||
+              p.pollingStationCode.toLowerCase().contains(_searchQuery);
+        }).toList();
+
+        if (filtered.isEmpty) {
+          return _buildEmptyView();
+        }
+
+        return ListView.builder(
+          controller: _scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+          itemCount: filtered.length,
+          itemBuilder: (context, index) {
+            final personero = filtered[index];
+            return _buildPersoneroCard(context, personero);
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.accent)),
+      error: (e, _) => Center(
+        child: Text('Error al cargar personeros: $e', style: const TextStyle(color: AppColors.danger)),
+      ),
+    );
+  }
+
+  Widget _buildEmptyView() {
+    return Center(
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.border),
+              ),
+              child: const Icon(
+                Icons.people_outline_rounded,
+                color: AppColors.textMuted,
+                size: 48,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _searchQuery.isNotEmpty
+                  ? 'No se encontraron personeros para "$_searchQuery"'
+                  : 'No hay personeros registrados.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Deslice hacia abajo para actualizar o presione (+) para registrar.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPersoneroCard(BuildContext context, PersoneroModel personero, {int? index}) {
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Fila Superior: Avatar + Nombre + Menú
+          // Fila Superior: Avatar + Nombre + Mesa
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -215,32 +408,54 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.info.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.how_to_vote_rounded, color: AppColors.info, size: 14),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Mesa ${personero.pollingStationCode}',
-                      style: const TextStyle(
-                        color: AppColors.info,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                    if (personero.politicalOrganizationName != null && personero.politicalOrganizationName!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(Icons.flag_outlined, color: AppColors.textMuted, size: 13),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              personero.politicalOrganizationName!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: AppColors.accent,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
+              if (personero.pollingStationCode.isNotEmpty && personero.pollingStationCode != '030390')
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.info.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.how_to_vote_rounded, color: AppColors.info, size: 14),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Mesa ${personero.pollingStationCode}',
+                        style: const TextStyle(
+                          color: AppColors.info,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
 
@@ -269,9 +484,15 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                     height: 30,
                     child: Switch(
                       value: personero.isActive,
-                      activeColor: AppColors.success,
+                      activeThumbColor: AppColors.success,
                       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       onChanged: (val) async {
+                        // Actualización optimista en memoria
+                        if (index != null && _remotePersoneros != null && index < _remotePersoneros!.length) {
+                          setState(() {
+                            _remotePersoneros![index] = _remotePersoneros![index].copyWith(isActive: val);
+                          });
+                        }
                         try {
                           final apiClient = ref.read(apiClientProvider);
                           await apiClient.patch('/personeros/${personero.id}/toggle-access');
@@ -286,9 +507,15 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                             );
                           }
                         } catch (e) {
+                          // Revertir en caso de error
+                          if (index != null && _remotePersoneros != null && index < _remotePersoneros!.length) {
+                            setState(() {
+                              _remotePersoneros![index] = _remotePersoneros![index].copyWith(isActive: !val);
+                            });
+                          }
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
+                              const SnackBar(
                                 backgroundColor: AppColors.danger,
                                 content: Text('Error al cambiar acceso. Verifica la conexión.'),
                               ),
@@ -365,9 +592,7 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
   }
 
   void _showResetPasswordModal(BuildContext context, {required PersoneroModel personero}) {
-    final defaultPass = (personero.email ?? '').toLowerCase().contains('puertoinca') || personero.dni == '44001122'
-        ? 'Puertoinca123!'
-        : 'Personero123!';
+    final defaultPass = '${personero.dni}!';
     final passwordController = TextEditingController(text: defaultPass);
     bool isSaving = false;
 

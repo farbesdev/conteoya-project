@@ -3,6 +3,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../../core/network/api_client.dart';
 import '../domain/personero_model.dart';
 
 class PersoneroValidationException implements Exception {
@@ -15,8 +16,74 @@ class PersoneroValidationException implements Exception {
 
 class PersonerosRepository {
   final AppDatabase db;
+  final ApiClient? apiClient;
 
-  PersonerosRepository({required this.db});
+  PersonerosRepository({required this.db, this.apiClient});
+
+  /// Consulta personeros paginados del backend API (para Admin/Director) de forma remota
+  Future<({List<PersoneroModel> items, bool hasMore, int total})> fetchRemotePersoneros({
+    String search = '',
+    int page = 1,
+    int perPage = 15,
+  }) async {
+    if (apiClient == null) return (items: <PersoneroModel>[], hasMore: false, total: 0);
+    try {
+      final queryParams = <String, dynamic>{
+        'page': page,
+        'per_page': perPage,
+      };
+      if (search.trim().isNotEmpty) {
+        queryParams['search'] = search.trim();
+      }
+      final response = await apiClient!.get<Map<String, Object?>>(
+        '/personeros',
+        queryParameters: queryParams,
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        final dataList = response.data!['data'] as List<Object?>? ?? [];
+        final meta = response.data!['meta'] as Map<String, Object?>? ?? {};
+        final hasMore = (meta['has_more'] as bool?) ?? false;
+        final total = (meta['total'] as int?) ?? 0;
+
+        final items = <PersoneroModel>[];
+        for (final item in dataList) {
+          if (item is Map<String, Object?>) {
+            final id = (item['id'] as int?) ?? 0;
+            final dni = item['dni']?.toString() ?? '';
+            final firstName = item['first_name']?.toString() ?? '';
+            final lastName = item['last_name']?.toString() ?? '';
+            final stationCode = item['polling_station_code']?.toString() ?? '';
+            final phone = item['phone_number']?.toString();
+            final email = item['email']?.toString();
+            final isActive = (item['is_active'] as bool?) ?? false;
+            final politicalOrg = item['political_organization_name']?.toString();
+            final status = item['status']?.toString();
+            final personeroType = item['personero_type']?.toString();
+
+            items.add(
+              PersoneroModel(
+                id: id,
+                dni: dni,
+                firstName: firstName,
+                lastName: lastName,
+                pollingStationCode: stationCode,
+                phoneNumber: phone,
+                email: email,
+                isActive: isActive,
+                politicalOrganizationName: politicalOrg,
+                status: status,
+                personeroType: personeroType,
+                createdAt: DateTime.now(),
+              ),
+            );
+          }
+        }
+        return (items: items, hasMore: hasMore, total: total);
+      }
+    } catch (_) {}
+    return (items: <PersoneroModel>[], hasMore: false, total: 0);
+  }
 
   Stream<List<PersoneroModel>> watchPersoneros() {
     return db.watchAllPersoneros().map((list) => list.map(_mapToModel).toList());

@@ -10,11 +10,17 @@ class Election extends Model
         'code',
         'name',
         'date',
-        'status'
+        'status',
+        'jee_proceso_electoral_id',
     ];
 
     public function levels()
     {
         return $this->hasMany(ElectoralLevel::class, 'election_id');
+    }
+
+    public function personeros()
+    {
+        return $this->hasMany(Personero::class, 'election_id');
     }
 }

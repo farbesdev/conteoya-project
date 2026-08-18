@@ -8,6 +8,7 @@ class ApiClient {
 
   final Dio _dio;
   String? _authToken;
+  void Function(String reason)? onUnauthorized;
 
   ApiClient({String? baseUrl, Dio? customDio})
       : _dio = customDio ??
@@ -42,6 +43,21 @@ class ApiClient {
             options.headers['Authorization'] = 'Bearer $_authToken';
           }
           return handler.next(options);
+        },
+        onError: (DioException error, handler) {
+          final statusCode = error.response?.statusCode;
+          final path = error.requestOptions.path;
+
+          // Si el servidor responde 401 o 403 en una llamada autenticada (no en el endpoint /login)
+          if ((statusCode == 401 || statusCode == 403) && !path.endsWith('/login')) {
+            String reason = 'Su cuenta se encuentra inhabilitada. Comuníquese con el Administrador.';
+            final data = error.response?.data;
+            if (data is Map && data['message'] != null) {
+              reason = data['message'].toString();
+            }
+            onUnauthorized?.call(reason);
+          }
+          return handler.next(error);
         },
       ),
     );

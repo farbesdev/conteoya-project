@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             JeeDatabaseSeeder::class,
             PollingStationSeeder::class,
+            PersonerosSeeder::class,
             UserSeeder::class,
         ]);
     }

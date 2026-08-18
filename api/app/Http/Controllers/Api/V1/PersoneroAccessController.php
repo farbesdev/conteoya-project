@@ -30,8 +30,14 @@ class PersoneroAccessController extends Controller
         $user->is_active = !$user->is_active;
         $user->save();
 
+        if (!$user->is_active) {
+            $user->tokens()->delete();
+        }
+
         return response()->json([
-            'message' => 'Acceso del personero actualizado.',
+            'message' => $user->is_active
+                ? 'Acceso del personero habilitado.'
+                : 'Acceso del personero inhabilitado y sesiones activas revocadas.',
             'is_active' => $user->is_active,
         ]);
     }

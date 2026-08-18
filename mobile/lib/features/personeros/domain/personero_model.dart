@@ -7,6 +7,9 @@ class PersoneroModel {
   final String? phoneNumber;
   final String? email;
   final bool isActive;
+  final String? politicalOrganizationName;
+  final String? status;
+  final String? personeroType;
   final DateTime createdAt;
 
   const PersoneroModel({
@@ -18,6 +21,9 @@ class PersoneroModel {
     this.phoneNumber,
     this.email,
     this.isActive = false,
+    this.politicalOrganizationName,
+    this.status,
+    this.personeroType,
     required this.createdAt,
   });
 
@@ -32,6 +38,9 @@ class PersoneroModel {
     String? phoneNumber,
     String? email,
     bool? isActive,
+    String? politicalOrganizationName,
+    String? status,
+    String? personeroType,
     DateTime? createdAt,
   }) {
     return PersoneroModel(
@@ -43,6 +52,9 @@ class PersoneroModel {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       email: email ?? this.email,
       isActive: isActive ?? this.isActive,
+      politicalOrganizationName: politicalOrganizationName ?? this.politicalOrganizationName,
+      status: status ?? this.status,
+      personeroType: personeroType ?? this.personeroType,
       createdAt: createdAt ?? this.createdAt,
     );
   }

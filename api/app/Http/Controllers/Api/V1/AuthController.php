@@ -25,7 +25,7 @@ class AuthController extends Controller
      *
      * @unauthenticated
      *
-     * @bodyParam email    string required Email del usuario.     Example: personero@conteoya.pe
+     * @bodyParam email    string required Email o DNI del usuario. Example: 44001122 o personero@conteoya.pe
      * @bodyParam password string required Contraseña del usuario. Example: Personero123!
      * @bodyParam device_uuid  string nullable UUID único del dispositivo móvil. Example: a1b2c3d4-e5f6-7890-abcd-ef1234567890
      * @bodyParam device_model string nullable Modelo del dispositivo.            Example: Samsung Galaxy S24
@@ -55,14 +55,23 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'email'        => 'required|email',
+            'email'        => 'required|string',
             'password'     => 'required',
             'device_uuid'  => 'nullable|string|max:100',
             'device_model' => 'nullable|string|max:100',
         ]);
 
+        $identifier = trim($request->input('email', ''));
+
         /** @var User|null $user */
-        $user = User::with(['roleModel', 'personero.pollingStations'])->where('email', $request->email)->first();
+        $user = User::with(['roleModel', 'personero.pollingStations'])
+            ->where(function ($q) use ($identifier) {
+                $q->where('email', $identifier)
+                  ->orWhereHas('personero', function ($pQ) use ($identifier) {
+                      $pQ->where('document_number', $identifier);
+                  });
+            })
+            ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([

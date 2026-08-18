@@ -36,7 +36,8 @@ final syncStateStreamProvider = StreamProvider<SyncEngineState>((ref) {
 // Repositorios
 final personerosRepositoryProvider = Provider<PersonerosRepository>((ref) {
   final db = ref.watch(appDatabaseProvider);
-  return PersonerosRepository(db: db);
+  final apiClient = ref.watch(apiClientProvider);
+  return PersonerosRepository(db: db, apiClient: apiClient);
 });
 
 final mesasRepositoryProvider = Provider<MesasRepository>((ref) {

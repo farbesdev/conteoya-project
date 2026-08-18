@@ -18,12 +18,13 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::post('/login', [AuthController::class, 'login']);
     });
 
-    // Rutas protegidas Sanctum con RateLimit por IP
-    Route::middleware('auth:sanctum')->group(function () {
+    // Rutas protegidas Sanctum con RateLimit por IP y verificación de usuario activo
+    Route::middleware(['auth:sanctum', 'active_user'])->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
 
         // Personero, Users & Mesas
+        Route::get('/personeros', [\App\Http\Controllers\Api\V1\PersoneroController::class, 'index']);
         Route::apiResource('polling-stations', \App\Http\Controllers\Api\V1\PollingStationController::class);
         Route::get('/personero/polling-stations', [PersoneroController::class, 'pollingStations']);
         Route::patch('/personeros/{personero}/toggle-access', [\App\Http\Controllers\Api\V1\PersoneroAccessController::class, 'toggleAccess']);

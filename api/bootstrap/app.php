@@ -14,7 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'idempotent' => \App\Http\Middleware\IdempotencyMiddleware::class,
+            'idempotent'  => \App\Http\Middleware\IdempotencyMiddleware::class,
+            'active_user' => \App\Http\Middleware\EnsureUserIsActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

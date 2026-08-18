@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_client.dart';
 import '../../../core/providers.dart';
 import '../data/auth_repository.dart';
 import '../domain/auth_state.dart';
@@ -12,13 +13,18 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 
 final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final repo = ref.watch(authRepositoryProvider);
-  return AuthNotifier(repo);
+  final apiClient = ref.watch(apiClientProvider);
+  return AuthNotifier(repo, apiClient);
 });
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _repository;
+  final ApiClient _apiClient;
 
-  AuthNotifier(this._repository) : super(const AuthInitial()) {
+  AuthNotifier(this._repository, this._apiClient) : super(const AuthInitial()) {
+    _apiClient.onUnauthorized = (reason) {
+      logoutWithReason(reason);
+    };
     _init();
   }
 
@@ -65,5 +71,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logout() async {
     await _repository.logout();
     state = const Unauthenticated();
+  }
+
+  Future<void> logoutWithReason(String reason) async {
+    await _repository.logout();
+    state = Unauthenticated(errorMessage: reason);
   }
 }
