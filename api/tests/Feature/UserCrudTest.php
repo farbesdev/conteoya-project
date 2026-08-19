@@ -68,4 +68,39 @@ class UserCrudTest extends TestCase
 
         $this->assertTrue(\Illuminate\Support\Facades\Hash::check('NewPassword123!', $targetUser->fresh()->password));
     }
+
+    public function test_admin_can_search_users_case_insensitively_by_name_email_and_dni()
+    {
+        $roleAdmin = Role::where('name', 'ADMIN')->first();
+        $admin = User::factory()->create(['role' => Role::ADMIN, 'role_id' => $roleAdmin->id]);
+
+        $personeroUser = User::factory()->create([
+            'name' => 'JUAN CARLOS FLORES',
+            'email' => 'juan.flores@conteoya.pe',
+            'role' => Role::PERSONERO,
+        ]);
+
+        Personero::create([
+            'user_id' => $personeroUser->id,
+            'document_number' => '87654321',
+            'full_name' => 'JUAN CARLOS FLORES',
+            'first_name' => 'JUAN CARLOS',
+        ]);
+
+        // 1. Buscar por nombre en minúsculas
+        $resName = $this->actingAs($admin)->getJson('/api/v1/users?search=carlos');
+        $resName->assertStatus(200);
+        $this->assertCount(1, $resName->json('data'));
+        $this->assertEquals('juan.flores@conteoya.pe', $resName->json('data.0.email'));
+
+        // 2. Buscar por DNI
+        $resDni = $this->actingAs($admin)->getJson('/api/v1/users?search=87654321');
+        $resDni->assertStatus(200);
+        $this->assertCount(1, $resDni->json('data'));
+
+        // 3. Buscar por email en mayúsculas
+        $resEmail = $this->actingAs($admin)->getJson('/api/v1/users?search=JUAN.FLORES');
+        $resEmail->assertStatus(200);
+        $this->assertCount(1, $resEmail->json('data'));
+    }
 }

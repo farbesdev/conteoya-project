@@ -110,4 +110,36 @@ class PollingStationTest extends TestCase
         $data = $response->json('data.polling_stations');
         $this->assertLessThanOrEqual(10, count($data));
     }
+
+    public function test_search_polling_stations_by_code_odpe_and_location_fields()
+    {
+        $roleAdmin = Role::where('name', 'ADMIN')->first();
+        $admin = User::factory()->create(['role' => Role::ADMIN, 'role_id' => $roleAdmin->id]);
+
+        PollingStation::create([
+            'code' => '030499',
+            'registered_voters' => 280,
+            'status' => 'ACTIVE',
+            'odpe' => 'ODPE LIMA CENTRO',
+            'department_name' => 'LIMA',
+            'province_name' => 'LIMA',
+            'district_name' => 'MIRAFLORES',
+        ]);
+
+        // 1. Buscar por ODPE en minúsculas
+        $resOdpe = $this->actingAs($admin)->getJson('/api/v1/polling-stations?search=lima+centro');
+        $resOdpe->assertStatus(200);
+        $this->assertCount(1, $resOdpe->json('data'));
+        $this->assertEquals('030499', $resOdpe->json('data.0.code'));
+
+        // 2. Buscar por distrito en minúsculas
+        $resDist = $this->actingAs($admin)->getJson('/api/v1/polling-stations?search=miraflores');
+        $resDist->assertStatus(200);
+        $this->assertCount(1, $resDist->json('data'));
+
+        // 3. Buscar por código de mesa
+        $resCode = $this->actingAs($admin)->getJson('/api/v1/polling-stations?search=030499');
+        $resCode->assertStatus(200);
+        $this->assertCount(1, $resCode->json('data'));
+    }
 }

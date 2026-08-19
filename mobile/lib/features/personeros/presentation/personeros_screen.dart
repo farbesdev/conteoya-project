@@ -282,11 +282,11 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
     // Fallback Offline a Drift SQLite local
     return personerosAsync.when(
       data: (personeros) {
+        final queryTerms = _searchQuery.toLowerCase().trim().split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
         final filtered = personeros.where((p) {
-          if (_searchQuery.isEmpty) return true;
-          return p.dni.toLowerCase().contains(_searchQuery) ||
-              p.fullName.toLowerCase().contains(_searchQuery) ||
-              p.pollingStationCode.toLowerCase().contains(_searchQuery);
+          if (queryTerms.isEmpty) return true;
+          final searchTarget = '${p.dni} ${p.fullName} ${p.firstName} ${p.lastName} ${p.pollingStationCode} ${p.politicalOrganizationName ?? ''} ${p.email ?? ''}'.toLowerCase();
+          return queryTerms.every((term) => searchTarget.contains(term));
         }).toList();
 
         if (filtered.isEmpty) {

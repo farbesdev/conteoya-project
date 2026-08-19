@@ -98,9 +98,21 @@ class PersonerosSeederTest extends TestCase
         $this->assertGreaterThanOrEqual(1, count($searchDni->json('data')));
         $this->assertEquals('42275934', $searchDni->json('data.0.dni'));
 
-        // 3. Buscar por Nombre
-        $searchName = $this->actingAs($admin)->getJson('/api/v1/personeros?search=ESPINOZA');
-        $searchName->assertStatus(200);
-        $this->assertGreaterThanOrEqual(1, count($searchName->json('data')));
+        // 3. Buscar por Nombre en Mayúsculas
+        $searchNameUpper = $this->actingAs($admin)->getJson('/api/v1/personeros?search=ESPINOZA');
+        $searchNameUpper->assertStatus(200);
+        $this->assertGreaterThanOrEqual(1, count($searchNameUpper->json('data')));
+
+        // 4. Buscar por Apellido en Minúsculas (case-insensitive)
+        $searchNameLower = $this->actingAs($admin)->getJson('/api/v1/personeros?search=espinoza');
+        $searchNameLower->assertStatus(200);
+        $this->assertGreaterThanOrEqual(1, count($searchNameLower->json('data')));
+        $this->assertTrue(collect($searchNameLower->json('data'))->contains(fn($p) => str_contains($p['dni'], '42275934')));
+
+        // 5. Buscar por Múltiples Palabras (Nombre y Apellido compuestos)
+        $searchMulti = $this->actingAs($admin)->getJson('/api/v1/personeros?search=josei+silva');
+        $searchMulti->assertStatus(200);
+        $this->assertGreaterThanOrEqual(1, count($searchMulti->json('data')));
+        $this->assertTrue(collect($searchMulti->json('data'))->contains(fn($p) => str_contains($p['dni'], '42275934')));
     }
 }

@@ -34,17 +34,27 @@ class PersoneroController extends Controller
         if ($search = $request->input('search')) {
             $search = trim($search);
             $query->where(function ($q) use ($search) {
+                // 1. Coincidencia directa por DNI o código de mesa asignada
                 $q->where('document_number', 'LIKE', "%{$search}%")
-                  ->orWhere('full_name', 'LIKE', "%{$search}%")
-                  ->orWhere('first_name', 'LIKE', "%{$search}%")
-                  ->orWhere('political_organization_name', 'LIKE', "%{$search}%")
-                  ->orWhere('email', 'LIKE', "%{$search}%")
-                  ->orWhereHas('user', function ($uQ) use ($search) {
-                      $uQ->where('name', 'LIKE', "%{$search}%")
-                         ->orWhere('email', 'LIKE', "%{$search}%");
-                  })
                   ->orWhereHas('pollingStations', function ($pQ) use ($search) {
                       $pQ->where('code', 'LIKE', "%{$search}%");
+                  })
+                  // 2. Búsqueda insensible agnóstica en campos de personero
+                  ->orWhereAnyInsensitive([
+                      'full_name',
+                      'first_name',
+                      'political_organization_name',
+                      'email',
+                      'abogado_responsable',
+                      'personero_type',
+                      'jee_name',
+                      'department_name',
+                      'province_name',
+                      'district_name',
+                  ], $search)
+                  // 3. Búsqueda en relación de usuario
+                  ->orWhereHas('user', function ($uQ) use ($search) {
+                      $uQ->whereAnyInsensitive(['name', 'email'], $search);
                   });
             });
         }

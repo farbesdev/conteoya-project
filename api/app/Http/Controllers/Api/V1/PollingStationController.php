@@ -39,30 +39,45 @@ class PollingStationController extends Controller
             $search = trim($search);
             $query->where(function ($q) use ($search) {
                 $q->where('code', 'LIKE', "%{$search}%")
+                  ->orWhereAnyInsensitive([
+                      'odpe',
+                      'department_name',
+                      'province_name',
+                      'district_name',
+                  ], $search)
                   ->orWhereHas('electoralLocation', function ($locQ) use ($search) {
-                      $locQ->where('name', 'LIKE', "%{$search}%")
+                      $locQ->whereAnyInsensitive(['name'], $search)
                            ->orWhereHas('district', function ($distQ) use ($search) {
-                               $distQ->where('name', 'LIKE', "%{$search}%");
+                               $distQ->whereAnyInsensitive(['name'], $search);
                            });
                   });
             });
         }
 
         if ($dept = $request->input('department_name')) {
-            $query->whereHas('electoralLocation.district.province.department', function ($q) use ($dept) {
-                $q->where('name', 'LIKE', "%{$dept}%");
+            $query->where(function ($q) use ($dept) {
+                $q->whereAnyInsensitive(['department_name'], $dept)
+                  ->orWhereHas('electoralLocation.district.province.department', function ($subQ) use ($dept) {
+                      $subQ->whereAnyInsensitive(['name'], $dept);
+                  });
             });
         }
 
         if ($prov = $request->input('province_name')) {
-            $query->whereHas('electoralLocation.district.province', function ($q) use ($prov) {
-                $q->where('name', 'LIKE', "%{$prov}%");
+            $query->where(function ($q) use ($prov) {
+                $q->whereAnyInsensitive(['province_name'], $prov)
+                  ->orWhereHas('electoralLocation.district.province', function ($subQ) use ($prov) {
+                      $subQ->whereAnyInsensitive(['name'], $prov);
+                  });
             });
         }
 
         if ($dist = $request->input('district_name')) {
-            $query->whereHas('electoralLocation.district', function ($q) use ($dist) {
-                $q->where('name', 'LIKE', "%{$dist}%");
+            $query->where(function ($q) use ($dist) {
+                $q->whereAnyInsensitive(['district_name'], $dist)
+                  ->orWhereHas('electoralLocation.district', function ($subQ) use ($dist) {
+                      $subQ->whereAnyInsensitive(['name'], $dist);
+                  });
             });
         }
 

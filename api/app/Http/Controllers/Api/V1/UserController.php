@@ -30,12 +30,12 @@ class UserController extends Controller
         }
 
         if ($request->has('search') && !empty($request->search)) {
-            $search = $request->search;
+            $search = trim($request->search);
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
+                $q->whereAnyInsensitive(['name', 'email'], $search)
                   ->orWhereHas('personero', function ($p) use ($search) {
-                      $p->where('document_number', 'like', "%{$search}%");
+                      $p->where('document_number', 'LIKE', "%{$search}%")
+                        ->orWhereAnyInsensitive(['full_name', 'first_name', 'email'], $search);
                   });
             });
         }

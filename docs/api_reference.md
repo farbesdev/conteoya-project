@@ -218,6 +218,100 @@ Revoca el token Bearer actual del usuario autenticado.
 
 ---
 
+### `POST /api/v1/users/{id}/reset-password`
+
+Restablece la contraseña de un usuario específico. Solo accesible por `ADMIN` y `DIRECTOR`.
+
+**Request Body**
+```json
+{
+  "password": "NuevaPassword123!"
+}
+```
+
+**Respuesta `200 OK`**
+```json
+{
+  "message": "Contraseña restablecida exitosamente.",
+  "user_id": 3,
+  "new_password": "NuevaPassword123!"
+}
+```
+
+---
+
+## 👥 Personeros (Gestión y Consulta — ADMIN / DIRECTOR / PERSONERO)
+
+### `GET /api/v1/personeros`
+
+Listado paginado de personeros de alto rendimiento con búsqueda agnóstica case-insensitive y soporte multi-término.
+
+> 🔒 Accesible por `ADMIN` y `DIRECTOR`.
+
+**Query Parameters**
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `search` | `string` | Término de búsqueda (DNI, nombres, apellidos, organización política, email, abogado responsable, tipo personero, JEE o ubigeo) |
+| `per_page` | `integer` | Cantidad de elementos por página (default 15, max 50) |
+| `page` | `integer` | Número de página |
+
+**Respuesta `200 OK`**
+```json
+{
+  "message": "Lista paginada de personeros obtenida exitosamente.",
+  "data": [
+    {
+      "id": 1,
+      "user_id": 3,
+      "dni": "42275934",
+      "first_name": "JOSEI ANTONIO",
+      "last_name": "ESPINOZA SILVA",
+      "name": "JOSEI ANTONIO ESPINOZA SILVA",
+      "full_name": "JOSEI ANTONIO ESPINOZA SILVA",
+      "polling_station_code": "030390",
+      "phone_number": "+51 987 654 321",
+      "email": "personero_42275934@conteoya.pe",
+      "is_active": true,
+      "status": "RECONOCIDO",
+      "personero_type": "PERSONERO TÉCNICO TITULAR",
+      "political_organization_name": "ACCION POPULAR",
+      "jee_name": "JEE LIMA CENTRO",
+      "department_name": "LIMA",
+      "province_name": "LIMA",
+      "district_name": "LIMA"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "last_page": 1,
+    "per_page": 15,
+    "total": 1,
+    "has_more": false
+  }
+}
+```
+
+---
+
+### `PATCH /api/v1/personeros/{id}/toggle-access`
+
+Habilita o deshabilita el acceso del personero a la aplicación móvil y la API. Si se deshabilita, revoca inmediatamente todos sus tokens Sanctum activos.
+
+> 🔒 Accesible por `ADMIN` y `DIRECTOR`.
+
+**Respuesta `200 OK`**
+```json
+{
+  "message": "Acceso actualizado exitosamente.",
+  "personero_id": 1,
+  "user_id": 3,
+  "is_active": false
+}
+```
+
+---
+
 ### `GET /api/v1/personero/polling-stations`
 
 Devuelve las mesas de sufragio asignadas al personero autenticado.
@@ -251,6 +345,54 @@ Devuelve las mesas de sufragio asignadas al personero autenticado.
 
 Todos los catálogos están cacheados en **Redis** (TTL indicado por endpoint).  
 Son accesibles para cualquier usuario autenticado independientemente de su rol.
+
+---
+
+### `GET /api/v1/catalogs/ballot-template`
+
+Genera dinámicamente la plantilla de la cédula electoral para una mesa o ubigeo específico, agrupando las organizaciones políticas y candidaturas según el nivel electoral (Regional, Provincial y Distrital).
+
+**Query Parameters**
+
+| Parámetro | Tipo | Requerido | Descripción |
+|-----------|------|-----------|-------------|
+| `polling_station_code` | `string` | ❌ | Código de la mesa de sufragio (ej. `030390`) |
+| `department_name` | `string` | ❌ | Nombre del departamento (si no se envía mesa) |
+| `province_name` | `string` | ❌ | Nombre de la provincia (si no se envía mesa) |
+| `district_name` | `string` | ❌ | Nombre del distrito (si no se envía mesa) |
+
+**Respuesta `200 OK`**
+```json
+{
+  "election": {
+    "code": "ERM2026",
+    "name": "Elecciones Regionales y Municipales 2026"
+  },
+  "polling_station_code": "030390",
+  "location": {
+    "department": "LIMA",
+    "province": "LIMA",
+    "district": "LIMA"
+  },
+  "levels": [
+    {
+      "id": 1,
+      "code": "REGIONAL_GOBERNADOR",
+      "name": "Gobernador y Vicegobernador Regional",
+      "organizations": [
+        {
+          "id": 1,
+          "name": "ACCION POPULAR",
+          "short_name": "AP",
+          "candidates": [
+            { "id": 10, "full_name": "JUAN CANDIDATO", "postulation": "Gobernador Regional" }
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
 
 ---
 
