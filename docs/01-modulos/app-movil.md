@@ -62,3 +62,16 @@ La interfaz móvil fue optimizada siguiendo los estándares de **`mobile-design`
 - **Resiliencia de Sincronización:**
   - `SyncEngine` comprueba `apiClient.hasAuthToken` antes de iniciar sincronizaciones en segundo plano.
   - Manejo transparente de respuestas `401` y `403` durante ciclos de pull para no interrumpir la experiencia offline si la sesión expira.
+
+---
+
+## 4. Estrategia de Búsqueda y Paginación Híbrida (`AdminActasScreen` & Modales)
+
+Para optimizar la experiencia de usuario y el consumo de red en catálogos extensos (miles de mesas y distritos):
+
+- **Filtro Local Instantáneo:** Cuando no hay búsqueda remota activa o antes del umbral de caracteres (`longitud < 2`), la UI filtra en tiempo real sobre la base de datos SQLite local (`Drift`).
+- **Debounce Controlado (350 ms):** Al ingresar 2 o más caracteres, se activa un temporizador *debounce* (`Timer`) de 350 ms. Si el usuario sigue tecleando, la petición anterior se cancela inmediatamente, evitando condiciones de carrera (*race conditions*) y múltiples llamadas redundantes a la API.
+- **Indicador de Búsqueda en Vivo:** Durante la ejecución de la consulta remota, el icono de la barra de búsqueda cambia a un `CircularProgressIndicator` sutil sin congelar ni hacer saltos bruscos en la interfaz.
+- **Paginación en Memoria (*Infinite Scroll*):** La vista remota (`_remoteMesas`) acumula los resultados paginados (`per_page: 10/15`) y carga la siguiente página de manera transparente al alcanzar el final del scroll.
+- **Reset Limpio:** Al vaciar la caja de búsqueda (`query.isEmpty`), se restablece el estado a la vista local reactiva de Drift de inmediato.
+

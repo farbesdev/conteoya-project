@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers.dart';
@@ -18,9 +19,11 @@ class AdminActasScreen extends ConsumerStatefulWidget {
 class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  Timer? _debounceTimer;
   String _searchQuery = '';
   int _currentPage = 1;
   bool _isLoadingMore = false;
+  bool _isSearching = false;
   bool _hasMore = true;
 
   // Lista en memoria para paginación y búsqueda remota
@@ -34,6 +37,7 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _searchController.dispose();
@@ -73,35 +77,50 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
     }
   }
 
-  Future<void> _onSearchChanged(String val) async {
+  void _onSearchChanged(String val) {
     final query = val.trim().toLowerCase();
+    _debounceTimer?.cancel();
+
+    if (query.isEmpty) {
+      // Al limpiar la búsqueda, vuelve al estado inicial local
+      setState(() {
+        _searchQuery = '';
+        _remoteMesas = null;
+        _isSearching = false;
+        _currentPage = 1;
+        _hasMore = true;
+      });
+      return;
+    }
+
     setState(() {
       _searchQuery = query;
       _currentPage = 1;
       _hasMore = true;
     });
 
-    if (query.isEmpty) {
-      // Al limpiar la búsqueda, vuelve al estado inicial local
+    if (query.length >= 2) {
+      setState(() => _isSearching = true);
+      _debounceTimer = Timer(const Duration(milliseconds: 350), () async {
+        final repo = ref.read(mesasRepositoryProvider);
+        final result = await repo.fetchRemotePollingStations(
+          search: query,
+          page: 1,
+          perPage: 10,
+        );
+        if (mounted && _searchQuery == query) {
+          setState(() {
+            _remoteMesas = result.items;
+            _hasMore = result.hasMore;
+            _isSearching = false;
+          });
+        }
+      });
+    } else {
       setState(() {
+        _isSearching = false;
         _remoteMesas = null;
       });
-      return;
-    }
-
-    if (query.length >= 2) {
-      final repo = ref.read(mesasRepositoryProvider);
-      final result = await repo.fetchRemotePollingStations(
-        search: query,
-        page: 1,
-        perPage: 10,
-      );
-      if (mounted) {
-        setState(() {
-          _remoteMesas = result.items;
-          _hasMore = result.hasMore;
-        });
-      }
     }
   }
 
@@ -219,15 +238,27 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
                 hintText: 'Buscar por código de mesa, local o distrito...',
                 hintStyle: TextStyle(color: theme.colorScheme.onSurface.withAlpha(128), fontSize: 14),
                 prefixIcon: Icon(Icons.search_rounded, color: theme.colorScheme.onSurface.withAlpha(128)),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(Icons.clear, color: theme.colorScheme.onSurface.withAlpha(128), size: 18),
-                        onPressed: () {
-                          _searchController.clear();
-                          _onSearchChanged('');
-                        },
+                suffixIcon: _isSearching
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.accent,
+                          ),
+                        ),
                       )
-                    : null,
+                    : _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(Icons.clear, color: theme.colorScheme.onSurface.withAlpha(128), size: 18),
+                            onPressed: () {
+                              _searchController.clear();
+                              _onSearchChanged('');
+                            },
+                          )
+                        : null,
                 filled: true,
                 fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                 contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
