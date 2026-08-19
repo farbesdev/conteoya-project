@@ -33,29 +33,46 @@ class PersoneroController extends Controller
 
         if ($search = $request->input('search')) {
             $search = trim($search);
-            $query->where(function ($q) use ($search) {
-                // 1. Coincidencia directa por DNI o código de mesa asignada
-                $q->where('document_number', 'LIKE', "%{$search}%")
-                  ->orWhereHas('pollingStations', function ($pQ) use ($search) {
-                      $pQ->where('code', 'LIKE', "%{$search}%");
+            $like = config('database.default') === 'pgsql' ? 'ILIKE' : 'LIKE';
+            $words = array_filter(explode(' ', $search));
+
+            $query->where(function ($q) use ($search, $words, $like) {
+                // Coincidencia de frase completa
+                $q->where('document_number', $like, "%{$search}%")
+                  ->orWhere('full_name', $like, "%{$search}%")
+                  ->orWhere('first_name', $like, "%{$search}%")
+                  ->orWhere('political_organization_name', $like, "%{$search}%")
+                  ->orWhere('email', $like, "%{$search}%")
+                  ->orWhere('abogado_responsable', $like, "%{$search}%")
+                  ->orWhere('personero_type', $like, "%{$search}%")
+                  ->orWhere('jee_name', $like, "%{$search}%")
+                  ->orWhere('department_name', $like, "%{$search}%")
+                  ->orWhere('province_name', $like, "%{$search}%")
+                  ->orWhere('district_name', $like, "%{$search}%")
+                  ->orWhereHas('pollingStations', function ($pQ) use ($search, $like) {
+                      $pQ->where('code', $like, "%{$search}%");
                   })
-                  // 2. Búsqueda insensible agnóstica en campos de personero
-                  ->orWhereAnyInsensitive([
-                      'full_name',
-                      'first_name',
-                      'political_organization_name',
-                      'email',
-                      'abogado_responsable',
-                      'personero_type',
-                      'jee_name',
-                      'department_name',
-                      'province_name',
-                      'district_name',
-                  ], $search)
-                  // 3. Búsqueda en relación de usuario
-                  ->orWhereHas('user', function ($uQ) use ($search) {
-                      $uQ->whereAnyInsensitive(['name', 'email'], $search);
+                  ->orWhereHas('user', function ($uQ) use ($search, $like) {
+                      $uQ->where('name', $like, "%{$search}%")
+                         ->orWhere('email', $like, "%{$search}%");
                   });
+
+                // Si hay múltiples palabras, también verificar que cada palabra coincida en al menos un campo relevante
+                if (count($words) > 1) {
+                    $q->orWhere(function ($subQ) use ($words, $like) {
+                        foreach ($words as $word) {
+                            $subQ->where(function ($wQ) use ($word, $like) {
+                                $wQ->where('full_name', $like, "%{$word}%")
+                                   ->orWhere('first_name', $like, "%{$word}%")
+                                   ->orWhere('email', $like, "%{$word}%")
+                                   ->orWhere('document_number', $like, "%{$word}%")
+                                   ->orWhereHas('user', function ($uQ) use ($word, $like) {
+                                       $uQ->where('name', $like, "%{$word}%");
+                                   });
+                            });
+                        }
+                    });
+                }
             });
         }
 
