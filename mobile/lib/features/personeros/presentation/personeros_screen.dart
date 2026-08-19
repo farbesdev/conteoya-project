@@ -589,9 +589,7 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                               dni: personero.dni,
                             );
 
-                            // Disparar sync inmediata sin esperar el ciclo de 30 segundos
-                            ref.read(syncEngineProvider).syncPendingOperations();
-
+                            // Feedback inmediato al usuario mientras la sync corre
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
@@ -602,7 +600,12 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                               );
                             }
 
-                            // Recargar lista desde el servidor para confirmar eliminación
+                            // Esperar que el VPS confirme el DELETE antes de recargar la lista.
+                            // Sin await, _refresh() correría antes de que el servidor procese la
+                            // operación y devolvería al personero en la lista (race condition).
+                            await ref.read(syncEngineProvider).syncPendingOperations();
+
+                            // Recargar lista desde el servidor — ahora el personero ya no existe
                             await _refresh();
                           },
                         );
