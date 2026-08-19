@@ -47,8 +47,10 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
               children: [
                 TextField(
                   controller: _searchController,
+                  textInputAction: TextInputAction.search,
                   style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
                   onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
+                  onSubmitted: (_) => FocusScope.of(context).unfocus(),
                   decoration: InputDecoration(
                     hintText: 'Buscar por nombre, email o DNI...',
                     hintStyle: TextStyle(color: theme.colorScheme.onSurface.withAlpha(128), fontSize: 14),

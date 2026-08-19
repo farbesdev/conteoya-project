@@ -82,7 +82,7 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
     _debounceTimer?.cancel();
 
     if (query.isEmpty) {
-      // Al limpiar la búsqueda, vuelve al estado inicial local
+      // Al limpiar la búsqueda, vuelve al estado inicial local de inmediato
       setState(() {
         _searchQuery = '';
         _remoteMesas = null;
@@ -101,25 +101,55 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
 
     if (query.length >= 2) {
       setState(() => _isSearching = true);
-      _debounceTimer = Timer(const Duration(milliseconds: 350), () async {
-        final repo = ref.read(mesasRepositoryProvider);
-        final result = await repo.fetchRemotePollingStations(
-          search: query,
-          page: 1,
-          perPage: 10,
-        );
-        if (mounted && _searchQuery == query) {
-          setState(() {
-            _remoteMesas = result.items;
-            _hasMore = result.hasMore;
-            _isSearching = false;
-          });
-        }
+      _debounceTimer = Timer(const Duration(milliseconds: 450), () {
+        _performSearch(query);
       });
     } else {
       setState(() {
         _isSearching = false;
         _remoteMesas = null;
+      });
+    }
+  }
+
+  void _onSearchSubmitted(String val) {
+    final query = val.trim().toLowerCase();
+    _debounceTimer?.cancel();
+    FocusScope.of(context).unfocus();
+
+    if (query.isEmpty) {
+      setState(() {
+        _searchQuery = '';
+        _remoteMesas = null;
+        _isSearching = false;
+        _currentPage = 1;
+        _hasMore = true;
+      });
+      return;
+    }
+
+    setState(() {
+      _searchQuery = query;
+      _currentPage = 1;
+      _hasMore = true;
+      _isSearching = true;
+    });
+
+    _performSearch(query);
+  }
+
+  Future<void> _performSearch(String query) async {
+    final repo = ref.read(mesasRepositoryProvider);
+    final result = await repo.fetchRemotePollingStations(
+      search: query,
+      page: 1,
+      perPage: 10,
+    );
+    if (mounted && _searchQuery == query) {
+      setState(() {
+        _remoteMesas = result.items;
+        _hasMore = result.hasMore;
+        _isSearching = false;
       });
     }
   }
@@ -232,8 +262,10 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
             ),
             child: TextField(
               controller: _searchController,
+              textInputAction: TextInputAction.search,
               style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
               onChanged: _onSearchChanged,
+              onSubmitted: _onSearchSubmitted,
               decoration: InputDecoration(
                 hintText: 'Buscar por código de mesa, local o distrito...',
                 hintStyle: TextStyle(color: theme.colorScheme.onSurface.withAlpha(128), fontSize: 14),
@@ -282,13 +314,20 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
           Expanded(
             child: mesasAsync.when(
               data: (localMesas) {
-                final displayMesas = _remoteMesas ?? localMesas;
-                final filtered = displayMesas.where((m) {
-                  if (_searchQuery.isEmpty || _remoteMesas != null) return true;
-                  return m.code.toLowerCase().contains(_searchQuery) ||
-                      m.locationName.toLowerCase().contains(_searchQuery) ||
-                      m.districtName.toLowerCase().contains(_searchQuery);
-                }).toList();
+                // Si tenemos resultados remotos, los mostramos; si aún no o falló, filtramos localmente
+                List<MesaModel> filtered;
+                if (_remoteMesas != null) {
+                  filtered = _remoteMesas!;
+                } else {
+                  filtered = localMesas.where((m) {
+                    if (_searchQuery.isEmpty) return true;
+                    return m.code.toLowerCase().contains(_searchQuery) ||
+                        m.locationName.toLowerCase().contains(_searchQuery) ||
+                        m.districtName.toLowerCase().contains(_searchQuery) ||
+                        (m.provinceName?.toLowerCase().contains(_searchQuery) ?? false) ||
+                        (m.departmentName?.toLowerCase().contains(_searchQuery) ?? false);
+                  }).toList();
+                }
 
                 if (filtered.isEmpty && !_isLoadingMore) {
                   return Center(

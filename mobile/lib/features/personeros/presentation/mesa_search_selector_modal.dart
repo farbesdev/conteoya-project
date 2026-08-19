@@ -194,7 +194,13 @@ class _MesaSearchSelectorModalState extends ConsumerState<MesaSearchSelectorModa
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: TextField(
               controller: _searchController,
+              textInputAction: TextInputAction.search,
               onChanged: _onSearchChanged,
+              onSubmitted: (val) {
+                _debounceTimer?.cancel();
+                FocusScope.of(context).unfocus();
+                _performSearch(val, page: 1);
+              },
               style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'Buscar por número de mesa, distrito u ODPE...',
