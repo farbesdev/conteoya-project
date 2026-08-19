@@ -268,21 +268,34 @@ class PersonerosRepository {
     );
   }
 
-  Future<void> deletePersonero(int id) async {
-    final existing = await (db.select(db.localPersonerosTable)..where((t) => t.id.equals(id))).getSingleOrNull();
-    if (existing != null) {
-      await db.deletePersonero(id);
+  Future<void> deletePersonero(int id, {String? dni}) async {
+    // Buscar en Drift por id local primero
+    final byId = await (db.select(db.localPersonerosTable)
+      ..where((t) => t.id.equals(id))).getSingleOrNull();
 
+    // Si no está en Drift por id (vino de la API remota), intentar por DNI
+    final existing = byId ?? (dni != null ? await db.getPersoneroByDni(dni) : null);
+
+    // Eliminar de Drift si existe localmente
+    if (existing != null) {
+      await db.deletePersonero(existing.id);
+    }
+
+    // Determinar el DNI a usar para la sync op
+    final targetDni = dni ?? existing?.dni;
+
+    // Siempre encolar el DELETE hacia el VPS si tenemos el DNI
+    if (targetDni != null) {
       final clientOpId = const Uuid().v4();
       await db.enqueueSyncOperation(
         LocalSyncOperationsTableCompanion.insert(
           clientOperationId: clientOpId,
           entityType: 'personeros',
-          entityId: existing.dni,
+          entityId: targetDni,
           operation: const Value('DELETE'),
           payloadJson: jsonEncode({
-            'document_number': existing.dni,
-            'email': existing.email ?? 'personero_${existing.dni}@conteoya.pe',
+            'document_number': targetDni,
+            'email': existing?.email ?? 'personero_$targetDni@conteoya.pe',
           }),
           status: const Value('PENDING'),
         ),

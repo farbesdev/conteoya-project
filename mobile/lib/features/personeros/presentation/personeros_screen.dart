@@ -578,15 +578,32 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                           context,
                           personeroName: personero.fullName,
                           onConfirm: () async {
-                            await ref.read(personerosRepositoryProvider).deletePersonero(personero.id);
+                            // Remoción optimista: quitar de la lista en memoria antes de esperar red
+                            if (index != null && _remotePersoneros != null && index < _remotePersoneros!.length) {
+                              setState(() => _remotePersoneros!.removeAt(index));
+                            }
+
+                            // Eliminar local + encolar DELETE sync op (usa dni para garantizar encolado)
+                            await ref.read(personerosRepositoryProvider).deletePersonero(
+                              personero.id,
+                              dni: personero.dni,
+                            );
+
+                            // Disparar sync inmediata sin esperar el ciclo de 30 segundos
+                            ref.read(syncEngineProvider).syncPendingOperations();
+
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   backgroundColor: AppColors.danger,
                                   content: Text('Personero eliminado del sistema.'),
+                                  duration: Duration(seconds: 3),
                                 ),
                               );
                             }
+
+                            // Recargar lista desde el servidor para confirmar eliminación
+                            await _refresh();
                           },
                         );
                       },
