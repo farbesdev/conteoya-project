@@ -37,22 +37,27 @@ class PollingStationController extends Controller
 
         if ($search = $request->input('search')) {
             $search = trim($search);
-            $query->where(function ($q) use ($search) {
-                $q->where('code', 'LIKE', "%{$search}%")
-                  ->orWhereAnyInsensitive([
-                      'odpe',
-                      'department_name',
-                      'province_name',
-                      'district_name',
-                  ], $search)
-                  ->orWhereHas('electoralLocation', function ($locQ) use ($search) {
-                      $locQ->whereAnyInsensitive(['name', 'address'], $search)
-                           ->orWhereHas('district', function ($distQ) use ($search) {
-                               $distQ->whereAnyInsensitive(['name', 'code'], $search)
-                                     ->orWhereHas('province', function ($provQ) use ($search) {
-                                         $provQ->whereAnyInsensitive(['name', 'code'], $search)
-                                               ->orWhereHas('department', function ($deptQ) use ($search) {
-                                                   $deptQ->whereAnyInsensitive(['name', 'code'], $search);
+            // Usamos ILIKE (PostgreSQL) para búsqueda insensible a mayúsculas/minúsculas.
+            // En SQLite (tests), LIKE ya es case-insensitive para ASCII.
+            // Se busca tanto en columnas directas de polling_stations (mesas JEE desnormalizadas)
+            // como en la relación electoralLocation para mesas con location_id configurado.
+            $like = config('database.default') === 'pgsql' ? 'ILIKE' : 'LIKE';
+            $query->where(function ($q) use ($search, $like) {
+                $q->where('code', $like, "%{$search}%")
+                  ->orWhere('odpe', $like, "%{$search}%")
+                  ->orWhere('department_name', $like, "%{$search}%")
+                  ->orWhere('province_name', $like, "%{$search}%")
+                  ->orWhere('district_name', $like, "%{$search}%")
+                  ->orWhereHas('electoralLocation', function ($locQ) use ($search, $like) {
+                      $locQ->where('name', $like, "%{$search}%")
+                           ->orWhere('address', $like, "%{$search}%")
+                           ->orWhereHas('district', function ($distQ) use ($search, $like) {
+                               $distQ->where('name', $like, "%{$search}%")
+                                     ->orWhere('code', $like, "%{$search}%")
+                                     ->orWhereHas('province', function ($provQ) use ($search, $like) {
+                                         $provQ->where('name', $like, "%{$search}%")
+                                               ->orWhereHas('department', function ($deptQ) use ($search, $like) {
+                                                   $deptQ->where('name', $like, "%{$search}%");
                                                });
                                      });
                            });
@@ -61,28 +66,31 @@ class PollingStationController extends Controller
         }
 
         if ($dept = $request->input('department_name')) {
-            $query->where(function ($q) use ($dept) {
-                $q->whereAnyInsensitive(['department_name'], $dept)
-                  ->orWhereHas('electoralLocation.district.province.department', function ($subQ) use ($dept) {
-                      $subQ->whereAnyInsensitive(['name'], $dept);
+            $like = config('database.default') === 'pgsql' ? 'ILIKE' : 'LIKE';
+            $query->where(function ($q) use ($dept, $like) {
+                $q->where('department_name', $like, "%{$dept}%")
+                  ->orWhereHas('electoralLocation.district.province.department', function ($subQ) use ($dept, $like) {
+                      $subQ->where('name', $like, "%{$dept}%");
                   });
             });
         }
 
         if ($prov = $request->input('province_name')) {
-            $query->where(function ($q) use ($prov) {
-                $q->whereAnyInsensitive(['province_name'], $prov)
-                  ->orWhereHas('electoralLocation.district.province', function ($subQ) use ($prov) {
-                      $subQ->whereAnyInsensitive(['name'], $prov);
+            $like = config('database.default') === 'pgsql' ? 'ILIKE' : 'LIKE';
+            $query->where(function ($q) use ($prov, $like) {
+                $q->where('province_name', $like, "%{$prov}%")
+                  ->orWhereHas('electoralLocation.district.province', function ($subQ) use ($prov, $like) {
+                      $subQ->where('name', $like, "%{$prov}%");
                   });
             });
         }
 
         if ($dist = $request->input('district_name')) {
-            $query->where(function ($q) use ($dist) {
-                $q->whereAnyInsensitive(['district_name'], $dist)
-                  ->orWhereHas('electoralLocation.district', function ($subQ) use ($dist) {
-                      $subQ->whereAnyInsensitive(['name'], $dist);
+            $like = config('database.default') === 'pgsql' ? 'ILIKE' : 'LIKE';
+            $query->where(function ($q) use ($dist, $like) {
+                $q->where('district_name', $like, "%{$dist}%")
+                  ->orWhereHas('electoralLocation.district', function ($subQ) use ($dist, $like) {
+                      $subQ->where('name', $like, "%{$dist}%");
                   });
             });
         }
@@ -228,22 +236,33 @@ class PollingStationController extends Controller
 
     protected function formatStation(PollingStation $station): array
     {
-        $loc = $station->electoralLocation;
+        $loc  = $station->electoralLocation;
         $dist = $loc?->district;
         $prov = $dist?->province;
         $dept = $prov?->department;
 
+        // Las mesas importadas del JEE tienen los nombres reales en columnas directas
+        // (department_name, province_name, district_name). La relación electoralLocation
+        // solo existe para mesas creadas manualmente o con location propia (ej. I.E. YUYAPICHIS).
+        // Se usan las columnas directas como fuente primaria para los nombres geográficos.
+        $locationName   = $loc?->name ?? 'LOCAL DE VOTACIÓN';
+        $districtName   = $dist?->name ?? $station->district_name ?? 'DISTRITO';
+        $provinceName   = $prov?->name ?? $station->province_name ?? 'PROVINCIA';
+        $departmentName = $dept?->name ?? $station->department_name ?? 'DEPARTAMENTO';
+        $districtCode   = $dist?->code ?? $station->district_code ?? '000000';
+
         return [
             'id'                => $station->id,
             'code'              => $station->code,
-            'location_name'     => $loc?->name ?? 'LOCAL DE VOTACIÓN',
+            'location_name'     => $locationName,
             'address'           => $loc?->address,
-            'district_code'     => $dist?->code ?? '000000',
-            'district_name'     => $dist?->name ?? 'DISTRITO',
-            'province_name'     => $prov?->name ?? 'PROVINCIA',
-            'department_name'   => $dept?->name ?? 'DEPARTAMENTO',
+            'district_code'     => $districtCode,
+            'district_name'     => $districtName,
+            'province_name'     => $provinceName,
+            'department_name'   => $departmentName,
             'registered_voters' => $station->registered_voters,
             'status'            => $station->status,
         ];
     }
+
 }

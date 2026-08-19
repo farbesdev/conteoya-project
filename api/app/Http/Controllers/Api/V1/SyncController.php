@@ -103,7 +103,7 @@ class SyncController extends Controller
         }
 
         $pollingStations = $pollingStationsQuery->get()->map(function ($station) {
-            $loc = $station->electoralLocation;
+            $loc  = $station->electoralLocation;
             $dist = $loc?->district;
             $prov = $dist?->province;
             $dept = $prov?->department;
@@ -113,10 +113,10 @@ class SyncController extends Controller
                 'code'              => $station->code,
                 'location_name'     => $loc?->name ?? 'LOCAL DE VOTACIÓN',
                 'address'           => $loc?->address,
-                'district_code'     => $dist?->code ?? '000000',
-                'district_name'     => $dist?->name ?? 'DISTRITO',
-                'province_name'     => $prov?->name ?? 'PROVINCIA',
-                'department_name'   => $dept?->name ?? 'DEPARTAMENTO',
+                'district_code'     => $dist?->code ?? $station->district_code ?? '000000',
+                'district_name'     => $dist?->name ?? $station->district_name ?? 'DISTRITO',
+                'province_name'     => $prov?->name ?? $station->province_name ?? 'PROVINCIA',
+                'department_name'   => $dept?->name ?? $station->department_name ?? 'DEPARTAMENTO',
                 'registered_voters' => $station->registered_voters,
                 'status'            => $station->status,
             ];
