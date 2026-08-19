@@ -138,11 +138,10 @@ class PersoneroActasScreen extends ConsumerWidget {
 
   Widget _buildMesaHeaderCard(BuildContext context, MesaModel mesa) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final textPrimary = theme.colorScheme.onSurface;
     final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
     final textMuted = theme.colorScheme.onSurface.withAlpha(128);
-    final cardBg = theme.colorScheme.surface;
-    final borderColor = theme.colorScheme.outlineVariant;
 
     return AppCard(
       child: Column(
@@ -153,8 +152,8 @@ class PersoneroActasScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
+                  color: AppColors.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.how_to_vote_rounded, color: AppColors.accent, size: 20),
               ),
@@ -170,11 +169,10 @@ class PersoneroActasScreen extends ConsumerWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: borderColor),
+                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   '${mesa.registeredVoters} electores',
@@ -205,7 +203,7 @@ class PersoneroActasScreen extends ConsumerWidget {
     required ActRegistrationStatus status,
   }) {
     final isRegistered = status.isRegistrada;
-    final statusColor = isRegistered ? AppColors.success : AppColors.warning;
+    final statusColor = isRegistered ? AppColors.successOf(context) : AppColors.warningOf(context);
 
     final theme = Theme.of(context);
     final textPrimary = theme.colorScheme.onSurface;
@@ -222,8 +220,8 @@ class PersoneroActasScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
+                  color: iconColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: iconColor, size: 22),
               ),
@@ -251,8 +249,8 @@ class PersoneroActasScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
+                  color: statusColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   status.label,
@@ -273,7 +271,7 @@ class PersoneroActasScreen extends ConsumerWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: buttonBg,
                 elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               icon: Icon(
                 isRegistered ? Icons.visibility_outlined : Icons.edit_note_rounded,

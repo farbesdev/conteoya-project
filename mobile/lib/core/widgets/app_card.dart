@@ -26,11 +26,13 @@ class AppCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     final defaultBg = theme.colorScheme.surface;
-    final defaultBorder = theme.colorScheme.outlineVariant;
+    final subtleBorderColor = isDark
+        ? const Color(0x1AFFFFFF)
+        : const Color(0x0F0F172A);
 
     final border = Border.all(
-      color: borderColor ?? defaultBorder,
-      width: 1,
+      color: borderColor ?? subtleBorderColor,
+      width: 0.5,
     );
 
     final cardContent = Container(
@@ -42,10 +44,10 @@ class AppCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: isDark
-                ? Colors.black.withValues(alpha: 0.18)
-                : Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+                ? Colors.black.withValues(alpha: 0.15)
+                : const Color(0xFF0F172A).withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),

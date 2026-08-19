@@ -28,31 +28,34 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
   @override
   Widget build(BuildContext context) {
     final personerosAsync = ref.watch(personerosStreamProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final subtleBorder = isDark ? const Color(0x1AFFFFFF) : const Color(0x0F0F172A);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Column(
         children: [
           // Header / Barra de Búsqueda y Filtros
           Container(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
-              border: Border(bottom: BorderSide(color: AppColors.border)),
+            decoration: BoxDecoration(
+              color: theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
+              border: Border(bottom: BorderSide(color: subtleBorder, width: 0.5)),
             ),
             child: Column(
               children: [
                 TextField(
                   controller: _searchController,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                  style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
                   onChanged: (val) => setState(() => _searchQuery = val.trim().toLowerCase()),
                   decoration: InputDecoration(
                     hintText: 'Buscar por nombre, email o DNI...',
-                    hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
-                    prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
+                    hintStyle: TextStyle(color: theme.colorScheme.onSurface.withAlpha(128), fontSize: 14),
+                    prefixIcon: Icon(Icons.search_rounded, color: theme.colorScheme.onSurface.withAlpha(128)),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, color: AppColors.textMuted, size: 18),
+                            icon: Icon(Icons.clear, color: theme.colorScheme.onSurface.withAlpha(128), size: 18),
                             onPressed: () {
                               _searchController.clear();
                               setState(() => _searchQuery = '');
@@ -60,25 +63,38 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                           )
                         : null,
                     filled: true,
-                    fillColor: AppColors.surface,
+                    fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                     contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    _buildFilterChip('TODOS', 'ALL'),
-                    const SizedBox(width: 6),
-                    _buildFilterChip('ADMIN', 'ADMIN'),
-                    const SizedBox(width: 6),
-                    _buildFilterChip('DIRECTOR', 'DIRECTOR'),
-                    const SizedBox(width: 6),
-                    _buildFilterChip('PERSONEROS', 'PERSONERO'),
-                  ],
+                const SizedBox(height: 10),
+                // Carrusel de Filtros Móvil Ergonómico
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: [
+                      _buildFilterChip('Todos', 'ALL', Icons.people_outline_rounded),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Admin', 'ADMIN', Icons.admin_panel_settings_outlined),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Director', 'DIRECTOR', Icons.manage_accounts_outlined),
+                      const SizedBox(width: 8),
+                      _buildFilterChip('Personeros', 'PERSONERO', Icons.badge_outlined),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -129,19 +145,19 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                 }).toList();
 
                 if (filtered.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Padding(
-                      padding: EdgeInsets.all(32),
+                      padding: const EdgeInsets.all(32),
                       child: Text(
                         'No se encontraron usuarios con los criterios de búsqueda.',
-                        style: TextStyle(color: AppColors.textSecondary),
+                        style: TextStyle(color: theme.colorScheme.onSurface.withAlpha(178)),
                       ),
                     ),
                   );
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
                     final u = filtered[index];
@@ -158,6 +174,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'fab_add_user',
         backgroundColor: AppColors.accent,
+        elevation: 2,
         icon: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white),
         label: const Text('+ Nuevo Usuario', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         onPressed: () => _showUserFormModal(context),
@@ -165,27 +182,41 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
     );
   }
 
-  Widget _buildFilterChip(String label, String value) {
+  Widget _buildFilterChip(String label, String value, IconData icon) {
     final isSelected = _selectedRoleFilter == value;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedRoleFilter = value),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.accent : AppColors.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: isSelected ? AppColors.accent : AppColors.border),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isSelected ? Colors.white : AppColors.textSecondary,
-              fontSize: 10,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accentColor = AppColors.accentOf(context);
+
+    return InkWell(
+      onTap: () => setState(() => _selectedRoleFilter = value),
+      borderRadius: BorderRadius.circular(20),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? accentColor
+              : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 15,
+              color: isSelected ? Colors.white : AppColors.textSecondaryOf(context),
             ),
-          ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : AppColors.textSecondaryOf(context),
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -193,11 +224,16 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
 
   Widget _buildUserCard(BuildContext context, Map<String, dynamic> user) {
     final role = user['role'] as String;
+    final warningColor = AppColors.warningOf(context);
+    final dangerColor = AppColors.dangerOf(context);
     final roleColor = switch (role) {
-      'ADMIN' => AppColors.danger,
-      'DIRECTOR' => AppColors.warning,
-      _ => AppColors.accent,
+      'ADMIN' => dangerColor,
+      'DIRECTOR' => warningColor,
+      _ => AppColors.accentOf(context),
     };
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final subtleBorder = isDark ? const Color(0x1AFFFFFF) : const Color(0x0F0F172A);
 
     return AppCard(
       child: Column(
@@ -208,8 +244,8 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: roleColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
+                  color: roleColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   role == 'ADMIN'
@@ -228,11 +264,11 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                   children: [
                     Text(
                       user['name'] as String,
-                      style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 15),
+                      style: TextStyle(color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold, fontSize: 15),
                     ),
                     Text(
                       user['email'] as String,
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      style: TextStyle(color: theme.colorScheme.onSurface.withAlpha(178), fontSize: 12),
                     ),
                   ],
                 ),
@@ -240,9 +276,8 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: roleColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: roleColor.withValues(alpha: 0.4)),
+                  color: roleColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   role,
@@ -265,28 +300,18 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
             ),
           ],
           const SizedBox(height: 8),
-          const Divider(color: AppColors.border, height: 1),
+          Divider(color: subtleBorder, height: 1),
           const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              if (user['personeroModel'] != null)
-                TextButton.icon(
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.textSecondary,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  ),
-                  icon: const Icon(Icons.edit_outlined, size: 14),
-                  label: const Text('Editar', style: TextStyle(fontSize: 12)),
-                  onPressed: () => PersoneroFormModal.show(context, personeroToEdit: user['personeroModel'] as PersoneroModel),
+              IconButton(
+                icon: Icon(Icons.key_rounded, size: 18, color: warningColor),
+                tooltip: 'Restablecer Clave',
+                style: IconButton.styleFrom(
+                  minimumSize: const Size(44, 44),
+                  padding: const EdgeInsets.all(10),
                 ),
-              TextButton.icon(
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.warning,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                ),
-                icon: const Icon(Icons.key_rounded, size: 14),
-                label: const Text('Clave', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 onPressed: () => _showResetPasswordModal(
                   context,
                   userId: user['id'] as int,
@@ -295,13 +320,23 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                 ),
               ),
               if (user['personeroModel'] != null)
-                TextButton.icon(
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.danger,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                IconButton(
+                  icon: Icon(Icons.edit_outlined, size: 18, color: theme.colorScheme.onSurface.withAlpha(178)),
+                  tooltip: 'Editar Datos',
+                  style: IconButton.styleFrom(
+                    minimumSize: const Size(44, 44),
+                    padding: const EdgeInsets.all(10),
                   ),
-                  icon: const Icon(Icons.delete_outline_rounded, size: 14),
-                  label: const Text('Eliminar', style: TextStyle(fontSize: 12)),
+                  onPressed: () => PersoneroFormModal.show(context, personeroToEdit: user['personeroModel'] as PersoneroModel),
+                ),
+              if (user['personeroModel'] != null)
+                IconButton(
+                  icon: Icon(Icons.delete_outline_rounded, size: 18, color: dangerColor),
+                  tooltip: 'Eliminar',
+                  style: IconButton.styleFrom(
+                    minimumSize: const Size(44, 44),
+                    padding: const EdgeInsets.all(10),
+                  ),
                   onPressed: () {
                     final pModel = user['personeroModel'] as PersoneroModel;
                     DeletePersoneroDialog.show(
@@ -311,9 +346,9 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                         await ref.read(personerosRepositoryProvider).deletePersonero(pModel.id);
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              backgroundColor: AppColors.danger,
-                              content: Text('Personero/Usuario eliminado del sistema.'),
+                            SnackBar(
+                              backgroundColor: dangerColor,
+                              content: const Text('Personero/Usuario eliminado del sistema.'),
                             ),
                           );
                         }

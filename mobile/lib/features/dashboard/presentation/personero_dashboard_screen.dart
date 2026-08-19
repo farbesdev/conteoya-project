@@ -145,11 +145,11 @@ class PersoneroDashboardScreen extends ConsumerWidget {
 
   Widget _buildMesaCard(BuildContext context, MesaModel mesa) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final textPrimary = theme.colorScheme.onSurface;
     final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
     final textMuted = theme.colorScheme.onSurface.withAlpha(128);
-    final cardBg = theme.colorScheme.surface;
-    final borderColor = theme.colorScheme.outlineVariant;
+    final subtleBorder = isDark ? const Color(0x1AFFFFFF) : const Color(0x0F0F172A);
 
     return AppCard(
       child: Column(
@@ -160,8 +160,8 @@ class PersoneroDashboardScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
+                  color: AppColors.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.how_to_vote_rounded, color: AppColors.accent, size: 24),
               ),
@@ -188,9 +188,8 @@ class PersoneroDashboardScreen extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: cardBg,
+                  color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: borderColor),
                 ),
                 child: Text(
                   '${mesa.registeredVoters} electores',
@@ -200,7 +199,7 @@ class PersoneroDashboardScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Divider(color: borderColor, height: 1),
+          Divider(color: subtleBorder, height: 1),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -233,25 +232,38 @@ class PersoneroDashboardScreen extends ConsumerWidget {
   Widget _buildProgressCard(BuildContext context, int registeredCount) {
     final isComplete = registeredCount == 2;
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final textPrimary = theme.colorScheme.onSurface;
     final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
     final textMuted = theme.colorScheme.onSurface.withAlpha(128);
     final cardBg = theme.colorScheme.surface;
-    final borderColor = theme.colorScheme.outlineVariant;
+    final subtleBorder = isDark ? const Color(0x1AFFFFFF) : const Color(0x0F0F172A);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isComplete ? AppColors.success.withValues(alpha: 0.4) : borderColor),
+        border: Border.all(
+          color: isComplete ? AppColors.success.withValues(alpha: 0.3) : subtleBorder,
+          width: 0.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.15)
+                : const Color(0xFF0F172A).withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: (isComplete ? AppColors.success : AppColors.accent).withValues(alpha: 0.15),
+              color: (isComplete ? AppColors.success : AppColors.accent).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -305,7 +317,7 @@ class PersoneroDashboardScreen extends ConsumerWidget {
     required Color primaryColor,
   }) {
     final isRegistered = status.isRegistrada;
-    final statusColor = isRegistered ? AppColors.success : AppColors.warning;
+    final statusColor = isRegistered ? AppColors.successOf(context) : AppColors.warningOf(context);
     final statusIcon = isRegistered ? Icons.check_circle_rounded : Icons.hourglass_empty_rounded;
 
     final theme = Theme.of(context);
@@ -317,16 +329,21 @@ class PersoneroDashboardScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: primaryColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
+                  color: primaryColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.description_rounded, color: primaryColor, size: 20),
+                child: Icon(
+                  electoralLevelId == 1 ? Icons.account_balance_rounded : Icons.location_city_rounded,
+                  color: primaryColor,
+                  size: 24,
+                ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -335,10 +352,11 @@ class PersoneroDashboardScreen extends ConsumerWidget {
                       title,
                       style: TextStyle(
                         color: textPrimary,
-                        fontSize: 15,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
                       subtitle,
                       style: TextStyle(color: textSecondary, fontSize: 12),
@@ -347,10 +365,10 @@ class PersoneroDashboardScreen extends ConsumerWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
+                  color: statusColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -359,58 +377,45 @@ class PersoneroDashboardScreen extends ConsumerWidget {
                     const SizedBox(width: 4),
                     Text(
                       status.label,
-                      style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            height: 40,
+            height: 44,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: isRegistered ? theme.colorScheme.surfaceContainerHigh : primaryColor,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                foregroundColor: isRegistered ? textPrimary : Colors.white,
+                elevation: isRegistered ? 0 : 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               icon: Icon(
-                isRegistered ? Icons.visibility_outlined : Icons.how_to_vote_rounded,
-                color: Colors.white,
-                size: 16,
+                isRegistered ? Icons.visibility_outlined : Icons.photo_camera_rounded,
+                size: 18,
               ),
               label: Text(
-                isRegistered ? 'Ver Acta' : 'Registrar Acta',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                isRegistered ? 'Ver Acta Registrada' : 'Registrar Acta Ahora',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
-              onPressed: () async {
-                if (isRegistered) {
-                  final db = ref.read(appDatabaseProvider);
-                  final act = await db.getActByStationAndLevel(mesaCode, electoralLevelId);
-                  if (act != null && context.mounted) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute<void>(
-                        builder: (ctx) => ActDetailScreen(clientActUuid: act.clientActUuid),
-                      ),
-                    );
-                    return;
-                  }
-                }
-
-                if (context.mounted) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute<void>(
-                      builder: (ctx) => ActFormScreen(
-                        pollingStationCode: mesaCode,
-                        electoralLevelId: electoralLevelId,
-                      ),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ActFormScreen(
+                      pollingStationCode: mesaCode,
+                      electoralLevelId: electoralLevelId,
                     ),
-                  );
-                }
+                  ),
+                );
               },
             ),
           ),
@@ -426,38 +431,39 @@ class PersoneroDashboardScreen extends ConsumerWidget {
 
     switch (state) {
       case SyncEngineState.syncing:
-        badgeColor = AppColors.info;
+        badgeColor = AppColors.infoOf(context);
         statusText = 'Sincronizando con servidor...';
         icon = Icons.sync;
         break;
       case SyncEngineState.offline:
-        badgeColor = AppColors.warning;
+        badgeColor = AppColors.warningOf(context);
         statusText = 'Modo Offline (Sin Conexión)';
         icon = Icons.cloud_off;
         break;
       case SyncEngineState.error:
-        badgeColor = AppColors.danger;
+        badgeColor = AppColors.dangerOf(context);
         statusText = 'Reintento programado';
         icon = Icons.error_outline;
         break;
       case SyncEngineState.idle:
-        badgeColor = AppColors.success;
+        badgeColor = AppColors.successOf(context);
         statusText = 'Listo para registrar';
         icon = Icons.cloud_done;
         break;
     }
 
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
     final cardBg = theme.colorScheme.surface;
-    final borderColor = theme.colorScheme.outlineVariant;
+    final subtleBorder = isDark ? const Color(0x1AFFFFFF) : const Color(0x0F0F172A);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: subtleBorder, width: 0.5),
       ),
       child: Row(
         children: [

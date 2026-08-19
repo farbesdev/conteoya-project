@@ -196,29 +196,32 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
   @override
   Widget build(BuildContext context) {
     final mesasAsync = ref.watch(mesasStreamProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final subtleBorder = isDark ? const Color(0x1AFFFFFF) : const Color(0x0F0F172A);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Column(
         children: [
           // Barra de Búsqueda
           Container(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
-              border: Border(bottom: BorderSide(color: AppColors.border)),
+            decoration: BoxDecoration(
+              color: theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
+              border: Border(bottom: BorderSide(color: subtleBorder, width: 0.5)),
             ),
             child: TextField(
               controller: _searchController,
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
               onChanged: _onSearchChanged,
               decoration: InputDecoration(
                 hintText: 'Buscar por código de mesa, local o distrito...',
-                hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 14),
-                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
+                hintStyle: TextStyle(color: theme.colorScheme.onSurface.withAlpha(128), fontSize: 14),
+                prefixIcon: Icon(Icons.search_rounded, color: theme.colorScheme.onSurface.withAlpha(128)),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, color: AppColors.textMuted, size: 18),
+                        icon: Icon(Icons.clear, color: theme.colorScheme.onSurface.withAlpha(128), size: 18),
                         onPressed: () {
                           _searchController.clear();
                           _onSearchChanged('');
@@ -226,18 +229,18 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
                       )
                     : null,
                 filled: true,
-                fillColor: AppColors.surface,
+                fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                 contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                   borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
                 ),
               ),
@@ -266,13 +269,12 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
                           Container(
                             padding: const EdgeInsets.all(20),
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
+                              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                               shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.border),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.ballot_outlined,
-                              color: AppColors.textMuted,
+                              color: theme.colorScheme.onSurface.withAlpha(128),
                               size: 48,
                             ),
                           ),
@@ -282,17 +284,17 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
                                 ? 'No se encontraron mesas para "$_searchQuery"'
                                 : 'No hay mesas registradas.',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurface.withAlpha(178),
                               fontSize: 15,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
+                          Text(
                             'Presione el botón (+) para agregar una mesa o acta.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                            style: TextStyle(color: theme.colorScheme.onSurface.withAlpha(128), fontSize: 13),
                           ),
                         ],
                       ),
@@ -302,7 +304,7 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
 
                 return ListView.builder(
                   controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
                   itemCount: filtered.length + (_isLoadingMore ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index == filtered.length) {
@@ -352,6 +354,13 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
   }
 
   Widget _buildMesaCard(BuildContext context, MesaModel mesa) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textPrimary = theme.colorScheme.onSurface;
+    final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
+    final textMuted = theme.colorScheme.onSurface.withAlpha(128);
+    final subtleBorder = isDark ? const Color(0x1AFFFFFF) : const Color(0x0F0F172A);
+
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -362,7 +371,7 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.15),
+                  color: AppColors.accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -377,7 +386,7 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
               const Spacer(),
               Text(
                 '${mesa.registeredVoters} electores',
-                style: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                style: TextStyle(color: textMuted, fontSize: 13),
               ),
             ],
           ),
@@ -386,36 +395,36 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
           // Local y Distrito
           Text(
             mesa.locationName,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: TextStyle(
+              color: textPrimary,
               fontWeight: FontWeight.w600,
               fontSize: 15,
             ),
           ),
           Text(
             mesa.districtName,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+            style: TextStyle(color: textSecondary, fontSize: 12),
           ),
           const SizedBox(height: 6),
 
           // Personero Asignado
           Row(
             children: [
-              const Icon(Icons.person_outline_rounded, color: AppColors.textMuted, size: 14),
+              Icon(Icons.person_outline_rounded, color: textMuted, size: 14),
               const SizedBox(width: 4),
               Text(
                 mesa.hasPersoneroAssigned
                     ? 'Personero: ${mesa.assignedPersoneroName}'
                     : 'Sin personero asignado',
                 style: TextStyle(
-                  color: mesa.hasPersoneroAssigned ? AppColors.textSecondary : AppColors.warning,
+                  color: mesa.hasPersoneroAssigned ? textSecondary : AppColors.warningOf(context),
                   fontSize: 12,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(color: AppColors.border, height: 1),
+          Divider(color: subtleBorder, height: 1),
           const SizedBox(height: 12),
 
           // Estado de Actas (Regional / Municipal)
@@ -423,6 +432,7 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
             children: [
               Expanded(
                 child: _buildActStatusBadge(
+                  context: context,
                   title: 'Regional',
                   status: mesa.regionalStatus,
                 ),
@@ -430,6 +440,7 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: _buildActStatusBadge(
+                  context: context,
                   title: 'Municipal',
                   status: mesa.municipalStatus,
                 ),
@@ -441,10 +452,11 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
           // Botón de Acción [ Ver / Registrar actas ]
           SizedBox(
             width: double.infinity,
+            height: 42,
             child: OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.accent,
-                side: const BorderSide(color: AppColors.accent),
+                side: const BorderSide(color: AppColors.accent, width: 1),
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
@@ -468,11 +480,12 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
   }
 
   Widget _buildActStatusBadge({
+    required BuildContext context,
     required String title,
     required ActRegistrationStatus status,
   }) {
     final isReg = status.isRegistrada;
-    final color = isReg ? AppColors.success : AppColors.warning;
+    final color = isReg ? AppColors.successOf(context) : AppColors.warningOf(context);
     final icon = isReg ? Icons.check_circle_outline_rounded : Icons.hourglass_empty_rounded;
 
     return Container(
@@ -480,7 +493,6 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

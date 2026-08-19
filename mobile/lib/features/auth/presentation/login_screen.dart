@@ -139,9 +139,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final isLoading = authState is AuthLoading;
     final errorMessage = authState is Unauthenticated ? authState.errorMessage : null;
     final currentServerUrl = ref.read(authNotifierProvider.notifier).getServerUrl();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final subtleBorder = isDark ? const Color(0x1AFFFFFF) : const Color(0x0F0F172A);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -157,7 +160,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.accent.withValues(alpha: 0.15),
+                        color: AppColors.accent.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -168,22 +171,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'ConteoYA',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: AppColors.textPrimary,
+                      color: theme.colorScheme.onSurface,
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.5,
                     ),
                   ),
                   const SizedBox(height: 6),
-                  const Text(
+                  Text(
                     'Elecciones Regionales y Municipales 2026\nCaptura y Validación de Actas',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: AppColors.textSecondary,
+                      color: theme.colorScheme.onSurface.withAlpha(178),
                       fontSize: 13,
                       height: 1.4,
                     ),
@@ -196,11 +199,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       onTap: _showServerConfigDialog,
                       borderRadius: BorderRadius.circular(20),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: theme.colorScheme.surface,
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: AppColors.border),
+                          border: Border.all(color: subtleBorder, width: 0.5),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -209,14 +212,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             const SizedBox(width: 6),
                             Text(
                               currentServerUrl.replaceAll('/api/v1', ''),
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
+                              style: TextStyle(
+                                color: theme.colorScheme.onSurface.withAlpha(178),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(Icons.edit, color: AppColors.textMuted, size: 14),
+                            Icon(Icons.edit, color: theme.colorScheme.onSurface.withAlpha(128), size: 14),
                           ],
                         ),
                       ),
@@ -229,9 +232,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.danger.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.danger.withValues(alpha: 0.4)),
+                        color: AppColors.danger.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -254,25 +256,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    style: const TextStyle(color: AppColors.textPrimary),
-                    decoration: InputDecoration(
+                    style: TextStyle(color: theme.colorScheme.onSurface),
+                    decoration: const InputDecoration(
                       labelText: 'Correo Electrónico o DNI',
-                      labelStyle: const TextStyle(color: AppColors.textSecondary),
-                      prefixIcon: const Icon(Icons.person_outline, color: AppColors.textMuted),
-                      filled: true,
-                      fillColor: AppColors.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.border),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.border),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.accent, width: 2),
-                      ),
+                      prefixIcon: Icon(Icons.person_outline),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -291,33 +278,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
-                    style: const TextStyle(color: AppColors.textPrimary),
+                    style: TextStyle(color: theme.colorScheme.onSurface),
                     decoration: InputDecoration(
                       labelText: 'Contraseña',
-                      labelStyle: const TextStyle(color: AppColors.textSecondary),
-                      prefixIcon: const Icon(Icons.lock_outline, color: AppColors.textMuted),
+                      prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                          color: AppColors.textMuted,
                         ),
                         onPressed: () {
                           setState(() => _obscurePassword = !_obscurePassword);
                         },
-                      ),
-                      filled: true,
-                      fillColor: AppColors.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.border),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.border),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.accent, width: 2),
                       ),
                     ),
                     validator: (value) {
@@ -335,9 +306,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.accent,
-                        elevation: 2,
+                        elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(14),
                         ),
                       ),
                       onPressed: isLoading ? null : _submit,
@@ -366,17 +337,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: AppColors.surface.withValues(alpha: 0.5),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border.withValues(alpha: 0.6)),
+                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Credenciales Demo (Desarrollo):',
                           style: TextStyle(
-                            color: AppColors.textMuted,
+                            color: theme.colorScheme.onSurface.withAlpha(128),
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
@@ -432,7 +402,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }) {
     return ActionChip(
       backgroundColor: color.withValues(alpha: 0.12),
-      side: BorderSide(color: color.withValues(alpha: 0.3)),
+      side: BorderSide.none,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       label: Text(
         label,
         style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),

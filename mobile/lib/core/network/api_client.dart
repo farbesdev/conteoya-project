@@ -70,6 +70,8 @@ class ApiClient {
 
   String get baseUrl => _dio.options.baseUrl;
 
+  bool get hasAuthToken => _authToken != null && _authToken!.isNotEmpty;
+
   void setBaseUrl(String url) {
     var formatted = url.trim();
     if (!formatted.startsWith('http://') && !formatted.startsWith('https://')) {

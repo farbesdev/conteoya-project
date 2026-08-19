@@ -138,29 +138,30 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
         _totalCount = result.total;
       });
     }
-  }
-
-  @override
+  }  @override
   Widget build(BuildContext context) {
     final personerosAsync = ref.watch(personerosStreamProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final subtleBorder = isDark ? const Color(0x1AFFFFFF) : const Color(0x0F0F172A);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Column(
         children: [
           // Header / Barra de Búsqueda
           Container(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
-              border: Border(bottom: BorderSide(color: AppColors.border)),
+            decoration: BoxDecoration(
+              color: theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
+              border: Border(bottom: BorderSide(color: subtleBorder, width: 0.5)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextField(
                   controller: _searchController,
-                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                  style: TextStyle(color: theme.colorScheme.onSurface, fontSize: 14),
                   onSubmitted: _onSearchChanged,
                   onChanged: (val) {
                     if (val.isEmpty || val.length >= 2) {
@@ -169,11 +170,11 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                   },
                   decoration: InputDecoration(
                     hintText: 'Buscar por DNI, nombres, apellidos o mesa...',
-                    hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
-                    prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted),
+                    hintStyle: TextStyle(color: theme.colorScheme.onSurface.withAlpha(128), fontSize: 13),
+                    prefixIcon: Icon(Icons.search_rounded, color: theme.colorScheme.onSurface.withAlpha(128)),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear, color: AppColors.textMuted, size: 18),
+                            icon: Icon(Icons.clear, color: theme.colorScheme.onSurface.withAlpha(128), size: 18),
                             onPressed: () {
                               _searchController.clear();
                               _onSearchChanged('');
@@ -181,18 +182,18 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                           )
                         : null,
                     filled: true,
-                    fillColor: AppColors.surface,
+                    fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                     contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
                     ),
                     enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.border),
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: BorderSide.none,
                     ),
                     focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                       borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
                     ),
                   ),
@@ -204,7 +205,7 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                     children: [
                       Text(
                         'Total: $_totalCount personeros registrados',
-                        style: const TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w600),
+                        style: TextStyle(color: theme.colorScheme.onSurface.withAlpha(128), fontSize: 11, fontWeight: FontWeight.w600),
                       ),
                       if (_isLoading)
                         const SizedBox(
@@ -234,7 +235,7 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'fab_add_personero',
         backgroundColor: AppColors.accent,
-        elevation: 4,
+        elevation: 2,
         icon: const Icon(Icons.person_add_rounded, color: Colors.white),
         label: const Text(
           'Agregar Personero',
@@ -296,7 +297,7 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
         return ListView.builder(
           controller: _scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
           itemCount: filtered.length,
           itemBuilder: (context, index) {
             final personero = filtered[index];
@@ -312,6 +313,9 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
   }
 
   Widget _buildEmptyView() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Center(
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -322,13 +326,12 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.border),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.people_outline_rounded,
-                color: AppColors.textMuted,
+                color: theme.colorScheme.onSurface.withAlpha(128),
                 size: 48,
               ),
             ),
@@ -338,17 +341,17 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                   ? 'No se encontraron personeros para "$_searchQuery"'
                   : 'No hay personeros registrados.',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.textSecondary,
+              style: TextStyle(
+                color: theme.colorScheme.onSurface.withAlpha(178),
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Deslice hacia abajo para actualizar o presione (+) para registrar.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+              style: TextStyle(color: theme.colorScheme.onSurface.withAlpha(128), fontSize: 13),
             ),
           ],
         ),
@@ -357,6 +360,16 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
   }
 
   Widget _buildPersoneroCard(BuildContext context, PersoneroModel personero, {int? index}) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textPrimary = theme.colorScheme.onSurface;
+    final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
+    final textMuted = theme.colorScheme.onSurface.withAlpha(128);
+    final subtleBorder = isDark ? const Color(0x1AFFFFFF) : const Color(0x0F0F172A);
+    final warningColor = AppColors.warningOf(context);
+    final successColor = AppColors.successOf(context);
+    final dangerColor = AppColors.dangerOf(context);
+
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -369,9 +382,8 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withValues(alpha: 0.15),
+                  color: AppColors.accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
                 ),
                 child: const Icon(Icons.person_rounded, color: AppColors.accent, size: 24),
               ),
@@ -384,8 +396,8 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                       personero.fullName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: textPrimary,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -393,14 +405,14 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        const Icon(Icons.badge_outlined, color: AppColors.textMuted, size: 14),
+                        Icon(Icons.badge_outlined, color: textMuted, size: 14),
                         const SizedBox(width: 4),
                         Flexible(
                           child: Text(
                             'DNI: ${personero.dni}',
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
+                            style: TextStyle(
+                              color: textSecondary,
                               fontSize: 13,
                               fontFamily: 'monospace',
                             ),
@@ -412,15 +424,15 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.flag_outlined, color: AppColors.textMuted, size: 13),
+                          Icon(Icons.flag_outlined, color: textMuted, size: 13),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
                               personero.politicalOrganizationName!,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: AppColors.accent,
+                              style: TextStyle(
+                                color: AppColors.accentOf(context),
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -443,9 +455,8 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                       return Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppColors.info.withValues(alpha: 0.15),
+                          color: AppColors.info.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -468,151 +479,150 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                 ),
             ],
           ),
-
           const SizedBox(height: 12),
-          const Divider(color: AppColors.border, height: 1),
-          const SizedBox(height: 8),
+          Divider(color: subtleBorder, height: 1),
+          const SizedBox(height: 6),
 
-          // Fila Inferior: Switch de Acceso y Acciones [Editar], [Clave] y [Eliminar]
+          // Fila Inferior: Switch de Acceso y Acciones [Clave], [Editar] y [Eliminar] ergonómicos (≥44dp)
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              // Switch de Acceso
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    personero.isActive ? 'Acceso Activo' : 'Acceso Inactivo',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: personero.isActive ? AppColors.success : AppColors.textMuted,
-                    ),
-                  ),
-                  SizedBox(
-                    height: 30,
-                    child: Switch(
-                      value: personero.isActive,
-                      activeThumbColor: AppColors.success,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      onChanged: (val) async {
-                        // Actualización optimista en memoria
-                        if (index != null && _remotePersoneros != null && index < _remotePersoneros!.length) {
-                          setState(() {
-                            _remotePersoneros![index] = _remotePersoneros![index].copyWith(isActive: val);
-                          });
-                        }
-                        try {
-                          final apiClient = ref.read(apiClientProvider);
-                          await apiClient.patch('/personeros/${personero.id}/toggle-access');
-                          await ref.read(personerosRepositoryProvider).togglePersoneroAccess(personero.id);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                backgroundColor: val ? AppColors.success : AppColors.warning,
-                                content: Text(val ? 'Acceso habilitado para ${personero.firstName}.' : 'Acceso deshabilitado para ${personero.firstName}.'),
-                                duration: const Duration(seconds: 2),
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          // Revertir en caso de error
+              // Switch de Acceso con área táctil cómoda
+              InkWell(
+                onTap: () async {
+                  final val = !personero.isActive;
+                  if (index != null && _remotePersoneros != null && index < _remotePersoneros!.length) {
+                    setState(() {
+                      _remotePersoneros![index] = _remotePersoneros![index].copyWith(isActive: val);
+                    });
+                  }
+                  try {
+                    final apiClient = ref.read(apiClientProvider);
+                    await apiClient.patch('/personeros/${personero.id}/toggle-access');
+                    await ref.read(personerosRepositoryProvider).togglePersoneroAccess(personero.id);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: val ? successColor : warningColor,
+                          content: Text(val ? 'Acceso habilitado para ${personero.firstName}.' : 'Acceso deshabilitado para ${personero.firstName}.'),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (index != null && _remotePersoneros != null && index < _remotePersoneros!.length) {
+                      setState(() {
+                        _remotePersoneros![index] = _remotePersoneros![index].copyWith(isActive: !val);
+                      });
+                    }
+                  }
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Switch.adaptive(
+                        value: personero.isActive,
+                        activeColor: successColor,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        onChanged: (val) async {
                           if (index != null && _remotePersoneros != null && index < _remotePersoneros!.length) {
                             setState(() {
-                              _remotePersoneros![index] = _remotePersoneros![index].copyWith(isActive: !val);
+                              _remotePersoneros![index] = _remotePersoneros![index].copyWith(isActive: val);
                             });
                           }
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                backgroundColor: AppColors.danger,
-                                content: Text('Error al cambiar acceso. Verifica la conexión.'),
-                              ),
-                            );
-                          }
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 8),
-              // Botones de Acción
-              Expanded(
-                child: Wrap(
-                  alignment: WrapAlignment.end,
-                  spacing: 2,
-                  runSpacing: 4,
-                  children: [
-                    TextButton.icon(
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.warning,
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      icon: const Icon(Icons.key_rounded, size: 15),
-                      label: const Text('Clave', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                      onPressed: () => _showResetPasswordModal(context, personero: personero),
-                    ),
-                    TextButton.icon(
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.textSecondary,
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      icon: const Icon(Icons.edit_outlined, size: 15),
-                      label: const Text('Editar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                      onPressed: () => PersoneroFormModal.show(context, personeroToEdit: personero),
-                    ),
-                    TextButton.icon(
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.danger,
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                      icon: const Icon(Icons.delete_outline_rounded, size: 15),
-                      label: const Text('Eliminar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                      onPressed: () {
-                        DeletePersoneroDialog.show(
-                          context,
-                          personeroName: personero.fullName,
-                          onConfirm: () async {
-                            // Remoción optimista: quitar de la lista en memoria antes de esperar red
-                            if (index != null && _remotePersoneros != null && index < _remotePersoneros!.length) {
-                              setState(() => _remotePersoneros!.removeAt(index));
-                            }
-
-                            // Eliminar local + encolar DELETE sync op (usa dni para garantizar encolado)
-                            await ref.read(personerosRepositoryProvider).deletePersonero(
-                              personero.id,
-                              dni: personero.dni,
-                            );
-
-                            // Feedback inmediato al usuario mientras la sync corre
+                          try {
+                            final apiClient = ref.read(apiClientProvider);
+                            await apiClient.patch('/personeros/${personero.id}/toggle-access');
+                            await ref.read(personerosRepositoryProvider).togglePersoneroAccess(personero.id);
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  backgroundColor: AppColors.danger,
-                                  content: Text('Personero eliminado del sistema.'),
-                                  duration: Duration(seconds: 3),
+                                SnackBar(
+                                  backgroundColor: val ? successColor : warningColor,
+                                  content: Text(val ? 'Acceso habilitado para ${personero.firstName}.' : 'Acceso deshabilitado para ${personero.firstName}.'),
+                                  duration: const Duration(seconds: 2),
                                 ),
                               );
                             }
-
-                            // Esperar que el VPS confirme el DELETE antes de recargar la lista.
-                            // Sin await, _refresh() correría antes de que el servidor procese la
-                            // operación y devolvería al personero en la lista (race condition).
-                            await ref.read(syncEngineProvider).syncPendingOperations();
-
-                            // Recargar lista desde el servidor — ahora el personero ya no existe
-                            await _refresh();
-                          },
-                        );
-                      },
-                    ),
-                  ],
+                          } catch (e) {
+                            if (index != null && _remotePersoneros != null && index < _remotePersoneros!.length) {
+                              setState(() {
+                                _remotePersoneros![index] = _remotePersoneros![index].copyWith(isActive: !val);
+                              });
+                            }
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        personero.isActive ? 'Activo' : 'Inactivo',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: personero.isActive ? successColor : textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+              ),
+              const Spacer(),
+              // Botones de Acción con Touch Target ergonómico ≥44dp
+              IconButton(
+                icon: Icon(Icons.key_rounded, size: 18, color: warningColor),
+                tooltip: 'Restablecer Clave',
+                style: IconButton.styleFrom(
+                  minimumSize: const Size(44, 44),
+                  padding: const EdgeInsets.all(10),
+                ),
+                onPressed: () => _showResetPasswordModal(context, personero: personero),
+              ),
+              IconButton(
+                icon: Icon(Icons.edit_outlined, size: 18, color: textSecondary),
+                tooltip: 'Editar Personero',
+                style: IconButton.styleFrom(
+                  minimumSize: const Size(44, 44),
+                  padding: const EdgeInsets.all(10),
+                ),
+                onPressed: () => PersoneroFormModal.show(context, personeroToEdit: personero),
+              ),
+              IconButton(
+                icon: Icon(Icons.delete_outline_rounded, size: 18, color: dangerColor),
+                tooltip: 'Eliminar Personero',
+                style: IconButton.styleFrom(
+                  minimumSize: const Size(44, 44),
+                  padding: const EdgeInsets.all(10),
+                ),
+                onPressed: () {
+                  DeletePersoneroDialog.show(
+                    context,
+                    personeroName: personero.fullName,
+                    onConfirm: () async {
+                      if (index != null && _remotePersoneros != null && index < _remotePersoneros!.length) {
+                        setState(() => _remotePersoneros!.removeAt(index));
+                      }
+
+                      await ref.read(personerosRepositoryProvider).deletePersonero(
+                        personero.id,
+                        dni: personero.dni,
+                      );
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            backgroundColor: AppColors.danger,
+                            content: Text('Personero eliminado del sistema.'),
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                      }
+
+                      await ref.read(syncEngineProvider).syncPendingOperations();
+                      await _refresh();
+                    },
+                  );
+                },
               ),
             ],
           ),

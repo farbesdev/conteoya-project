@@ -60,13 +60,16 @@ class _AppShellState extends ConsumerState<AppShell>
 
   void _showLogoutDialog(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final subtleBorder = isDark ? const Color(0x1AFFFFFF) : const Color(0x0F0F172A);
+
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: cs.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: cs.outlineVariant),
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: subtleBorder, width: 0.5),
         ),
         title: Text(
           'Cerrar Sesión',
@@ -90,8 +93,10 @@ class _AppShellState extends ConsumerState<AppShell>
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.danger,
+              elevation: 0,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: const Text(
               'Cerrar Sesión',

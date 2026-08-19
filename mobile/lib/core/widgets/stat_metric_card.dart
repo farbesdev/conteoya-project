@@ -27,23 +27,20 @@ class StatMetricCard extends StatelessWidget {
     final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
     final textMuted = theme.colorScheme.onSurface.withAlpha(128);
     final cardBg = theme.colorScheme.surface;
-    final borderColor = theme.colorScheme.outlineVariant;
+    final subtleBorder = isDark
+        ? const Color(0x1AFFFFFF)
+        : const Color(0x0F0F172A);
 
     return Container(
       decoration: BoxDecoration(
         color: cardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: subtleBorder, width: 0.5),
         boxShadow: [
           BoxShadow(
-            color: accentColor.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
             color: isDark
-                ? Colors.black.withValues(alpha: 0.2)
-                : Colors.black.withValues(alpha: 0.04),
+                ? Colors.black.withValues(alpha: 0.15)
+                : const Color(0xFF0F172A).withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

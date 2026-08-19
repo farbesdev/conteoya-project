@@ -134,6 +134,19 @@ PENDING → PROCESSING → DONE
 
 ---
 
+## 🎨 Sistema de Diseño Mobile-First (`core/theme/`)
+
+La aplicación implementa las directrices de los skills **`mobile-design`**, **`ui-styling`** y **`ui-ux-pro-max`**:
+
+- **Anti-Border Hell:** Se eliminó la sobrecarga de bordes duros de 1px. La jerarquía se logra mediante **elevación tonal** (`surface` / `surfaceElevated`) y bordes *hairline* ultra-sutiles de `0.5px` (`0x1AFFFFFF` en Dark / `0x0F0F172A` en Light).
+- **Anti-Chromostereopsis (WCAG 2.1 AA/AAA):** Helpers dinámicos (`warningOf`, `successOf`, `dangerOf`) evitan la vibración cromática del amarillo/naranja sobre fondos oscuros (usando *Amber 400* `#FBBF24` en modo oscuro).
+- **Ergonomía Táctil:**
+  - **Padding Anti-Colisión:** `110dp` en listas para que el FAB no tape la última tarjeta ni sus botones.
+  - **Touch Targets:** Botones de acción ergonómicos con `minimumSize: Size(44, 44)`.
+  - **Carrusel de Filtros Móvil:** Navegación horizontal fluida (`BouncingScrollPhysics`) con chips redondeados de 20px.
+
+---
+
 ## 🔑 Principios Críticos
 
 1. **Offline es el modo normal.** Toda acción del usuario funciona sin red. La sync es siempre asíncrona.
@@ -141,6 +154,7 @@ PENDING → PROCESSING → DONE
 3. **SHA-256 se calcula en el cliente** antes de guardar localmente y antes de subir a R2.
 4. **Null safety estricto.** No se usa `dynamic` ni el operador `!` sin justificación.
 5. **Riverpod para estado global.** No se usa `setState` para estado de aplicación.
+6. **Autenticación controlada:** `SyncEngine` comprueba `hasAuthToken` y gestiona respuestas `401/403` de forma resiliente.
 
 ---
 

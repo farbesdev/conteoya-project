@@ -222,41 +222,45 @@ class AdminDashboardScreen extends ConsumerWidget {
     final textPrimary = theme.colorScheme.onSurface;
     final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
     final cardBg = theme.colorScheme.surface;
-    final borderColor = theme.colorScheme.outlineVariant;
+    final isDark = theme.brightness == Brightness.dark;
+    final subtleBorder = isDark ? const Color(0x1AFFFFFF) : const Color(0x0F0F172A);
 
     return Material(
       color: cardBg,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: borderColor),
-        ),
-        child: ListTile(
-          onTap: onTap,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          leading: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(10),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: subtleBorder, width: 0.5),
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            leading: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 22),
             ),
-            child: Icon(icon, color: color, size: 22),
-          ),
-          title: Text(
-            title,
-            style: TextStyle(
-              color: textPrimary,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
+            title: Text(
+              title,
+              style: TextStyle(
+                color: textPrimary,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
             ),
+            subtitle: Text(
+              subtitle,
+              style: TextStyle(color: textSecondary, fontSize: 12),
+            ),
+            trailing: Icon(Icons.chevron_right_rounded, color: textSecondary, size: 20),
           ),
-          subtitle: Text(
-            subtitle,
-            style: TextStyle(color: textSecondary, fontSize: 12),
-          ),
-          trailing: Icon(Icons.chevron_right_rounded, color: textSecondary, size: 20),
         ),
       ),
     );
@@ -269,38 +273,39 @@ class AdminDashboardScreen extends ConsumerWidget {
 
     switch (state) {
       case SyncEngineState.syncing:
-        badgeColor = AppColors.info;
+        badgeColor = AppColors.infoOf(context);
         statusText = 'Sincronizando con servidor...';
         icon = Icons.sync;
         break;
       case SyncEngineState.offline:
-        badgeColor = AppColors.warning;
+        badgeColor = AppColors.warningOf(context);
         statusText = 'Modo Offline (Sin Conexión)';
         icon = Icons.cloud_off;
         break;
       case SyncEngineState.error:
-        badgeColor = AppColors.danger;
+        badgeColor = AppColors.dangerOf(context);
         statusText = 'Reintento programado';
         icon = Icons.error_outline;
         break;
       case SyncEngineState.idle:
-        badgeColor = AppColors.success;
+        badgeColor = AppColors.successOf(context);
         statusText = 'Servidor conectado';
         icon = Icons.cloud_done;
         break;
     }
 
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final textSecondary = theme.colorScheme.onSurface.withAlpha(178);
     final cardBg = theme.colorScheme.surface;
-    final borderColor = theme.colorScheme.outlineVariant;
+    final subtleBorder = isDark ? const Color(0x1AFFFFFF) : const Color(0x0F0F172A);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: borderColor),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: subtleBorder, width: 0.5),
       ),
       child: Row(
         children: [
