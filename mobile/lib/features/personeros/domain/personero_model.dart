@@ -12,7 +12,7 @@ class PersoneroModel {
   final String? personeroType;
   final DateTime createdAt;
 
-  const PersoneroModel({
+  PersoneroModel({
     required this.id,
     required this.dni,
     required this.firstName,
@@ -27,7 +27,9 @@ class PersoneroModel {
     this.personeroType,
     required this.createdAt,
   }) : pollingStationCodes = pollingStationCodes ??
-            (pollingStationCode != null && pollingStationCode.isNotEmpty ? [pollingStationCode] : const []);
+            (pollingStationCode != null && pollingStationCode.isNotEmpty
+                ? <String>[pollingStationCode]
+                : <String>[]);
 
   String get pollingStationCode =>
       pollingStationCodes.isNotEmpty ? pollingStationCodes.first : '';
