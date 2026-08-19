@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../domain/personero_model.dart';
+import 'mesa_search_selector_modal.dart';
 
 class PersoneroFormModal extends ConsumerStatefulWidget {
   final PersoneroModel? personeroToEdit;
@@ -30,7 +31,7 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
   late final TextEditingController _phoneController;
   late final TextEditingController _emailController;
 
-  String? _selectedMesaCode;
+  late final Set<String> _selectedMesaCodes;
   bool _isSaving = false;
   String? _errorMessage;
 
@@ -45,7 +46,15 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
     _lastNameController = TextEditingController(text: p?.lastName ?? '');
     _phoneController = TextEditingController(text: p?.phoneNumber ?? '');
     _emailController = TextEditingController(text: p?.email ?? '');
-    _selectedMesaCode = p?.pollingStationCode;
+
+    _selectedMesaCodes = {};
+    if (p != null) {
+      if (p.pollingStationCodes.isNotEmpty) {
+        _selectedMesaCodes.addAll(p.pollingStationCodes);
+      } else if (p.pollingStationCode.isNotEmpty) {
+        _selectedMesaCodes.add(p.pollingStationCode);
+      }
+    }
   }
 
   @override
@@ -58,12 +67,29 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
     super.dispose();
   }
 
+  Future<void> _openMesaSelector() async {
+    final result = await MesaSearchSelectorModal.show(
+      context,
+      initialSelectedCodes: _selectedMesaCodes.toList(),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _selectedMesaCodes.clear();
+        _selectedMesaCodes.addAll(result);
+        if (_selectedMesaCodes.isNotEmpty) {
+          _errorMessage = null;
+        }
+      });
+    }
+  }
+
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    if (_selectedMesaCode == null || _selectedMesaCode!.isEmpty) {
+    if (_selectedMesaCodes.isEmpty) {
       setState(() {
-        _errorMessage = 'Debe seleccionar una mesa de votación para el personero.';
+        _errorMessage = 'Debe asignar al menos una mesa de votación al personero.';
       });
       return;
     }
@@ -82,7 +108,7 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
           dni: _dniController.text,
           firstName: _firstNameController.text,
           lastName: _lastNameController.text,
-          pollingStationCode: _selectedMesaCode!,
+          pollingStationCodes: _selectedMesaCodes.toList(),
           phoneNumber: _phoneController.text,
           email: _emailController.text,
         );
@@ -91,7 +117,7 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
           dni: _dniController.text,
           firstName: _firstNameController.text,
           lastName: _lastNameController.text,
-          pollingStationCode: _selectedMesaCode!,
+          pollingStationCodes: _selectedMesaCodes.toList(),
           phoneNumber: _phoneController.text,
           email: _emailController.text,
         );
@@ -118,12 +144,11 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
 
   @override
   Widget build(BuildContext context) {
-    final mesasAsync = ref.watch(mesasStreamProvider);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
+        maxHeight: MediaQuery.of(context).size.height * 0.88,
       ),
       decoration: const BoxDecoration(
         color: AppColors.surface,
@@ -283,69 +308,112 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
               ),
               const SizedBox(height: 16),
 
-              // Selector de Mesa Asignada (Obligatorio, 1 Personero = 1 Mesa)
-              mesasAsync.when(
-                data: (mesas) {
-                  return DropdownButtonFormField<String>(
-                    isExpanded: true,
-                    initialValue: _selectedMesaCode,
-                    dropdownColor: AppColors.surface,
-                    style: const TextStyle(color: AppColors.textPrimary),
-                    decoration: InputDecoration(
-                      labelText: 'Mesa de Votación Asignada *',
-                      labelStyle: const TextStyle(color: AppColors.textSecondary),
-                      prefixIcon: const Icon(Icons.how_to_vote_outlined, color: AppColors.textMuted),
-                      filled: true,
-                      fillColor: AppColors.background,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.border),
-                      ),
-                    ),
-                    items: mesas.map((mesa) {
-                      final isAssignedToOther = mesa.hasPersoneroAssigned &&
-                          mesa.assignedPersoneroDni != widget.personeroToEdit?.dni;
-
-                      return DropdownMenuItem<String>(
-                        value: mesa.code,
-                        enabled: !isAssignedToOther,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+              // ─── SECCIÓN MESAS DE VOTACIÓN ASIGNADAS (Múltiples) ───
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _selectedMesaCodes.isEmpty && _errorMessage != null
+                        ? AppColors.danger
+                        : AppColors.border,
+                    width: _selectedMesaCodes.isEmpty && _errorMessage != null ? 1.5 : 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
                           children: [
-                            Text(
-                              'Mesa ${mesa.code}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: isAssignedToOther ? AppColors.textMuted : AppColors.textPrimary,
-                              ),
-                            ),
+                            const Icon(Icons.how_to_vote_outlined, color: AppColors.accent, size: 18),
                             const SizedBox(width: 8),
-                            Flexible(
-                              child: Text(
-                                isAssignedToOther ? '(${mesa.assignedPersoneroName})' : '(${mesa.districtName})',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: isAssignedToOther ? AppColors.danger : AppColors.textSecondary,
-                                ),
+                            Text(
+                              'Mesas Asignadas (${_selectedMesaCodes.length}) *',
+                              style: const TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      setState(() {
-                        _selectedMesaCode = val;
-                      });
-                    },
-                    validator: (val) =>
-                        val == null || val.isEmpty ? 'Seleccione una mesa obligatoria' : null,
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Text('Error al cargar mesas: $e', style: const TextStyle(color: AppColors.danger)),
+                        TextButton.icon(
+                          onPressed: _openMesaSelector,
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          icon: const Icon(Icons.search_rounded, size: 16, color: AppColors.accent),
+                          label: Text(
+                            _selectedMesaCodes.isEmpty ? 'Buscar Mesas' : 'Editar Mesas',
+                            style: const TextStyle(
+                              color: AppColors.accent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    if (_selectedMesaCodes.isEmpty)
+                      InkWell(
+                        onTap: _openMesaSelector,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.border.withValues(alpha: 0.6)),
+                          ),
+                          child: const Column(
+                            children: [
+                              Icon(Icons.add_location_alt_outlined, color: AppColors.textMuted, size: 28),
+                              SizedBox(height: 6),
+                              Text(
+                                'Toque aquí para buscar y asignar mesas al personero',
+                                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _selectedMesaCodes.map((code) {
+                          return Chip(
+                            backgroundColor: AppColors.accent.withValues(alpha: 0.15),
+                            side: const BorderSide(color: AppColors.accent, width: 0.8),
+                            avatar: const Icon(Icons.check_circle, size: 16, color: AppColors.accent),
+                            label: Text(
+                              'Mesa $code',
+                              style: const TextStyle(
+                                color: AppColors.accent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                            deleteIcon: const Icon(Icons.close, size: 14, color: AppColors.accent),
+                            onDeleted: () {
+                              setState(() {
+                                _selectedMesaCodes.remove(code);
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
 

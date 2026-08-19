@@ -25,6 +25,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
 
         // Personero, Users & Mesas
         Route::get('/personeros', [\App\Http\Controllers\Api\V1\PersoneroController::class, 'index']);
+        Route::post('/personeros/{id}/polling-stations', [\App\Http\Controllers\Api\V1\PersoneroController::class, 'assignPollingStations']);
         Route::apiResource('polling-stations', \App\Http\Controllers\Api\V1\PollingStationController::class);
         Route::get('/personero/polling-stations', [PersoneroController::class, 'pollingStations']);
         Route::patch('/personeros/{personero}/toggle-access', [\App\Http\Controllers\Api\V1\PersoneroAccessController::class, 'toggleAccess']);

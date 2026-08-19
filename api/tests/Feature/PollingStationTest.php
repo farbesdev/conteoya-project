@@ -141,5 +141,36 @@ class PollingStationTest extends TestCase
         $resCode = $this->actingAs($admin)->getJson('/api/v1/polling-stations?search=030499');
         $resCode->assertStatus(200);
         $this->assertCount(1, $resCode->json('data'));
+
+        // 4. Buscar por departamento (ej: TUMBES) a través de la jerarquía relacional
+        \Illuminate\Support\Facades\DB::table('departments')->updateOrInsert(
+            ['code' => '24'],
+            ['name' => 'TUMBES', 'updated_at' => now(), 'created_at' => now()]
+        );
+        \Illuminate\Support\Facades\DB::table('provinces')->updateOrInsert(
+            ['code' => '2401'],
+            ['department_code' => '24', 'name' => 'TUMBES', 'updated_at' => now(), 'created_at' => now()]
+        );
+        \Illuminate\Support\Facades\DB::table('districts')->updateOrInsert(
+            ['code' => '240101'],
+            ['province_code' => '2401', 'department_code' => '24', 'name' => 'TUMBES', 'updated_at' => now(), 'created_at' => now()]
+        );
+
+        $locTumbes = \App\Models\ElectoralLocation::firstOrCreate(
+            ['name' => 'I.E. 001 JOSE LISHNER TUDELA', 'district_code' => '240101'],
+            ['address' => 'Av. Tumbes 123']
+        );
+
+        PollingStation::create([
+            'code'                  => '080001',
+            'electoral_location_id' => $locTumbes->id,
+            'registered_voters'     => 290,
+            'status'                => 'ACTIVE',
+        ]);
+
+        $resTumbes = $this->actingAs($admin)->getJson('/api/v1/polling-stations?search=tumbes');
+        $resTumbes->assertStatus(200);
+        $this->assertGreaterThanOrEqual(1, count($resTumbes->json('data')));
+        $this->assertTrue(collect($resTumbes->json('data'))->contains(fn($m) => $m['code'] === '080001'));
     }
 }

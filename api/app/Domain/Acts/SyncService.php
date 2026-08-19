@@ -272,17 +272,28 @@ class SyncService
                 ]);
             }
 
-            if (!empty($payload['polling_station_code'])) {
+            $stationCodes = [];
+            if (!empty($payload['polling_station_codes']) && is_array($payload['polling_station_codes'])) {
+                $stationCodes = $payload['polling_station_codes'];
+            } elseif (!empty($payload['polling_station_code'])) {
+                $stationCodes = [$payload['polling_station_code']];
+            }
+
+            if (!empty($stationCodes)) {
                 $locationId = \App\Models\ElectoralLocation::value('id') ?? 1;
-                $station = PollingStation::firstOrCreate(
-                    ['code' => $payload['polling_station_code']],
-                    [
-                        'electoral_location_id' => $locationId,
-                        'registered_voters'     => 300,
-                        'status'                => 'ACTIVE',
-                    ]
-                );
-                $personero->pollingStations()->sync([$station->id]);
+                $stationIds = [];
+                foreach ($stationCodes as $stCode) {
+                    $station = PollingStation::firstOrCreate(
+                        ['code' => $stCode],
+                        [
+                            'electoral_location_id' => $locationId,
+                            'registered_voters'     => 300,
+                            'status'                => 'ACTIVE',
+                        ]
+                    );
+                    $stationIds[] = $station->id;
+                }
+                $personero->pollingStations()->sync($stationIds);
             }
 
             return [

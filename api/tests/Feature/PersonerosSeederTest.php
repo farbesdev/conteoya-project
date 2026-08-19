@@ -115,4 +115,58 @@ class PersonerosSeederTest extends TestCase
         $this->assertGreaterThanOrEqual(1, count($searchMulti->json('data')));
         $this->assertTrue(collect($searchMulti->json('data'))->contains(fn($p) => str_contains($p['dni'], '42275934')));
     }
+
+    public function test_admin_can_assign_multiple_polling_stations_to_personero(): void
+    {
+        $adminRole = Role::where('name', Role::ADMIN)->first();
+        $admin = User::factory()->create([
+            'role'      => Role::ADMIN,
+            'role_id'   => $adminRole->id,
+            'is_active' => true,
+        ]);
+
+        $personeroUser = User::factory()->create(['role' => Role::PERSONERO]);
+        $personero = Personero::create([
+            'user_id'         => $personeroUser->id,
+            'document_number' => '99887766',
+        ]);
+
+        // Crear 3 mesas con jerarquía geográfica válida
+        \Illuminate\Support\Facades\DB::table('departments')->updateOrInsert(
+            ['code' => '15'],
+            ['name' => 'LIMA', 'updated_at' => now(), 'created_at' => now()]
+        );
+        \Illuminate\Support\Facades\DB::table('provinces')->updateOrInsert(
+            ['code' => '1501'],
+            ['department_code' => '15', 'name' => 'LIMA', 'updated_at' => now(), 'created_at' => now()]
+        );
+        \Illuminate\Support\Facades\DB::table('districts')->updateOrInsert(
+            ['code' => '150101'],
+            ['province_code' => '1501', 'department_code' => '15', 'name' => 'LIMA', 'updated_at' => now(), 'created_at' => now()]
+        );
+
+        $loc = \App\Models\ElectoralLocation::firstOrCreate(
+            ['name' => 'COLEGIO NACIONAL TEST', 'district_code' => '150101'],
+            ['address' => 'Av. Central 123']
+        );
+
+        $m1 = \App\Models\PollingStation::firstOrCreate(['code' => '900001'], ['electoral_location_id' => $loc->id, 'registered_voters' => 300, 'status' => 'ACTIVE']);
+        $m2 = \App\Models\PollingStation::firstOrCreate(['code' => '900002'], ['electoral_location_id' => $loc->id, 'registered_voters' => 300, 'status' => 'ACTIVE']);
+        $m3 = \App\Models\PollingStation::firstOrCreate(['code' => '900003'], ['electoral_location_id' => $loc->id, 'registered_voters' => 300, 'status' => 'ACTIVE']);
+
+        // Asignar las 3 mesas vía API
+        $response = $this->actingAs($admin)->postJson("/api/v1/personeros/{$personero->id}/polling-stations", [
+            'polling_station_codes' => ['900001', '900002', '900003'],
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'message'               => 'Mesas asignadas exitosamente al personero.',
+                'personero_id'          => $personero->id,
+                'polling_station_codes' => ['900001', '900002', '900003'],
+                'assigned_count'        => 3,
+            ]);
+
+        $this->assertEquals(3, $personero->fresh()->pollingStations()->count());
+    }
 }

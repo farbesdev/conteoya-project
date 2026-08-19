@@ -62,7 +62,8 @@ class PersoneroController extends Controller
         $paginated = $query->orderBy('id')->paginate($perPage);
 
         $items = collect($paginated->items())->map(function ($p) {
-            $stationCode = $p->pollingStations->first()?->code ?? '030390';
+            $stationCodes = $p->pollingStations->pluck('code')->filter()->values()->all();
+            $stationCode = $stationCodes[0] ?? '030390';
             $fullName = $p->full_name ?: ($p->user?->name ?? 'Personero Registrado');
             $parts = explode(' ', trim($fullName));
             $firstName = $p->first_name ?: ($parts[0] ?? 'Personero');
@@ -77,6 +78,7 @@ class PersoneroController extends Controller
                 'name'                        => $fullName,
                 'full_name'                   => $fullName,
                 'polling_station_code'        => $stationCode,
+                'polling_station_codes'       => $stationCodes,
                 'phone_number'                => $p->phone_number,
                 'email'                       => $p->email ?: $p->user?->email,
                 'is_active'                   => $p->user?->is_active ?? false,
@@ -121,6 +123,28 @@ class PersoneroController extends Controller
             'personero_id'     => $personero->id,
             'document_number'  => $personero->document_number,
             'polling_stations' => $stations,
+        ]);
+    }
+
+    /**
+     * Asignar / sincronizar múltiples mesas de votación a un personero.
+     */
+    public function assignPollingStations(Request $request, int $id): JsonResponse
+    {
+        $personero = Personero::findOrFail($id);
+        $stationCodes = $request->input('polling_station_codes', []);
+        if (empty($stationCodes) && $request->filled('polling_station_code')) {
+            $stationCodes = [$request->input('polling_station_code')];
+        }
+
+        $stationIds = \App\Models\PollingStation::whereIn('code', $stationCodes)->pluck('id')->all();
+        $personero->pollingStations()->sync($stationIds);
+
+        return response()->json([
+            'message'               => 'Mesas asignadas exitosamente al personero.',
+            'personero_id'          => $personero->id,
+            'polling_station_codes' => $stationCodes,
+            'assigned_count'        => count($stationIds),
         ]);
     }
 }

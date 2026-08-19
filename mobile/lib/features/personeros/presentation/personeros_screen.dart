@@ -432,28 +432,38 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                   ],
                 ),
               ),
-              if (personero.pollingStationCode.isNotEmpty && personero.pollingStationCode != '030390')
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.info.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.how_to_vote_rounded, color: AppColors.info, size: 14),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Mesa ${personero.pollingStationCode}',
-                        style: const TextStyle(
-                          color: AppColors.info,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+              if (personero.pollingStationCodes.isNotEmpty)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 140),
+                  child: Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: personero.pollingStationCodes.map((code) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.info.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.info.withValues(alpha: 0.3)),
                         ),
-                      ),
-                    ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.how_to_vote_rounded, color: AppColors.info, size: 12),
+                            const SizedBox(width: 3),
+                            Text(
+                              'Mesa $code',
+                              style: const TextStyle(
+                                color: AppColors.info,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
             ],

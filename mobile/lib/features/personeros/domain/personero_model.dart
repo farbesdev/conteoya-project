@@ -3,7 +3,7 @@ class PersoneroModel {
   final String dni;
   final String firstName;
   final String lastName;
-  final String pollingStationCode;
+  final List<String> pollingStationCodes;
   final String? phoneNumber;
   final String? email;
   final bool isActive;
@@ -17,7 +17,8 @@ class PersoneroModel {
     required this.dni,
     required this.firstName,
     required this.lastName,
-    required this.pollingStationCode,
+    List<String>? pollingStationCodes,
+    String? pollingStationCode,
     this.phoneNumber,
     this.email,
     this.isActive = false,
@@ -25,7 +26,11 @@ class PersoneroModel {
     this.status,
     this.personeroType,
     required this.createdAt,
-  });
+  }) : pollingStationCodes = pollingStationCodes ??
+            (pollingStationCode != null && pollingStationCode.isNotEmpty ? [pollingStationCode] : const []);
+
+  String get pollingStationCode =>
+      pollingStationCodes.isNotEmpty ? pollingStationCodes.first : '';
 
   String get fullName => '$firstName $lastName'.trim();
 
@@ -34,6 +39,7 @@ class PersoneroModel {
     String? dni,
     String? firstName,
     String? lastName,
+    List<String>? pollingStationCodes,
     String? pollingStationCode,
     String? phoneNumber,
     String? email,
@@ -48,7 +54,8 @@ class PersoneroModel {
       dni: dni ?? this.dni,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
-      pollingStationCode: pollingStationCode ?? this.pollingStationCode,
+      pollingStationCodes: pollingStationCodes ??
+          (pollingStationCode != null ? [pollingStationCode] : this.pollingStationCodes),
       phoneNumber: phoneNumber ?? this.phoneNumber,
       email: email ?? this.email,
       isActive: isActive ?? this.isActive,

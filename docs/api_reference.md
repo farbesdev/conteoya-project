@@ -270,6 +270,10 @@ Listado paginado de personeros de alto rendimiento con búsqueda agnóstica case
       "name": "JOSEI ANTONIO ESPINOZA SILVA",
       "full_name": "JOSEI ANTONIO ESPINOZA SILVA",
       "polling_station_code": "030390",
+      "polling_station_codes": [
+        "030390",
+        "030391"
+      ],
       "phone_number": "+51 987 654 321",
       "email": "personero_42275934@conteoya.pe",
       "is_active": true,
@@ -289,6 +293,39 @@ Listado paginado de personeros de alto rendimiento con búsqueda agnóstica case
     "total": 1,
     "has_more": false
   }
+}
+```
+
+---
+
+### `POST /api/v1/personeros/{id}/polling-stations`
+
+Asigna y sincroniza en lote una o múltiples mesas de votación para un personero.
+
+> 🔒 Accesible por `ADMIN` y `DIRECTOR`.
+
+**Request Body**
+```json
+{
+  "polling_station_codes": [
+    "030390",
+    "030391",
+    "030392"
+  ]
+}
+```
+
+**Respuesta `200 OK`**
+```json
+{
+  "message": "Mesas asignadas exitosamente al personero.",
+  "personero_id": 1,
+  "polling_station_codes": [
+    "030390",
+    "030391",
+    "030392"
+  ],
+  "assigned_count": 3
 }
 ```
 

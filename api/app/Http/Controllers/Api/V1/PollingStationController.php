@@ -46,9 +46,15 @@ class PollingStationController extends Controller
                       'district_name',
                   ], $search)
                   ->orWhereHas('electoralLocation', function ($locQ) use ($search) {
-                      $locQ->whereAnyInsensitive(['name'], $search)
+                      $locQ->whereAnyInsensitive(['name', 'address'], $search)
                            ->orWhereHas('district', function ($distQ) use ($search) {
-                               $distQ->whereAnyInsensitive(['name'], $search);
+                               $distQ->whereAnyInsensitive(['name', 'code'], $search)
+                                     ->orWhereHas('province', function ($provQ) use ($search) {
+                                         $provQ->whereAnyInsensitive(['name', 'code'], $search)
+                                               ->orWhereHas('department', function ($deptQ) use ($search) {
+                                                   $deptQ->whereAnyInsensitive(['name', 'code'], $search);
+                                               });
+                                     });
                            });
                   });
             });
