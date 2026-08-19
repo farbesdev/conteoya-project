@@ -50,10 +50,15 @@ class ApiClient {
 
           // Si el servidor responde 401 o 403 en una llamada autenticada (no en el endpoint /login)
           if ((statusCode == 401 || statusCode == 403) && !path.endsWith('/login')) {
-            String reason = 'Su cuenta se encuentra inhabilitada. Comuníquese con el Administrador.';
+            String reason = 'Su sesión ha expirado o el acceso fue revocado.';
             final data = error.response?.data;
             if (data is Map && data['message'] != null) {
-              reason = data['message'].toString();
+              final msg = data['message'].toString();
+              if (msg == 'Unauthenticated.' || msg.toLowerCase().contains('unauthenticated')) {
+                reason = 'Sesión expirada. Por favor inicie sesión nuevamente.';
+              } else {
+                reason = msg;
+              }
             }
             onUnauthorized?.call(reason);
           }

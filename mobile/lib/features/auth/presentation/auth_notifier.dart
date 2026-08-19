@@ -48,6 +48,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> updateServerUrl(String url) async {
     await _repository.updateServerUrl(url);
+    state = const Unauthenticated();
   }
 
   Future<void> login({

@@ -26,11 +26,13 @@ class AuthRepository {
     }
   }
 
-  /// Guarda una nueva URL base del servidor
+  /// Guarda una nueva URL base del servidor y limpia tokens/sesiones del servidor previo
   Future<void> updateServerUrl(String newUrl) async {
     apiClient.setBaseUrl(newUrl);
+    apiClient.setAuthToken('');
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_serverUrlKey, apiClient.baseUrl);
+    await prefs.remove(_sessionKey);
   }
 
   /// Obtiene la URL actual configurada
@@ -56,6 +58,9 @@ class AuthRepository {
     String? deviceModel,
   }) async {
     final deviceUuid = await getOrCreateDeviceUuid();
+
+    // Limpiar token residual previo para evitar conflictos de autenticación
+    apiClient.setAuthToken('');
 
     Object? dioOrServerException;
     try {
