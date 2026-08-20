@@ -1,13 +1,26 @@
 import type { App } from 'vue'
 import { createI18n } from 'vue-i18n'
+import { es as vuetifyEs, en as vuetifyEn } from 'vuetify/locale'
 import { cookieRef } from '@layouts/stores/config'
 import { themeConfig } from '@themeConfig'
 
-const messages = Object.fromEntries(
+const loadedMessages = Object.fromEntries(
   Object.entries(
     import.meta.glob<{ default: any }>('./locales/*.json', { eager: true }))
     .map(([key, value]) => [key.slice(10, -5), value.default]),
 )
+
+const messages = {
+  ...loadedMessages,
+  es: {
+    ...loadedMessages.es,
+    $vuetify: vuetifyEs,
+  },
+  en: {
+    ...loadedMessages.en,
+    $vuetify: vuetifyEn,
+  },
+}
 
 let _i18n: any = null
 
@@ -18,6 +31,8 @@ export const getI18n = () => {
       locale: cookieRef('language', themeConfig.app.i18n.defaultLocale).value,
       fallbackLocale: 'en',
       messages,
+      missingWarn: false,
+      fallbackWarn: false,
     })
   }
 

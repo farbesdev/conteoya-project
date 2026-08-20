@@ -112,8 +112,15 @@ class ActService
             ],
         ]);
 
+        $loadedAct = $act->load(['totals', 'results', 'pollingStation', 'capturedByPersonero.user']);
+
+        if ($status === 'CONFIRMED' || $status === 'SYNCED') {
+            app(\App\Domain\Acts\Services\ResultsAggregationService::class)->invalidateCache();
+            event(new \App\Events\ActConfirmedEvent($loadedAct));
+        }
+
         return [
-            'act'               => $act->load(['totals', 'results', 'pollingStation', 'capturedByPersonero.user']),
+            'act'               => $loadedAct,
             'validation_result' => $validationResult,
         ];
     }
@@ -140,6 +147,11 @@ class ActService
             ],
         ]);
 
-        return $act->load(['totals', 'results', 'pollingStation']);
+        $loadedAct = $act->load(['totals', 'results', 'pollingStation']);
+
+        app(\App\Domain\Acts\Services\ResultsAggregationService::class)->invalidateCache();
+        event(new \App\Events\ActConfirmedEvent($loadedAct));
+
+        return $loadedAct;
     }
 }

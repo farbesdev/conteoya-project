@@ -68,8 +68,8 @@ conteoya-project/
 | Fase | Estado | Descripción |
 |------|--------|-------------|
 | **Fase 0 — Foundation** | ✅ Completada | API base, PostgreSQL, Sanctum, Roles, Auth, Catálogos JEE |
-| **Fase 1 — Ingesta** | 🟡 En progreso | Flutter offline-first, actas, evidencias R2, sync engine |
-| **Fase 2 — Resultados** | ⏳ Pendiente | Dashboard Vue 3, realtime Reverb |
+| **Fase 1 — Ingesta** | ✅ Completada | Flutter offline-first, actas, evidencias R2, sync engine |
+| **Fase 2 — Resultados** | ✅ Completada | Dashboard Vue 3.5 + Vuetify 3, realtime Reverb, agregación Redis, panel admin |
 | **Fase 3 — Hardening** | ⏳ Pendiente | E2E, carga, auditoría |
 
 ---

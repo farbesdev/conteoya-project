@@ -16,7 +16,7 @@ import { dirname, join } from 'node:path'
 
 // Installation: npm install --save-dev @iconify/tools @iconify/utils @iconify/json @iconify/iconify
 import { cleanupSVG, importDirectory, isEmptyColor, parseColors, runSVGO } from '@iconify/tools'
-import type { IconifyJSON } from '@iconify/types'
+type IconifyJSON = any
 import { getIcons, getIconsCSS, stringToIcon } from '@iconify/utils'
 
 // Create require function for ES modules

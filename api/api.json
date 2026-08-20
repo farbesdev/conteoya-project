@@ -12,6 +12,73 @@
     ],
     "paths": {
         "/v1/acts": {
+            "get": {
+                "operationId": "act.index",
+                "summary": "Listar y Filtrar Actas Electorales (Admin, Director o Personero)",
+                "tags": [
+                    "Actas Electorales",
+                    "Act"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Lista de actas obtenida exitosamente."
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ActResource"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer"
+                                                },
+                                                "last_page": {
+                                                    "type": "integer"
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                },
+                                                "has_more": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "last_page",
+                                                "per_page",
+                                                "total",
+                                                "has_more"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
             "post": {
                 "operationId": "act.store",
                 "description": "Registra los resultados y totales de una mesa de votaci\u00f3n de forma at\u00f3mica.\nSi la suma de votos difiere del total emitido, la operaci\u00f3n no se bloquea;\nse devuelve el acta registrada junto con la lista de advertencias (`warnings`).",
@@ -1438,6 +1505,9 @@
                                                             }
                                                         ]
                                                     },
+                                                    "odpe": {
+                                                        "type": "string"
+                                                    },
                                                     "registered_voters": {
                                                         "type": "string"
                                                     },
@@ -1454,6 +1524,7 @@
                                                     "district_name",
                                                     "province_name",
                                                     "department_name",
+                                                    "odpe",
                                                     "registered_voters",
                                                     "status"
                                                 ]
@@ -1638,6 +1709,9 @@
                                                         }
                                                     ]
                                                 },
+                                                "odpe": {
+                                                    "type": "string"
+                                                },
                                                 "registered_voters": {
                                                     "type": "string"
                                                 },
@@ -1654,6 +1728,7 @@
                                                 "district_name",
                                                 "province_name",
                                                 "department_name",
+                                                "odpe",
                                                 "registered_voters",
                                                 "status"
                                             ]
@@ -1802,6 +1877,9 @@
                                                         }
                                                     ]
                                                 },
+                                                "odpe": {
+                                                    "type": "string"
+                                                },
                                                 "registered_voters": {
                                                     "type": "string"
                                                 },
@@ -1818,6 +1896,7 @@
                                                 "district_name",
                                                 "province_name",
                                                 "department_name",
+                                                "odpe",
                                                 "registered_voters",
                                                 "status"
                                             ]
@@ -1997,6 +2076,9 @@
                                                         }
                                                     ]
                                                 },
+                                                "odpe": {
+                                                    "type": "string"
+                                                },
                                                 "registered_voters": {
                                                     "type": "string"
                                                 },
@@ -2013,6 +2095,7 @@
                                                 "district_name",
                                                 "province_name",
                                                 "department_name",
+                                                "odpe",
                                                 "registered_voters",
                                                 "status"
                                             ]
@@ -2312,6 +2395,9 @@
                                                                     }
                                                                 ]
                                                             },
+                                                            "odpe": {
+                                                                "type": "string"
+                                                            },
                                                             "registered_voters": {
                                                                 "type": "string"
                                                             },
@@ -2328,6 +2414,7 @@
                                                             "district_name",
                                                             "province_name",
                                                             "department_name",
+                                                            "odpe",
                                                             "registered_voters",
                                                             "status"
                                                         ]
@@ -2625,18 +2712,10 @@
                                                             }
                                                         ]
                                                     },
-                                                    "polling_station_code": {
-                                                        "anyOf": [
-                                                            {
-                                                                "type": "string"
-                                                            },
-                                                            {
-                                                                "type": "string",
-                                                                "enum": [
-                                                                    "030390"
-                                                                ]
-                                                            }
-                                                        ]
+                                                    "polling_station_code": {},
+                                                    "polling_station_codes": {
+                                                        "type": "array",
+                                                        "items": {}
                                                     },
                                                     "phone_number": {
                                                         "type": "string"
@@ -2695,6 +2774,7 @@
                                                     "name",
                                                     "full_name",
                                                     "polling_station_code",
+                                                    "polling_station_codes",
                                                     "phone_number",
                                                     "email",
                                                     "is_active",
@@ -2740,6 +2820,85 @@
                                         "message",
                                         "data",
                                         "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/personeros/{id}/polling-stations": {
+            "post": {
+                "operationId": "personero.assignPollingStations",
+                "summary": "Asignar / sincronizar m\u00faltiples mesas de votaci\u00f3n a un personero",
+                "tags": [
+                    "Personeros",
+                    "Personero"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "polling_station_codes": {
+                                        "type": "string"
+                                    },
+                                    "polling_station_code": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Mesas asignadas exitosamente al personero."
+                                        },
+                                        "personero_id": {
+                                            "type": "string"
+                                        },
+                                        "polling_station_codes": {
+                                            "type": "array",
+                                            "prefixItems": [
+                                                {}
+                                            ],
+                                            "minItems": 1,
+                                            "maxItems": 1,
+                                            "additionalItems": false
+                                        },
+                                        "assigned_count": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "personero_id",
+                                        "polling_station_codes",
+                                        "assigned_count"
                                     ]
                                 }
                             }
@@ -3151,6 +3310,717 @@
                         "$ref": "#/components/responses/AuthorizationException"
                     }
                 }
+            }
+        },
+        "/v1/results/summary": {
+            "get": {
+                "operationId": "results.summary",
+                "description": "Retorna indicadores clave de desempe\u00f1o electoral: % de actas procesadas, electores h\u00e1biles,\nparticipaci\u00f3n ciudadana, votos emitidos, v\u00e1lidos, en blanco, nulos e impugnados.\nSoporta filtrado opcional por elecci\u00f3n y niveles de Ubigeo.",
+                "summary": "Resumen Global de Resultados y Cobertura",
+                "tags": [
+                    "Resultados y Consolidaci\u00f3n Electoral",
+                    "Results"
+                ],
+                "parameters": [
+                    {
+                        "name": "department_code",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "province_code",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "district_code",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Resumen de resultados consolidado obtenido exitosamente."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "total_stations": {
+                                                    "type": "string"
+                                                },
+                                                "processed_stations": {
+                                                    "type": "string"
+                                                },
+                                                "pending_stations": {
+                                                    "type": [
+                                                        "object",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "confirmed_acts_count": {
+                                                    "type": "string"
+                                                },
+                                                "coverage_percentage": {
+                                                    "type": "number"
+                                                },
+                                                "registered_voters": {
+                                                    "type": "integer"
+                                                },
+                                                "voters_who_voted": {
+                                                    "type": "integer"
+                                                },
+                                                "participation_percentage": {
+                                                    "type": "number"
+                                                },
+                                                "total_votes": {
+                                                    "type": "integer"
+                                                },
+                                                "valid_votes": {
+                                                    "type": [
+                                                        "object",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "blank_votes": {
+                                                    "type": "integer"
+                                                },
+                                                "null_votes": {
+                                                    "type": "integer"
+                                                },
+                                                "challenged_votes": {
+                                                    "type": "integer"
+                                                },
+                                                "valid_votes_percentage": {
+                                                    "type": "number"
+                                                },
+                                                "blank_votes_percentage": {
+                                                    "type": "number"
+                                                },
+                                                "null_votes_percentage": {
+                                                    "type": "number"
+                                                },
+                                                "challenged_votes_percentage": {
+                                                    "type": "number"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "total_stations",
+                                                "processed_stations",
+                                                "pending_stations",
+                                                "confirmed_acts_count",
+                                                "coverage_percentage",
+                                                "registered_voters",
+                                                "voters_who_voted",
+                                                "participation_percentage",
+                                                "total_votes",
+                                                "valid_votes",
+                                                "blank_votes",
+                                                "null_votes",
+                                                "challenged_votes",
+                                                "valid_votes_percentage",
+                                                "blank_votes_percentage",
+                                                "null_votes_percentage",
+                                                "challenged_votes_percentage",
+                                                "updated_at"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/v1/results/elections/{id}": {
+            "get": {
+                "operationId": "results.electionResults",
+                "description": "Retorna el listado consolidado de votos por lista electoral / partido con ranking,\nlogos, porcentajes sobre votos v\u00e1lidos y porcentajes sobre votos emitidos totales.",
+                "summary": "Resultados por Organizaci\u00f3n Pol\u00edtica para una Elecci\u00f3n",
+                "tags": [
+                    "Resultados y Consolidaci\u00f3n Electoral",
+                    "Results"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "department_code",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "province_code",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "district_code",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Resultados por organizaci\u00f3n pol\u00edtica obtenidos exitosamente."
+                                        },
+                                        "election": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "code": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "date": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "code",
+                                                "name",
+                                                "date"
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "summary": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "total_stations": {
+                                                            "type": "string"
+                                                        },
+                                                        "processed_stations": {
+                                                            "type": "string"
+                                                        },
+                                                        "pending_stations": {
+                                                            "type": [
+                                                                "object",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "confirmed_acts_count": {
+                                                            "type": "string"
+                                                        },
+                                                        "coverage_percentage": {
+                                                            "type": "number"
+                                                        },
+                                                        "registered_voters": {
+                                                            "type": "integer"
+                                                        },
+                                                        "voters_who_voted": {
+                                                            "type": "integer"
+                                                        },
+                                                        "participation_percentage": {
+                                                            "type": "number"
+                                                        },
+                                                        "total_votes": {
+                                                            "type": "integer"
+                                                        },
+                                                        "valid_votes": {
+                                                            "type": [
+                                                                "object",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "blank_votes": {
+                                                            "type": "integer"
+                                                        },
+                                                        "null_votes": {
+                                                            "type": "integer"
+                                                        },
+                                                        "challenged_votes": {
+                                                            "type": "integer"
+                                                        },
+                                                        "valid_votes_percentage": {
+                                                            "type": "number"
+                                                        },
+                                                        "blank_votes_percentage": {
+                                                            "type": "number"
+                                                        },
+                                                        "null_votes_percentage": {
+                                                            "type": "number"
+                                                        },
+                                                        "challenged_votes_percentage": {
+                                                            "type": "number"
+                                                        },
+                                                        "updated_at": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "total_stations",
+                                                        "processed_stations",
+                                                        "pending_stations",
+                                                        "confirmed_acts_count",
+                                                        "coverage_percentage",
+                                                        "registered_voters",
+                                                        "voters_who_voted",
+                                                        "participation_percentage",
+                                                        "total_votes",
+                                                        "valid_votes",
+                                                        "blank_votes",
+                                                        "null_votes",
+                                                        "challenged_votes",
+                                                        "valid_votes_percentage",
+                                                        "blank_votes_percentage",
+                                                        "null_votes_percentage",
+                                                        "challenged_votes_percentage",
+                                                        "updated_at"
+                                                    ]
+                                                },
+                                                "organizations": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "rank": {
+                                                                "type": "string"
+                                                            },
+                                                            "political_organization_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "organization_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "short_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "logo_url": {
+                                                                "type": "string"
+                                                            },
+                                                            "votes": {
+                                                                "type": "integer"
+                                                            },
+                                                            "percentage_valid_votes": {
+                                                                "type": "number"
+                                                            },
+                                                            "percentage_total_votes": {
+                                                                "type": "number"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "rank",
+                                                            "political_organization_id",
+                                                            "organization_name",
+                                                            "short_name",
+                                                            "logo_url",
+                                                            "votes",
+                                                            "percentage_valid_votes",
+                                                            "percentage_total_votes"
+                                                        ]
+                                                    }
+                                                },
+                                                "non_party_votes": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "blank_votes": {
+                                                            "type": "integer"
+                                                        },
+                                                        "blank_percentage": {
+                                                            "type": "number"
+                                                        },
+                                                        "null_votes": {
+                                                            "type": "integer"
+                                                        },
+                                                        "null_percentage": {
+                                                            "type": "number"
+                                                        },
+                                                        "challenged_votes": {
+                                                            "type": "integer"
+                                                        },
+                                                        "challenged_pct": {
+                                                            "type": "number"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "blank_votes",
+                                                        "blank_percentage",
+                                                        "null_votes",
+                                                        "null_percentage",
+                                                        "challenged_votes",
+                                                        "challenged_pct"
+                                                    ]
+                                                },
+                                                "updated_at": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "summary",
+                                                "organizations",
+                                                "non_party_votes",
+                                                "updated_at"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "election",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Elecci\u00f3n no encontrada."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/v1/results/polling-stations/{code}": {
+            "get": {
+                "operationId": "results.pollingStationResults",
+                "description": "Consulta el estado de las actas registradas para una mesa electoral espec\u00edfica.",
+                "summary": "Resultados y Actas por Mesa Electoral",
+                "tags": [
+                    "Resultados y Consolidaci\u00f3n Electoral",
+                    "Results"
+                ],
+                "parameters": [
+                    {
+                        "name": "code",
+                        "in": "path",
+                        "required": true,
+                        "description": "C\u00f3digo \u00fanico de mesa electoral (6 d\u00edgitos). Example: 030390",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Resultados de mesa electoral obtenidos exitosamente."
+                                        },
+                                        "data": {
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ],
+                                            "properties": {
+                                                "polling_station": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "string"
+                                                        },
+                                                        "code": {
+                                                            "type": "string"
+                                                        },
+                                                        "registered_voters": {
+                                                            "type": "string"
+                                                        },
+                                                        "odpe": {
+                                                            "type": "string"
+                                                        },
+                                                        "department_name": {
+                                                            "type": "string"
+                                                        },
+                                                        "province_name": {
+                                                            "type": "string"
+                                                        },
+                                                        "district_name": {
+                                                            "type": "string"
+                                                        },
+                                                        "location_name": {
+                                                            "anyOf": [
+                                                                {
+                                                                    "type": "string"
+                                                                },
+                                                                {
+                                                                    "type": "string",
+                                                                    "enum": [
+                                                                        "LOCAL DE VOTACI\u00d3N"
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        },
+                                                        "status": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "id",
+                                                        "code",
+                                                        "registered_voters",
+                                                        "odpe",
+                                                        "department_name",
+                                                        "province_name",
+                                                        "district_name",
+                                                        "location_name",
+                                                        "status"
+                                                    ]
+                                                },
+                                                "acts": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "act_code": {
+                                                                "type": "string"
+                                                            },
+                                                            "election_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "electoral_level_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "status": {
+                                                                "type": "string"
+                                                            },
+                                                            "captured_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "confirmed_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "totals": {
+                                                                "type": [
+                                                                    "object",
+                                                                    "null"
+                                                                ],
+                                                                "properties": {
+                                                                    "registered_voters": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "voters_who_voted": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "total_votes": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "blank_votes": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "null_votes": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "challenged_votes": {
+                                                                        "type": "string"
+                                                                    },
+                                                                    "is_valid_total": {
+                                                                        "type": "boolean"
+                                                                    }
+                                                                },
+                                                                "required": [
+                                                                    "registered_voters",
+                                                                    "voters_who_voted",
+                                                                    "total_votes",
+                                                                    "blank_votes",
+                                                                    "null_votes",
+                                                                    "challenged_votes",
+                                                                    "is_valid_total"
+                                                                ]
+                                                            },
+                                                            "results": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "political_organization_id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "organization_name": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "short_name": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "logo_url": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "votes": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "source": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "confidence": {
+                                                                            "type": "string"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "political_organization_id",
+                                                                        "organization_name",
+                                                                        "short_name",
+                                                                        "logo_url",
+                                                                        "votes",
+                                                                        "source",
+                                                                        "confidence"
+                                                                    ]
+                                                                }
+                                                            },
+                                                            "evidences": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "evidence_type": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "file_path": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "file_hash": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "status": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "created_at": {
+                                                                            "type": [
+                                                                                "string",
+                                                                                "null"
+                                                                            ]
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "id",
+                                                                        "evidence_type",
+                                                                        "file_path",
+                                                                        "file_hash",
+                                                                        "status",
+                                                                        "created_at"
+                                                                    ]
+                                                                }
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "act_code",
+                                                            "election_id",
+                                                            "electoral_level_id",
+                                                            "status",
+                                                            "captured_at",
+                                                            "confirmed_at",
+                                                            "totals",
+                                                            "results",
+                                                            "evidences"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "polling_station",
+                                                "acts"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Mesa electoral no encontrada."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
             }
         },
         "/v1/users/{id}/reset-password": {

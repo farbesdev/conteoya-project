@@ -772,6 +772,141 @@ Consulta el estado de sincronización de las operaciones del personero autentica
 
 ---
 
+## 📊 Fase 2: Consolidación y Resultados Electorales (En Vivo)
+
+Endpoints públicos de alta velocidad con soporte para caché en Redis y agregación de votos por lista electoral, ubigeo y mesa.
+
+### `GET /api/v1/results/summary`
+Retorna el resumen consolidado global de participación, actas procesadas, votos emitidos, válidos, en blanco, nulos e impugnados.
+
+**Query Parameters:**
+- `election_id` *(opcional)*: ID del proceso electoral (default: elección activa).
+- `department_code` *(opcional)*: Código o nombre del departamento.
+- `province_code` *(opcional)*: Código o nombre de la provincia.
+- `district_code` *(opcional)*: Código o nombre del distrito.
+
+**Respuesta `200 OK`**
+```json
+{
+  "message": "Resumen de resultados consolidado obtenido exitosamente.",
+  "data": {
+    "total_stations": 87000,
+    "processed_stations": 43500,
+    "pending_stations": 43500,
+    "confirmed_acts_count": 43500,
+    "coverage_percentage": 50.0,
+    "registered_voters": 25000000,
+    "voters_who_voted": 19500000,
+    "participation_percentage": 78.0,
+    "total_votes": 19500000,
+    "valid_votes": 17000000,
+    "blank_votes": 1200000,
+    "null_votes": 1100000,
+    "challenged_votes": 200000,
+    "valid_votes_percentage": 87.18,
+    "blank_votes_percentage": 6.15,
+    "null_votes_percentage": 5.64,
+    "challenged_votes_percentage": 1.03,
+    "updated_at": "2026-08-20T15:00:00.000000Z"
+  }
+}
+```
+
+---
+
+### `GET /api/v1/results/elections/{id}`
+Retorna el desglose de votos por organización política con ranking, porcentajes sobre votos válidos y porcentajes sobre votos totales.
+
+**Path Parameters:**
+- `id` *(requerido)*: ID de la elección.
+
+**Query Parameters:**
+- `electoral_level_id` *(opcional)*: ID del nivel electoral (Gobernador, Alcalde, etc.).
+- `department_code` *(opcional)*: Filtro por departamento.
+- `province_code` *(opcional)*: Filtro por provincia.
+- `district_code` *(opcional)*: Filtro por distrito.
+
+**Respuesta `200 OK`**
+```json
+{
+  "message": "Resultados por organización política obtenidos exitosamente.",
+  "election": {
+    "id": 1,
+    "code": "ERM2026",
+    "name": "Elecciones Regionales y Municipales 2026",
+    "date": "2026-10-04"
+  },
+  "data": {
+    "summary": { ... },
+    "organizations": [
+      {
+        "rank": 1,
+        "political_organization_id": 1,
+        "organization_name": "PARTIDO DEMOCRATICO PERUANO",
+        "short_name": "PDP",
+        "logo_url": "https://r2.conteoya.pe/logos/pdp.png",
+        "votes": 8500000,
+        "percentage_valid_votes": 50.0,
+        "percentage_total_votes": 43.59
+      }
+    ],
+    "non_party_votes": {
+      "blank_votes": 1200000,
+      "blank_percentage": 6.15,
+      "null_votes": 1100000,
+      "null_percentage": 5.64,
+      "challenged_votes": 200000,
+      "challenged_pct": 1.03
+    },
+    "updated_at": "2026-08-20T15:00:00.000000Z"
+  }
+}
+```
+
+---
+
+### `GET /api/v1/results/polling-stations/{code}`
+Consulta el detalle de resultados, electores y actas registradas para una mesa específica por su código de 6 dígitos.
+
+**Path Parameters:**
+- `code` *(requerido)*: Código de mesa (ej. `030390`).
+
+---
+
+### `GET /api/v1/acts`
+Consulta paginada y filtrada del repositorio de actas electorales (ADMIN, DIRECTOR y PERSONERO).
+
+**Query Parameters:**
+- `search` *(opcional)*: Código de acta o código de mesa.
+- `status` *(opcional)*: `DRAFT`, `CONFIRMED`, `SYNCED`, `OBSERVED`.
+- `election_id` *(opcional)*: ID de la elección.
+- `page` *(opcional)*: Número de página (default: 1).
+- `per_page` *(opcional)*: Cantidad por página (default: 15, max: 100).
+
+---
+
+### 📡 WebSockets en Tiempo Real (Laravel Reverb)
+
+- **Canal Público:** `election-results`
+- **Evento Broadcast:** `act.confirmed` (o `.act.confirmed` en Laravel Echo)
+- **Payload:**
+```json
+{
+  "act_id": 42,
+  "act_code": "ACT-030390-MP",
+  "election_id": 1,
+  "polling_station": "030390",
+  "department_name": "LIMA",
+  "province_name": "LIMA",
+  "district_name": "MIRAFLORES",
+  "status": "CONFIRMED",
+  "confirmed_at": "2026-08-20T15:00:00.000000Z",
+  "total_votes": 280
+}
+```
+
+---
+
 ## 👥 Usuarios de Prueba (Desarrollo)
 
 > ⚠️ Cambiar credenciales antes de pasar a producción o staging.

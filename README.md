@@ -48,8 +48,8 @@ Permite a los personeros registrar resultados de actas electorales mediante una 
 | **Cache & Queues** | Redis |
 | **Almacenamiento** | Cloudflare R2 / S3 (Privado + Signed URLs) |
 | **App Móvil** | Flutter 3.44 + SQLite/Drift (Offline-first) |
-| **Frontend Web** | Vue 3.5 + Vite 8 + Pinia *(Fase 2 — no iniciada)* |
-| **Realtime** | Laravel Reverb *(Fase 2 — no iniciada)* |
+| **Frontend Web** | Vue 3.5 + Vuetify 3 + TypeScript 5.9 + Pinia + ApexCharts |
+| **Realtime** | Laravel Reverb + Laravel Echo |
 | **Documentación API** | Dedoc Scramble (OpenAPI 3.1) |
 
 ---

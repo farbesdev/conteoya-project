@@ -1,9 +1,41 @@
-import appsAndPages from './apps-and-pages'
-import charts from './charts'
-import dashboard from './dashboard'
-import forms from './forms'
-import others from './others'
-import uiElements from './ui-elements'
 import type { VerticalNavItems } from '@layouts/types'
 
-export default [...dashboard, ...appsAndPages, ...uiElements, ...forms, ...charts, ...others] as VerticalNavItems
+export default [
+  {
+    title: 'Dashboard',
+    to: { path: '/admin/dashboard' },
+    icon: { icon: 'ri-dashboard-line' },
+  },
+  {
+    title: 'Resultados Públicos',
+    to: { path: '/resultados' },
+    icon: { icon: 'ri-bar-chart-box-line' },
+    target: '_blank',
+  },
+  {
+    heading: 'Gestión Electoral',
+  },
+  {
+    title: 'Personeros',
+    to: { path: '/admin/personeros' },
+    icon: { icon: 'ri-user-shared-line' },
+  },
+  {
+    title: 'Mesas Electorales',
+    to: { path: '/admin/mesas' },
+    icon: { icon: 'ri-archive-line' },
+  },
+  {
+    title: 'Actas y Auditoría',
+    to: { path: '/admin/actas' },
+    icon: { icon: 'ri-file-shield-line' },
+  },
+  {
+    heading: 'Administración',
+  },
+  {
+    title: 'Usuarios',
+    to: { path: '/admin/usuarios' },
+    icon: { icon: 'ri-shield-user-line' },
+  },
+] as VerticalNavItems

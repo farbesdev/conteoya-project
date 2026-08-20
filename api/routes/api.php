@@ -41,6 +41,9 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::get('/electoral-lists', [CatalogController::class, 'electoralLists']);
         Route::get('/ballot-template', [CatalogController::class, 'ballotTemplate']);
 
+        // Fase 1 & 2: Gestión y Auditoría de Actas Electorales
+        Route::get('/acts', [\App\Http\Controllers\Api\V1\ActController::class, 'index']);
+
         // Fase 1: Ingesta de Actas Electorales
         Route::middleware(['throttle:acts', 'idempotent'])->group(function () {
             Route::post('/acts', [\App\Http\Controllers\Api\V1\ActController::class, 'store']);
@@ -62,5 +65,12 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
             Route::get('/sync/pull', [\App\Http\Controllers\Api\V1\SyncController::class, 'pull']);
             Route::get('/sync/status', [\App\Http\Controllers\Api\V1\SyncController::class, 'status']);
         });
+    });
+
+    // Fase 2: Consolidación y Resultados en Vivo (Acceso Público con Caching)
+    Route::prefix('results')->group(function () {
+        Route::get('/summary', [\App\Http\Controllers\Api\V1\ResultsController::class, 'summary']);
+        Route::get('/elections/{id}', [\App\Http\Controllers\Api\V1\ResultsController::class, 'electionResults']);
+        Route::get('/polling-stations/{code}', [\App\Http\Controllers\Api\V1\ResultsController::class, 'pollingStationResults']);
     });
 });

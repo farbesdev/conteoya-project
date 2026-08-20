@@ -54,6 +54,10 @@ class AuthController extends Controller
      */
     public function login(Request $request): JsonResponse
     {
+        if (!$request->has('email') && $request->has('login')) {
+            $request->merge(['email' => $request->input('login')]);
+        }
+
         $request->validate([
             'email'        => 'required|string',
             'password'     => 'required',

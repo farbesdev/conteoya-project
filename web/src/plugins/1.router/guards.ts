@@ -3,31 +3,37 @@ import { canNavigate } from '@layouts/plugins/casl'
 
 export const setupGuards = (router: _RouterTyped<RouteNamedMap & { [key: string]: any }>) => {
   // 👉 router.beforeEach
-  // Docs: https://router.vuejs.org/guide/advanced/navigation-guards.html#global-before-guards
   router.beforeEach(to => {
     /*
-     * If it's a public route, continue navigation. This kind of pages are allowed to visited by login & non-login users. Basically, without any restrictions.
-     * Examples of public routes are, 404, under maintenance, etc.
+     * If it's a public route (or /resultados), continue navigation.
      */
-    if (to.meta.public)
+    if (to.meta.public || to.path.startsWith('/resultados'))
       return
 
     /**
-     * Check if user is logged in by checking if token & user data exists in local storage
-     * Feel free to update this logic to suit your needs
+     * Check if user is logged in by checking if token & user data exists in cookies
      */
     const isLoggedIn = !!(useCookie('userData').value && useCookie('accessToken').value)
 
     /*
-      If user is logged in and is trying to access login like page, redirect to home
-      else allow visiting the page
-      (WARN: Don't allow executing further by return statement because next code will check for permissions)
+      If user is logged in and is trying to access login like page, redirect to admin dashboard
      */
     if (to.meta.unauthenticatedOnly) {
       if (isLoggedIn)
-        return '/'
+        return '/admin/dashboard'
       else
         return undefined
+    }
+
+    // Require auth for admin routes
+    if (to.path.startsWith('/admin')) {
+      if (!isLoggedIn) {
+        return {
+          path: '/login',
+          query: { to: to.fullPath !== '/' ? to.path : undefined },
+        }
+      }
+      return
     }
 
     if (!canNavigate(to) && to.matched.length) {

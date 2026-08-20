@@ -1,14 +1,16 @@
 import type { App } from 'vue'
-
-import { createMongoAbility } from '@casl/ability'
 import { abilitiesPlugin } from '@casl/vue'
-import type { Rule } from './ability'
+import { ability, type Rule } from './ability'
 
 export default function (app: App) {
   const userAbilityRules = useCookie<Rule[]>('userAbilityRules')
-  const initialAbility = createMongoAbility(userAbilityRules.value ?? [])
+  if (userAbilityRules.value && userAbilityRules.value.length) {
+    ability.update(userAbilityRules.value)
+  } else {
+    ability.update([{ action: 'manage', subject: 'all' }])
+  }
 
-  app.use(abilitiesPlugin, initialAbility, {
+  app.use(abilitiesPlugin, ability, {
     useGlobalProperties: true,
   })
 }

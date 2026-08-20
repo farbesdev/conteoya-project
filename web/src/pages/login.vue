@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { VForm } from 'vuetify/components/VForm'
-import AuthProvider from '@/views/pages/authentication/AuthProvider.vue'
 import { themeConfig } from '@themeConfig'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { VNodeRenderer } from '@layouts/components/VNodeRenderer'
 
 import authV2LoginIllustrationBorderedDark from '@images/pages/auth-v2-login-illustration-bordered-dark.png'
 import authV2LoginIllustrationBorderedLight from '@images/pages/auth-v2-login-illustration-bordered-light.png'
@@ -9,7 +10,6 @@ import authV2LoginIllustrationDark from '@images/pages/auth-v2-login-illustratio
 import authV2LoginIllustrationLight from '@images/pages/auth-v2-login-illustration-light.png'
 import authV2LoginMaskDark from '@images/pages/auth-v2-login-mask-dark.png'
 import authV2LoginMaskLight from '@images/pages/auth-v2-login-mask-light.png'
-import { VNodeRenderer } from '@layouts/components/VNodeRenderer'
 
 const authThemeImg = useGenerateImageVariant(
   authV2LoginIllustrationLight,
@@ -28,55 +28,32 @@ definePage({
 })
 
 const isPasswordVisible = ref(false)
-
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 
-const ability = useAbility()
-
-const errors = ref<Record<string, string | undefined>>({
-  email: undefined,
-  password: undefined,
-})
-
+const errorMessage = ref<string | null>(null)
 const refVForm = ref<VForm>()
 
 const credentials = ref({
-  email: 'admin@demo.com',
-  password: 'admin',
+  login: 'admin@conteoya.pe',
+  password: 'Admin123!',
 })
 
 const rememberMe = ref(false)
 
 const login = async () => {
+  errorMessage.value = null
   try {
-    const res = await $api('/auth/login', {
-      method: 'POST',
-      body: {
-        email: credentials.value.email,
-        password: credentials.value.password,
-      },
-      onResponseError({ response }) {
-        errors.value = response._data.errors
-      },
-    })
+    await authStore.login(credentials.value.login, credentials.value.password)
 
-    const { accessToken, userData, userAbilityRules } = res
-
-    useCookie('userAbilityRules').value = userAbilityRules
-    ability.update(userAbilityRules)
-
-    useCookie('userData').value = userData
-    useCookie('accessToken').value = accessToken
-
-    // Redirect to `to` query if exist or redirect to index route
-    // ❗ nextTick is required to wait for DOM updates and later redirect
     await nextTick(() => {
-      router.replace(route.query.to ? String(route.query.to) : '/')
+      const target = (route.query.to ? String(route.query.to) : '/admin/dashboard')
+      router.replace(target)
     })
   }
-  catch (err) {
-    console.error(err)
+  catch (err: any) {
+    errorMessage.value = err?._data?.message || err?.message || 'Credenciales inválidas.'
   }
 }
 
@@ -134,22 +111,33 @@ const onSubmit = () => {
       >
         <VCardText>
           <h4 class="text-h4 mb-1">
-            Welcome to <span class="text-capitalize">{{ themeConfig.app.title }}!</span> 👋🏻
+            Bienvenido a <span class="text-capitalize text-primary">ConteoYA</span> 👋🏻
           </h4>
-          <p class="mb-0">
-            Please sign-in to your account and start the adventure
+          <p class="mb-0 text-medium-emphasis">
+            Ingreso de Administradores, Directores y Personeros
           </p>
         </VCardText>
+
         <VCardText>
+          <VAlert
+            v-if="errorMessage"
+            color="error"
+            variant="tonal"
+            class="mb-4"
+            closable
+          >
+            {{ errorMessage }}
+          </VAlert>
+
           <VAlert
             color="primary"
             variant="tonal"
           >
-            <p class="text-caption mb-2 text-primary">
-              Admin Email: <strong>admin@demo.com</strong> / Pass: <strong>admin</strong>
+            <p class="text-caption mb-1 text-primary">
+              <strong>Admin:</strong> admin@conteoya.pe / Pass: <strong>Admin123!</strong>
             </p>
             <p class="text-caption mb-0 text-primary">
-              Client Email: <strong>client@demo.com</strong> / Pass: <strong>client</strong>
+              <strong>Director:</strong> director@conteoya.pe / Pass: <strong>Director123!</strong>
             </p>
           </VAlert>
         </VCardText>
@@ -160,16 +148,15 @@ const onSubmit = () => {
             @submit.prevent="onSubmit"
           >
             <VRow>
-              <!-- email -->
+              <!-- login (email or DNI) -->
               <VCol cols="12">
                 <VTextField
-                  v-model="credentials.email"
-                  label="Email"
-                  placeholder="johndoe@email.com"
-                  type="email"
+                  v-model="credentials.login"
+                  label="Email o DNI"
+                  placeholder="admin@conteoya.pe o 44556677"
+                  type="text"
                   autofocus
-                  :rules="[requiredValidator, emailValidator]"
-                  :error-messages="errors.email"
+                  :rules="[requiredValidator]"
                 />
               </VCol>
 
@@ -177,68 +164,36 @@ const onSubmit = () => {
               <VCol cols="12">
                 <VTextField
                   v-model="credentials.password"
-                  label="Password"
+                  label="Contraseña"
                   placeholder="············"
                   :rules="[requiredValidator]"
                   :type="isPasswordVisible ? 'text' : 'password'"
-                  autocomplete="password"
-                  :error-messages="errors.password"
+                  autocomplete="current-password"
                   :append-inner-icon="isPasswordVisible ? 'ri-eye-off-line' : 'ri-eye-line'"
                   @click:append-inner="isPasswordVisible = !isPasswordVisible"
                 />
 
-                <div class="d-flex align-center flex-wrap justify-space-between my-6 gap-x-2">
+                <div class="d-flex align-center flex-wrap justify-space-between my-4 gap-x-2">
                   <VCheckbox
                     v-model="rememberMe"
-                    label="Remember me"
+                    label="Recordarme"
+                    density="compact"
                   />
                   <RouterLink
-                    class="text-primary"
-                    :to="{ name: 'forgot-password' }"
+                    class="text-primary text-caption"
+                    to="/resultados"
                   >
-                    Forgot Password?
+                    Ver Resultados Públicos
                   </RouterLink>
                 </div>
 
                 <VBtn
                   block
                   type="submit"
+                  :loading="authStore.loading"
                 >
-                  Login
+                  Iniciar Sesión
                 </VBtn>
-              </VCol>
-
-              <!-- create account -->
-              <VCol
-                cols="12"
-                class="text-body-1 text-center"
-              >
-                <span class="d-inline-block">
-                  New on our platform?
-                </span>
-                <RouterLink
-                  class="text-primary ms-1 d-inline-block text-body-1"
-                  :to="{ name: 'register' }"
-                >
-                  Create an account
-                </RouterLink>
-              </VCol>
-
-              <VCol
-                cols="12"
-                class="d-flex align-center"
-              >
-                <VDivider />
-                <span class="mx-4 text-high-emphasis">or</span>
-                <VDivider />
-              </VCol>
-
-              <!-- auth providers -->
-              <VCol
-                cols="12"
-                class="text-center"
-              >
-                <AuthProvider />
               </VCol>
             </VRow>
           </VForm>
