@@ -106,7 +106,7 @@ class AppColors {
   static Color warningOf(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark
         ? const Color(0xFFFBBF24) // Amber 400 (suave y legible en fondos oscuros sin vibración cromática)
-        : const Color(0xFFD97706); // Amber 600 (alto contraste en fondos claros)
+        : const Color(0xFFB45309); // Amber 700 (alto contraste > 5.5:1 en fondos claros, cumple WCAG AAA)
   }
 
   static Color successOf(BuildContext context) {

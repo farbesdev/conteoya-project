@@ -15,12 +15,19 @@ class OcrPreviewModal extends StatelessWidget {
   Widget build(BuildContext context) {
     final confidenceMap = (extractionData['confidence_map'] as List<Object?>?) ?? [];
     final results = (extractionData['results'] as List<Object?>?) ?? [];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final textMuted = AppColors.textMutedOf(context);
+    final warningColor = AppColors.warningOf(context);
+    final borderColor = AppColors.borderOf(context);
 
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceOf(context),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: borderColor)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -30,17 +37,18 @@ class OcrPreviewModal extends StatelessWidget {
             children: [
               const Icon(Icons.auto_awesome, color: AppColors.info, size: 24),
               const SizedBox(width: 10),
-              const Text(
-                'Sugerencias OCR / IA Asistida',
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Text(
+                  'Sugerencias OCR / IA Asistida',
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              const Spacer(),
               IconButton(
-                icon: const Icon(Icons.close, color: AppColors.textMuted),
+                icon: Icon(Icons.close, color: textMuted),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -49,27 +57,27 @@ class OcrPreviewModal extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.warning.withValues(alpha: 0.15),
+              color: warningColor.withValues(alpha: isDark ? 0.15 : 0.08),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+              border: Border.all(color: warningColor.withValues(alpha: isDark ? 0.3 : 0.25)),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.info_outline, color: AppColors.warning, size: 20),
-                SizedBox(width: 8),
+                Icon(Icons.info_outline, color: warningColor, size: 20),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Principio ConteoYA: La IA nunca confirma el acta. Revise los campos con baja confianza antes de aplicar.',
-                    style: TextStyle(color: AppColors.textPrimary, fontSize: 12),
+                    style: TextStyle(color: textPrimary, fontSize: 12),
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             'Campos Extraídos & Confianza:',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 14, fontWeight: FontWeight.w600),
+            style: TextStyle(color: textSecondary, fontSize: 14, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 10),
           Flexible(
@@ -88,11 +96,11 @@ class OcrPreviewModal extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: isLow
-                          ? AppColors.warning.withValues(alpha: 0.1)
-                          : AppColors.surfaceElevated,
+                          ? warningColor.withValues(alpha: 0.1)
+                          : (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: isLow ? AppColors.warning : AppColors.border,
+                        color: isLow ? warningColor : borderColor,
                       ),
                     ),
                     child: Row(
@@ -103,12 +111,12 @@ class OcrPreviewModal extends StatelessWidget {
                             children: [
                               Text(
                                 field,
-                                style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                                style: TextStyle(color: textMuted, fontSize: 12),
                               ),
                               Text(
                                 '$value',
-                                style: const TextStyle(
-                                  color: AppColors.textPrimary,
+                                style: TextStyle(
+                                  color: textPrimary,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -119,7 +127,7 @@ class OcrPreviewModal extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: isLow ? AppColors.warning : AppColors.success,
+                            color: isLow ? warningColor : AppColors.successOf(context),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -138,7 +146,7 @@ class OcrPreviewModal extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   'Listas detectadas: ${results.length}',
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  style: TextStyle(color: textSecondary, fontSize: 13),
                 ),
               ],
             ),

@@ -123,15 +123,21 @@ class _MesaSearchSelectorModalState extends ConsumerState<MesaSearchSelectorModa
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final textMuted = AppColors.textMutedOf(context);
+    final inputFill = isDark ? const Color(0xFF0B1120) : const Color(0xFFF1F5F9);
+    final borderColor = AppColors.borderOf(context);
 
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.90,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceOf(context),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: borderColor, width: 1)),
       ),
       child: Column(
         children: [
@@ -142,7 +148,7 @@ class _MesaSearchSelectorModalState extends ConsumerState<MesaSearchSelectorModa
               height: 4,
               margin: const EdgeInsets.only(top: 12, bottom: 8),
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: borderColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -162,27 +168,27 @@ class _MesaSearchSelectorModalState extends ConsumerState<MesaSearchSelectorModa
                   child: const Icon(Icons.how_to_vote_rounded, color: AppColors.accent, size: 22),
                 ),
                 const SizedBox(width: 12),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Buscar y Asignar Mesas',
                         style: TextStyle(
-                          color: AppColors.textPrimary,
+                          color: textPrimary,
                           fontSize: 17,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
                         'Selecciona una o varias mesas para el personero',
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                        style: TextStyle(color: textSecondary, fontSize: 12),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, color: AppColors.textMuted),
+                  icon: Icon(Icons.close, color: textMuted),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
@@ -201,14 +207,14 @@ class _MesaSearchSelectorModalState extends ConsumerState<MesaSearchSelectorModa
                 FocusScope.of(context).unfocus();
                 _performSearch(val, page: 1);
               },
-              style: const TextStyle(color: AppColors.textPrimary, fontSize: 14),
+              style: TextStyle(color: textPrimary, fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'Buscar por número de mesa, distrito u ODPE...',
-                hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+                hintStyle: TextStyle(color: textMuted, fontSize: 13),
                 prefixIcon: const Icon(Icons.search_rounded, color: AppColors.accent),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, color: AppColors.textMuted, size: 18),
+                        icon: Icon(Icons.clear, color: textMuted, size: 18),
                         onPressed: () {
                           _searchController.clear();
                           _performSearch('', page: 1);
@@ -216,15 +222,15 @@ class _MesaSearchSelectorModalState extends ConsumerState<MesaSearchSelectorModa
                       )
                     : null,
                 filled: true,
-                fillColor: AppColors.background,
+                fillColor: inputFill,
                 contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border),
+                  borderSide: BorderSide(color: borderColor),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border),
+                  borderSide: BorderSide(color: borderColor),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -278,7 +284,7 @@ class _MesaSearchSelectorModalState extends ConsumerState<MesaSearchSelectorModa
               ),
             ),
 
-          const Divider(height: 1, color: AppColors.border),
+          Divider(height: 1, color: borderColor),
 
           // Lista de Resultados
           Expanded(
@@ -289,13 +295,13 @@ class _MesaSearchSelectorModalState extends ConsumerState<MesaSearchSelectorModa
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.search_off_rounded, color: AppColors.textMuted, size: 40),
+                            Icon(Icons.search_off_rounded, color: textMuted, size: 40),
                             const SizedBox(height: 10),
                             Text(
                               _currentQuery.isNotEmpty
                                   ? 'No se encontraron mesas para "$_currentQuery"'
                                   : 'No hay mesas disponibles',
-                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                              style: TextStyle(color: textSecondary, fontSize: 13),
                             ),
                           ],
                         ),
@@ -333,12 +339,12 @@ class _MesaSearchSelectorModalState extends ConsumerState<MesaSearchSelectorModa
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? AppColors.accent.withValues(alpha: 0.12)
-                                    : AppColors.background,
+                                    : inputFill,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: isSelected
                                       ? AppColors.accent
-                                      : AppColors.border.withValues(alpha: 0.6),
+                                      : borderColor.withValues(alpha: 0.6),
                                   width: isSelected ? 1.5 : 1,
                                 ),
                               ),
@@ -352,7 +358,7 @@ class _MesaSearchSelectorModalState extends ConsumerState<MesaSearchSelectorModa
                                       color: isSelected ? AppColors.accent : Colors.transparent,
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                        color: isSelected ? AppColors.accent : AppColors.textMuted,
+                                        color: isSelected ? AppColors.accent : textMuted,
                                         width: 1.5,
                                       ),
                                     ),
@@ -374,7 +380,7 @@ class _MesaSearchSelectorModalState extends ConsumerState<MesaSearchSelectorModa
                                               style: TextStyle(
                                                 color: isSelected
                                                     ? AppColors.accent
-                                                    : AppColors.textPrimary,
+                                                    : textPrimary,
                                                 fontSize: 15,
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -405,8 +411,8 @@ class _MesaSearchSelectorModalState extends ConsumerState<MesaSearchSelectorModa
                                           mesa.locationName,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            color: AppColors.textSecondary,
+                                          style: TextStyle(
+                                            color: textSecondary,
                                             fontSize: 12,
                                           ),
                                         ),
@@ -414,8 +420,8 @@ class _MesaSearchSelectorModalState extends ConsumerState<MesaSearchSelectorModa
                                           '${mesa.odpe != null && mesa.odpe!.trim().isNotEmpty ? 'ODPE ${mesa.odpe!.toUpperCase().replaceAll("ODPE ", "")} • ' : ''}${mesa.districtName} — ${mesa.provinceName}, ${mesa.departmentName}',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            color: AppColors.textMuted,
+                                          style: TextStyle(
+                                            color: textMuted,
                                             fontSize: 11,
                                           ),
                                         ),
@@ -433,9 +439,9 @@ class _MesaSearchSelectorModalState extends ConsumerState<MesaSearchSelectorModa
           // Bottom Bar de Confirmación
           Container(
             padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + bottomInset),
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              border: Border(top: BorderSide(color: AppColors.border)),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceOf(context),
+              border: Border(top: BorderSide(color: borderColor)),
             ),
             child: Row(
               children: [
@@ -446,15 +452,15 @@ class _MesaSearchSelectorModalState extends ConsumerState<MesaSearchSelectorModa
                     children: [
                       Text(
                         '${_selectedCodes.length} ${_selectedCodes.length == 1 ? 'mesa seleccionada' : 'mesas seleccionadas'}',
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
+                        style: TextStyle(
+                          color: textPrimary,
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const Text(
+                      Text(
                         'El personero podrá capturar actas de estas mesas',
-                        style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+                        style: TextStyle(color: textMuted, fontSize: 11),
                       ),
                     ],
                   ),

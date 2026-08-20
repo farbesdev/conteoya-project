@@ -169,10 +169,10 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          border: Border(top: BorderSide(color: AppColors.border)),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceOf(context),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(top: BorderSide(color: AppColors.borderOf(context))),
         ),
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         child: Column(
@@ -185,15 +185,15 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.border,
+                  color: AppColors.borderOf(context),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-            const Text(
+            Text(
               'Seleccione una Mesa para Registrar Acta:',
               style: TextStyle(
-                color: AppColors.textPrimary,
+                color: AppColors.textPrimaryOf(context),
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -217,13 +217,13 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
                     ),
                     title: Text(
                       'Mesa ${m.code}',
-                      style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: AppColors.textPrimaryOf(context), fontWeight: FontWeight.bold),
                     ),
                     subtitle: Text(
                       '${m.locationName} • ${m.districtName}',
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      style: TextStyle(color: AppColors.textSecondaryOf(context), fontSize: 12),
                     ),
-                    trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                    trailing: Icon(Icons.chevron_right, color: AppColors.textMutedOf(context)),
                     onTap: () {
                       Navigator.pop(ctx);
                       SelectActTypeModal.show(
@@ -516,7 +516,11 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
           // Personero Asignado
           Row(
             children: [
-              Icon(Icons.person_outline_rounded, color: textMuted, size: 14),
+              Icon(
+                Icons.person_outline_rounded,
+                color: mesa.hasPersoneroAssigned ? textMuted : AppColors.warningOf(context),
+                size: 14,
+              ),
               const SizedBox(width: 4),
               Text(
                 mesa.hasPersoneroAssigned
@@ -525,6 +529,7 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
                 style: TextStyle(
                   color: mesa.hasPersoneroAssigned ? textSecondary : AppColors.warningOf(context),
                   fontSize: 12,
+                  fontWeight: mesa.hasPersoneroAssigned ? FontWeight.normal : FontWeight.w600,
                 ),
               ),
             ],
@@ -590,6 +595,7 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
     required String title,
     required ActRegistrationStatus status,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isReg = status.isRegistrada;
     final color = isReg ? AppColors.successOf(context) : AppColors.warningOf(context);
     final icon = isReg ? Icons.check_circle_outline_rounded : Icons.hourglass_empty_rounded;
@@ -597,16 +603,20 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withValues(alpha: isDark ? 0.14 : 0.08),
         borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: color.withValues(alpha: isDark ? 0.28 : 0.22),
+          width: 0.8,
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             title,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: TextStyle(
+              color: AppColors.textPrimaryOf(context),
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),

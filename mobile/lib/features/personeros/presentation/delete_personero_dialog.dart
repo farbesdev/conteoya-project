@@ -27,28 +27,33 @@ class DeletePersoneroDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final borderColor = AppColors.borderOf(context);
+    final dangerColor = AppColors.dangerOf(context);
+
     return AlertDialog(
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.surfaceOf(context),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: borderColor),
       ),
       title: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.danger.withValues(alpha: 0.15),
+              color: dangerColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.warning_amber_rounded, color: AppColors.danger, size: 24),
+            child: Icon(Icons.warning_amber_rounded, color: dangerColor, size: 24),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
               '¿Eliminar personero?',
               style: TextStyle(
-                color: AppColors.textPrimary,
+                color: textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -62,17 +67,17 @@ class DeletePersoneroDialog extends StatelessWidget {
         children: [
           Text(
             personeroName,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
+            style: TextStyle(
+              color: textPrimary,
               fontWeight: FontWeight.w600,
               fontSize: 14,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Esta acción eliminará la asignación del personero a su mesa.',
             style: TextStyle(
-              color: AppColors.textSecondary,
+              color: textSecondary,
               fontSize: 13,
               height: 1.4,
             ),
@@ -82,15 +87,15 @@ class DeletePersoneroDialog extends StatelessWidget {
       actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       actions: [
         TextButton(
-          child: const Text(
+          child: Text(
             'Cancelar',
-            style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+            style: TextStyle(color: textSecondary, fontWeight: FontWeight.w600),
           ),
           onPressed: () => Navigator.pop(context, false),
         ),
         ElevatedButton(
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.danger,
+            backgroundColor: dangerColor,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             elevation: 0,
           ),

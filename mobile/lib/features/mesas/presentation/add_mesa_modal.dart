@@ -77,15 +77,21 @@ class _AddMesaModalState extends ConsumerState<AddMesaModal> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final textMuted = AppColors.textMutedOf(context);
+    final inputFill = isDark ? const Color(0xFF0B1120) : const Color(0xFFF1F5F9);
+    final borderColor = AppColors.borderOf(context);
 
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceOf(context),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: borderColor, width: 1)),
       ),
       padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + bottomInset),
       child: Form(
@@ -102,7 +108,7 @@ class _AddMesaModalState extends ConsumerState<AddMesaModal> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.border,
+                    color: borderColor,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -120,17 +126,18 @@ class _AddMesaModalState extends ConsumerState<AddMesaModal> {
                     child: const Icon(Icons.how_to_vote_rounded, color: AppColors.accent, size: 22),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
-                    'Agregar Mesa de Votación',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      'Agregar Mesa de Votación',
+                      style: TextStyle(
+                        color: textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                  const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.textMuted),
+                    icon: Icon(Icons.close, color: textMuted),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -165,16 +172,24 @@ class _AddMesaModalState extends ConsumerState<AddMesaModal> {
               TextFormField(
                 controller: _codeController,
                 keyboardType: TextInputType.number,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Número / Código de Mesa (Ej: 030394)',
-                  labelStyle: const TextStyle(color: AppColors.textSecondary),
-                  prefixIcon: const Icon(Icons.pin_outlined, color: AppColors.textMuted),
+                  labelStyle: TextStyle(color: textSecondary),
+                  prefixIcon: Icon(Icons.pin_outlined, color: textMuted),
                   filled: true,
-                  fillColor: AppColors.background,
+                  fillColor: inputFill,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
                   ),
                 ),
                 validator: (val) {
@@ -188,16 +203,24 @@ class _AddMesaModalState extends ConsumerState<AddMesaModal> {
               TextFormField(
                 controller: _locationController,
                 textCapitalization: TextCapitalization.words,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Local de Votación',
-                  labelStyle: const TextStyle(color: AppColors.textSecondary),
-                  prefixIcon: const Icon(Icons.school_outlined, color: AppColors.textMuted),
+                  labelStyle: TextStyle(color: textSecondary),
+                  prefixIcon: Icon(Icons.school_outlined, color: textMuted),
                   filled: true,
-                  fillColor: AppColors.background,
+                  fillColor: inputFill,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
                   ),
                 ),
                 validator: (val) =>
@@ -209,16 +232,24 @@ class _AddMesaModalState extends ConsumerState<AddMesaModal> {
               TextFormField(
                 controller: _districtController,
                 textCapitalization: TextCapitalization.words,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Distrito',
-                  labelStyle: const TextStyle(color: AppColors.textSecondary),
-                  prefixIcon: const Icon(Icons.location_city_outlined, color: AppColors.textMuted),
+                  labelStyle: TextStyle(color: textSecondary),
+                  prefixIcon: Icon(Icons.location_city_outlined, color: textMuted),
                   filled: true,
-                  fillColor: AppColors.background,
+                  fillColor: inputFill,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
                   ),
                 ),
                 validator: (val) =>
@@ -230,16 +261,24 @@ class _AddMesaModalState extends ConsumerState<AddMesaModal> {
               TextFormField(
                 controller: _votersController,
                 keyboardType: TextInputType.number,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Electores Hábiles (Registrados)',
-                  labelStyle: const TextStyle(color: AppColors.textSecondary),
-                  prefixIcon: const Icon(Icons.group_outlined, color: AppColors.textMuted),
+                  labelStyle: TextStyle(color: textSecondary),
+                  prefixIcon: Icon(Icons.group_outlined, color: textMuted),
                   filled: true,
-                  fillColor: AppColors.background,
+                  fillColor: inputFill,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
                   ),
                 ),
                 validator: (val) {
@@ -258,27 +297,44 @@ class _AddMesaModalState extends ConsumerState<AddMesaModal> {
                   return personerosAsync.when(
                     data: (personeros) {
                       return DropdownButtonFormField<String>(
-                        dropdownColor: AppColors.surface,
-                        style: const TextStyle(color: AppColors.textPrimary),
+                        isExpanded: true,
+                        dropdownColor: AppColors.surfaceOf(context),
+                        style: TextStyle(color: textPrimary),
                         decoration: InputDecoration(
                           labelText: 'Personero Asignado (Opcional)',
-                          labelStyle: const TextStyle(color: AppColors.textSecondary),
+                          labelStyle: TextStyle(color: textSecondary),
                           prefixIcon: const Icon(Icons.person_pin_outlined, color: AppColors.accent),
                           filled: true,
-                          fillColor: AppColors.background,
+                          fillColor: inputFill,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: AppColors.border),
+                            borderSide: BorderSide(color: borderColor),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: borderColor),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
                           ),
                         ),
                         items: [
-                          const DropdownMenuItem(
+                          DropdownMenuItem(
                             value: '',
-                            child: Text('-- Ninguno (Sin Asignar) --', style: TextStyle(color: AppColors.textMuted)),
+                            child: Text(
+                              '-- Ninguno (Sin Asignar) --',
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(color: textMuted),
+                            ),
                           ),
                           ...personeros.map((p) => DropdownMenuItem(
                                 value: p.dni,
-                                child: Text('${p.fullName} (DNI: ${p.dni})'),
+                                child: Text(
+                                  '${p.fullName} (DNI: ${p.dni})',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: textPrimary),
+                                ),
                               )),
                         ],
                         onChanged: (val) {

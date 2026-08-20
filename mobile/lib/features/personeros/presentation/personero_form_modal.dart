@@ -145,15 +145,21 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final textMuted = AppColors.textMutedOf(context);
+    final inputFill = isDark ? const Color(0xFF0B1120) : const Color(0xFFF1F5F9);
+    final borderColor = AppColors.borderOf(context);
 
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.88,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceOf(context),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: borderColor, width: 1)),
       ),
       padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + bottomInset),
       child: Form(
@@ -170,7 +176,7 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: AppColors.border,
+                    color: borderColor,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -195,15 +201,15 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
                   Expanded(
                     child: Text(
                       _isEditing ? 'Editar Personero' : 'Agregar Personero',
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: textPrimary,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: AppColors.textMuted),
+                    icon: Icon(Icons.close, color: textMuted),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -239,17 +245,25 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
                 controller: _dniController,
                 keyboardType: TextInputType.number,
                 maxLength: 8,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: textPrimary),
                 decoration: InputDecoration(
                   labelText: 'DNI (8 dígitos)',
-                  labelStyle: const TextStyle(color: AppColors.textSecondary),
-                  prefixIcon: const Icon(Icons.badge_outlined, color: AppColors.textMuted),
-                  counterStyle: const TextStyle(color: AppColors.textMuted),
+                  labelStyle: TextStyle(color: textSecondary),
+                  prefixIcon: Icon(Icons.badge_outlined, color: textMuted),
+                  counterStyle: TextStyle(color: textMuted),
                   filled: true,
-                  fillColor: AppColors.background,
+                  fillColor: inputFill,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
                   ),
                 ),
                 validator: (val) {
@@ -269,15 +283,23 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
                     child: TextFormField(
                       controller: _firstNameController,
                       textCapitalization: TextCapitalization.words,
-                      style: const TextStyle(color: AppColors.textPrimary),
+                      style: TextStyle(color: textPrimary),
                       decoration: InputDecoration(
                         labelText: 'Nombres',
-                        labelStyle: const TextStyle(color: AppColors.textSecondary),
+                        labelStyle: TextStyle(color: textSecondary),
                         filled: true,
-                        fillColor: AppColors.background,
+                        fillColor: inputFill,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.border),
+                          borderSide: BorderSide(color: borderColor),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: borderColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
                         ),
                       ),
                       validator: (val) =>
@@ -289,15 +311,23 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
                     child: TextFormField(
                       controller: _lastNameController,
                       textCapitalization: TextCapitalization.words,
-                      style: const TextStyle(color: AppColors.textPrimary),
+                      style: TextStyle(color: textPrimary),
                       decoration: InputDecoration(
                         labelText: 'Apellidos',
-                        labelStyle: const TextStyle(color: AppColors.textSecondary),
+                        labelStyle: TextStyle(color: textSecondary),
                         filled: true,
-                        fillColor: AppColors.background,
+                        fillColor: inputFill,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(color: AppColors.border),
+                          borderSide: BorderSide(color: borderColor),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: borderColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
                         ),
                       ),
                       validator: (val) =>
@@ -312,12 +342,12 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.background,
+                  color: inputFill,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: _selectedMesaCodes.isEmpty && _errorMessage != null
                         ? AppColors.danger
-                        : AppColors.border,
+                        : borderColor,
                     width: _selectedMesaCodes.isEmpty && _errorMessage != null ? 1.5 : 1,
                   ),
                 ),
@@ -333,8 +363,8 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
                             const SizedBox(width: 8),
                             Text(
                               'Mesas Asignadas (${_selectedMesaCodes.length}) *',
-                              style: const TextStyle(
-                                color: AppColors.textPrimary,
+                              style: TextStyle(
+                                color: textPrimary,
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -369,17 +399,17 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
                           decoration: BoxDecoration(
-                            color: AppColors.surface,
+                            color: AppColors.surfaceOf(context),
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: AppColors.border.withValues(alpha: 0.6)),
+                            border: Border.all(color: borderColor.withValues(alpha: 0.6)),
                           ),
-                          child: const Column(
+                          child: Column(
                             children: [
-                              Icon(Icons.add_location_alt_outlined, color: AppColors.textMuted, size: 28),
-                              SizedBox(height: 6),
+                              Icon(Icons.add_location_alt_outlined, color: textMuted, size: 28),
+                              const SizedBox(height: 6),
                               Text(
                                 'Toque aquí para buscar y asignar mesas al personero',
-                                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                style: TextStyle(color: textSecondary, fontSize: 12),
                                 textAlign: TextAlign.center,
                               ),
                             ],
@@ -421,16 +451,24 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Teléfono / Celular (Opcional)',
-                  labelStyle: const TextStyle(color: AppColors.textSecondary),
-                  prefixIcon: const Icon(Icons.phone_outlined, color: AppColors.textMuted),
+                  labelStyle: TextStyle(color: textSecondary),
+                  prefixIcon: Icon(Icons.phone_outlined, color: textMuted),
                   filled: true,
-                  fillColor: AppColors.background,
+                  fillColor: inputFill,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
                   ),
                 ),
               ),

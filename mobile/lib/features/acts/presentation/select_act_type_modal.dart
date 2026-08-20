@@ -30,10 +30,10 @@ class SelectActTypeModal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceOf(context),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: AppColors.borderOf(context), width: 1)),
       ),
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       child: Column(
@@ -47,7 +47,7 @@ class SelectActTypeModal extends StatelessWidget {
               height: 4,
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: AppColors.border,
+                color: AppColors.borderOf(context),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -69,17 +69,17 @@ class SelectActTypeModal extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Registrar Acta',
                       style: TextStyle(
-                        color: AppColors.textPrimary,
+                        color: AppColors.textPrimaryOf(context),
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
                       'Mesa $pollingStationCode ${mesaLocationName != null ? '• $mesaLocationName' : ''}',
-                      style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                      style: TextStyle(color: AppColors.textMutedOf(context), fontSize: 12),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -87,15 +87,15 @@ class SelectActTypeModal extends StatelessWidget {
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.close, color: AppColors.textMuted),
+                icon: Icon(Icons.close, color: AppColors.textMutedOf(context)),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'Seleccione el tipo de acta electoral que desea procesar:',
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            style: TextStyle(color: AppColors.textSecondaryOf(context), fontSize: 13),
           ),
           const SizedBox(height: 20),
 
@@ -153,7 +153,7 @@ class SelectActTypeModal extends StatelessWidget {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.backgroundOf(context),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: color.withValues(alpha: 0.4), width: 1.5),
         boxShadow: [
@@ -189,8 +189,8 @@ class SelectActTypeModal extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
+                        style: TextStyle(
+                          color: AppColors.textPrimaryOf(context),
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                         ),
@@ -198,7 +198,7 @@ class SelectActTypeModal extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         subtitle,
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                        style: TextStyle(color: AppColors.textSecondaryOf(context), fontSize: 12),
                       ),
                     ],
                   ),

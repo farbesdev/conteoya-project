@@ -635,28 +635,38 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
     final defaultPass = '${personero.dni}!';
     final passwordController = TextEditingController(text: defaultPass);
     bool isSaving = false;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final textMuted = AppColors.textMutedOf(context);
+    final inputFill = isDark ? const Color(0xFF0B1120) : const Color(0xFFF1F5F9);
+    final borderColor = AppColors.borderOf(context);
+    final warningColor = AppColors.warningOf(context);
 
     showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) => AlertDialog(
-          backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: AppColors.surfaceOf(context),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: borderColor),
+          ),
           title: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.15),
+                  color: warningColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.key_rounded, color: AppColors.warning, size: 22),
+                child: Icon(Icons.key_rounded, color: warningColor, size: 22),
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Restablecer Contraseña',
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -667,23 +677,27 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
             children: [
               Text(
                 'Personero: ${personero.fullName}\nDNI: ${personero.dni} — Mesa: ${personero.pollingStationCode}',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.3),
+                style: TextStyle(color: textSecondary, fontSize: 13, height: 1.3),
               ),
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 'Nueva Contraseña:',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600),
+                style: TextStyle(color: textMuted, fontSize: 12, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 6),
               TextField(
                 controller: passwordController,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: textPrimary),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: AppColors.background,
+                  fillColor: inputFill,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: borderColor),
                   ),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.refresh_rounded, color: AppColors.accent),
@@ -697,7 +711,7 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar', style: TextStyle(color: AppColors.textMuted)),
+              child: Text('Cancelar', style: TextStyle(color: textMuted)),
             ),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent),

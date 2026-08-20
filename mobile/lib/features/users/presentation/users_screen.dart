@@ -369,28 +369,38 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
     final defaultPass = email.toLowerCase().contains('puertoinca') ? 'Puertoinca123!' : 'Personero123!';
     final passwordController = TextEditingController(text: defaultPass);
     bool isSaving = false;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final textMuted = AppColors.textMutedOf(context);
+    final inputFill = isDark ? const Color(0xFF0B1120) : const Color(0xFFF1F5F9);
+    final borderColor = AppColors.borderOf(context);
+    final warningColor = AppColors.warningOf(context);
 
     showDialog<void>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setModalState) => AlertDialog(
-          backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: AppColors.surfaceOf(context),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: borderColor),
+          ),
           title: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.15),
+                  color: warningColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.key_rounded, color: AppColors.warning, size: 22),
+                child: Icon(Icons.key_rounded, color: warningColor, size: 22),
               ),
               const SizedBox(width: 10),
-              const Expanded(
+              Expanded(
                 child: Text(
                   'Restablecer Contraseña',
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: textPrimary, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -401,23 +411,27 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
             children: [
               Text(
                 'Usuario: $name\n$email',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.3),
+                style: TextStyle(color: textSecondary, fontSize: 13, height: 1.3),
               ),
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 'Nueva Contraseña para el Usuario:',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 12, fontWeight: FontWeight.w600),
+                style: TextStyle(color: textMuted, fontSize: 12, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 6),
               TextField(
                 controller: passwordController,
-                style: const TextStyle(color: AppColors.textPrimary),
+                style: TextStyle(color: textPrimary),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: AppColors.background,
+                  fillColor: inputFill,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: AppColors.border),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: borderColor),
                   ),
                   suffixIcon: IconButton(
                     icon: const Icon(Icons.refresh_rounded, color: AppColors.accent),
@@ -431,7 +445,7 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancelar', style: TextStyle(color: AppColors.textMuted)),
+              child: Text('Cancelar', style: TextStyle(color: textMuted)),
             ),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent),
@@ -568,15 +582,22 @@ class _UserFormModalState extends ConsumerState<UserFormModal> {
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final textMuted = AppColors.textMutedOf(context);
+    final inputFill = isDark ? const Color(0xFF0B1120) : const Color(0xFFF1F5F9);
+    final borderColor = AppColors.borderOf(context);
     final mesasAsync = ref.watch(mesasStreamProvider);
 
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.85,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceOf(context),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: borderColor, width: 1)),
       ),
       padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + bottomInset),
       child: SingleChildScrollView(
@@ -584,7 +605,42 @@ class _UserFormModalState extends ConsumerState<UserFormModal> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Nuevo Usuario', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+            // Drag Handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: borderColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.person_add_alt_1_rounded, color: AppColors.accent, size: 22),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Nuevo Usuario',
+                    style: TextStyle(color: textPrimary, fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(Icons.close, color: textMuted),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
             const SizedBox(height: 14),
 
             if (_errorMessage != null) ...[
@@ -602,41 +658,128 @@ class _UserFormModalState extends ConsumerState<UserFormModal> {
 
             TextField(
               controller: _nameController,
-              style: const TextStyle(color: AppColors.textPrimary),
-              decoration: const InputDecoration(labelText: 'Nombre Completo *', filled: true, fillColor: AppColors.background),
+              style: TextStyle(color: textPrimary),
+              decoration: InputDecoration(
+                labelText: 'Nombre Completo *',
+                labelStyle: TextStyle(color: textSecondary),
+                filled: true,
+                fillColor: inputFill,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: borderColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: borderColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+                ),
+              ),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
-              style: const TextStyle(color: AppColors.textPrimary),
-              decoration: const InputDecoration(labelText: 'Correo Electrónico *', filled: true, fillColor: AppColors.background),
+              style: TextStyle(color: textPrimary),
+              decoration: InputDecoration(
+                labelText: 'Correo Electrónico *',
+                labelStyle: TextStyle(color: textSecondary),
+                filled: true,
+                fillColor: inputFill,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: borderColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: borderColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+                ),
+              ),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: _dniController,
               keyboardType: TextInputType.number,
               maxLength: 8,
-              style: const TextStyle(color: AppColors.textPrimary),
-              decoration: const InputDecoration(labelText: 'DNI (8 dígitos)', filled: true, fillColor: AppColors.background, counterText: ''),
+              style: TextStyle(color: textPrimary),
+              decoration: InputDecoration(
+                labelText: 'DNI (8 dígitos)',
+                labelStyle: TextStyle(color: textSecondary),
+                filled: true,
+                fillColor: inputFill,
+                counterText: '',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: borderColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: borderColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+                ),
+              ),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: _phoneController,
               keyboardType: TextInputType.phone,
-              style: const TextStyle(color: AppColors.textPrimary),
-              decoration: const InputDecoration(labelText: 'Teléfono (opcional)', filled: true, fillColor: AppColors.background),
+              style: TextStyle(color: textPrimary),
+              decoration: InputDecoration(
+                labelText: 'Teléfono (opcional)',
+                labelStyle: TextStyle(color: textSecondary),
+                filled: true,
+                fillColor: inputFill,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: borderColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: borderColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+                ),
+              ),
             ),
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
-              initialValue: _selectedRole,
-              dropdownColor: AppColors.surface,
-              style: const TextStyle(color: AppColors.textPrimary),
-              decoration: const InputDecoration(labelText: 'Rol *', filled: true, fillColor: AppColors.background),
-              items: const [
-                DropdownMenuItem(value: 'PERSONERO', child: Text('Personero de Mesa')),
-                DropdownMenuItem(value: 'DIRECTOR', child: Text('Director Electoral')),
-                DropdownMenuItem(value: 'ADMIN', child: Text('Administrador (ADMIN)')),
+              isExpanded: true,
+              value: _selectedRole,
+              dropdownColor: AppColors.surfaceOf(context),
+              style: TextStyle(color: textPrimary),
+              decoration: InputDecoration(
+                labelText: 'Rol *',
+                labelStyle: TextStyle(color: textSecondary),
+                filled: true,
+                fillColor: inputFill,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: borderColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: borderColor),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+                ),
+              ),
+              items: [
+                DropdownMenuItem(value: 'PERSONERO', child: Text('Personero de Mesa', overflow: TextOverflow.ellipsis, style: TextStyle(color: textPrimary))),
+                DropdownMenuItem(value: 'DIRECTOR', child: Text('Director Electoral', overflow: TextOverflow.ellipsis, style: TextStyle(color: textPrimary))),
+                DropdownMenuItem(value: 'ADMIN', child: Text('Administrador (ADMIN)', overflow: TextOverflow.ellipsis, style: TextStyle(color: textPrimary))),
               ],
               onChanged: (val) => setState(() => _selectedRole = val ?? 'PERSONERO'),
             ),
@@ -644,27 +787,49 @@ class _UserFormModalState extends ConsumerState<UserFormModal> {
 
             mesasAsync.when(
               data: (mesas) => DropdownButtonFormField<String>(
-                initialValue: _selectedMesaCode,
-                dropdownColor: AppColors.surface,
-                style: const TextStyle(color: AppColors.textPrimary),
-                decoration: const InputDecoration(labelText: 'Mesa Asignada *', filled: true, fillColor: AppColors.background),
+                isExpanded: true,
+                value: _selectedMesaCode,
+                dropdownColor: AppColors.surfaceOf(context),
+                style: TextStyle(color: textPrimary),
+                decoration: InputDecoration(
+                  labelText: 'Mesa Asignada *',
+                  labelStyle: TextStyle(color: textSecondary),
+                  filled: true,
+                  fillColor: inputFill,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: borderColor),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
+                  ),
+                ),
                 items: mesas.map((m) => DropdownMenuItem(
                   value: m.code,
-                  child: Text('Mesa ${m.code} - ${m.locationName}'),
+                  child: Text('Mesa ${m.code} - ${m.locationName}', overflow: TextOverflow.ellipsis, style: TextStyle(color: textPrimary)),
                 )).toList(),
                 onChanged: (val) => setState(() => _selectedMesaCode = val),
               ),
               loading: () => const LinearProgressIndicator(),
-              error: (_, __) => const Text('Error al cargar mesas'),
+              error: (_, __) => Text('Error al cargar mesas', style: TextStyle(color: AppColors.dangerOf(context))),
             ),
 
             const SizedBox(height: 20),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
               onPressed: _isSaving ? null : _submitUser,
               child: _isSaving
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('Crear y Sincronizar Usuario', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  : const Text('Crear y Sincronizar Usuario', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
             ),
           ],
         ),
