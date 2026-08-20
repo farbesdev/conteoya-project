@@ -528,6 +528,9 @@
                                             "null"
                                         ],
                                         "maxLength": 100
+                                    },
+                                    "login": {
+                                        "type": "string"
                                     }
                                 },
                                 "required": [
@@ -2821,6 +2824,50 @@
                                         "data",
                                         "meta"
                                     ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/personeros/{id}": {
+            "delete": {
+                "operationId": "personero.destroy",
+                "description": "Elimina el perfil de personero, sus asignaciones de mesas y su cuenta de usuario asociada.",
+                "summary": "Eliminar personero",
+                "tags": [
+                    "Personeros",
+                    "Personero"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 200
                                 }
                             }
                         }

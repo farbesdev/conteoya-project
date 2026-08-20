@@ -46,4 +46,10 @@ export const personerosService = {
       method: 'PATCH',
     })
   },
+
+  async delete(personeroId: number): Promise<{ message: string }> {
+    return apiClient<{ message: string }>(`/personeros/${personeroId}`, {
+      method: 'DELETE',
+    })
+  },
 }

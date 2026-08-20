@@ -349,6 +349,28 @@ Habilita o deshabilita el acceso del personero a la aplicación móvil y la API.
 
 ---
 
+### `DELETE /api/v1/personeros/{id}`
+
+Elimina de forma permanente un personero, desvinculando sus mesas de votación asignadas, revocando sus tokens de acceso activos y eliminando su cuenta de usuario y dispositivos asociados.
+
+> 🔒 Accesible por `ADMIN` y `DIRECTOR`.
+
+**Respuesta `200 OK`**
+```json
+{
+  "message": "Personero eliminado exitosamente del sistema."
+}
+```
+
+**Respuesta `404 Not Found`**
+```json
+{
+  "message": "Personero no encontrado."
+}
+```
+
+---
+
 ### `GET /api/v1/personero/polling-stations`
 
 Devuelve las mesas de sufragio asignadas al personero autenticado.

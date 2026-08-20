@@ -127,4 +127,35 @@ class PersoneroAccessTest extends TestCase
         $responseEmail->assertStatus(200)
             ->assertJsonStructure(['access_token']);
     }
+
+    public function test_admin_can_delete_personero_and_associated_user(): void
+    {
+        $adminRole = Role::where('name', Role::ADMIN)->first();
+        $admin = User::factory()->create([
+            'role'      => Role::ADMIN,
+            'role_id'   => $adminRole->id,
+            'is_active' => true,
+        ]);
+        $adminToken = $admin->createToken('AdminDevice')->plainTextToken;
+
+        $personeroRole = Role::where('name', Role::PERSONERO)->first();
+        $personeroUser = User::factory()->create([
+            'role'      => Role::PERSONERO,
+            'role_id'   => $personeroRole->id,
+            'is_active' => true,
+        ]);
+
+        $personero = Personero::create([
+            'user_id'         => $personeroUser->id,
+            'document_number' => '12345678',
+            'full_name'       => 'Juan Pérez Demo',
+        ]);
+
+        $response = $this->withToken($adminToken)->deleteJson("/api/v1/personeros/{$personero->id}");
+        $response->assertStatus(200)
+            ->assertJson(['message' => 'Personero eliminado exitosamente del sistema.']);
+
+        $this->assertDatabaseMissing('personeros', ['id' => $personero->id]);
+        $this->assertDatabaseMissing('users', ['id' => $personeroUser->id]);
+    }
 }

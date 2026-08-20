@@ -269,23 +269,38 @@ class PersonerosRepository {
   }
 
   Future<void> deletePersonero(int id, {String? dni}) async {
-    // Buscar en Drift por id local primero
+    // 1. Buscar en Drift por id local primero
     final byId = await (db.select(db.localPersonerosTable)
       ..where((t) => t.id.equals(id))).getSingleOrNull();
 
-    // Si no está en Drift por id (vino de la API remota), intentar por DNI
+    // 2. Si no está en Drift por id (vino de la API remota), intentar por DNI
     final existing = byId ?? (dni != null ? await db.getPersoneroByDni(dni) : null);
 
-    // Eliminar de Drift si existe localmente
+    // 3. Eliminar de Drift si existe localmente
     if (existing != null) {
       await db.deletePersonero(existing.id);
     }
 
-    // Determinar el DNI a usar para la sync op
     final targetDni = dni ?? existing?.dni;
 
-    // Siempre encolar el DELETE hacia el VPS si tenemos el DNI
-    if (targetDni != null) {
+    // 4. Intentar eliminar directamente en la API si apiClient está disponible
+    bool remoteDeleted = false;
+    if (apiClient != null) {
+      try {
+        final target = id > 0 ? '$id' : targetDni;
+        if (target != null && target.isNotEmpty) {
+          final res = await apiClient!.delete<Map<String, Object?>>('/personeros/$target');
+          if (res.statusCode == 200) {
+            remoteDeleted = true;
+          }
+        }
+      } catch (_) {
+        // En caso de estar offline o error de red, queda encolado para el SyncEngine
+      }
+    }
+
+    // 5. Si no se eliminó en caliente (offline), encolar la operación de DELETE para SyncEngine
+    if (!remoteDeleted && targetDni != null) {
       final clientOpId = const Uuid().v4();
       await db.enqueueSyncOperation(
         LocalSyncOperationsTableCompanion.insert(

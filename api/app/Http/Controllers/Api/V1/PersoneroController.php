@@ -164,5 +164,42 @@ class PersoneroController extends Controller
             'assigned_count'        => count($stationIds),
         ]);
     }
+
+    /**
+     * Eliminar personero
+     *
+     * Elimina el perfil de personero, sus asignaciones de mesas y su cuenta de usuario asociada.
+     *
+     * @response 200 { "message": "Personero eliminado exitosamente del sistema." }
+     * @response 404 { "message": "Personero no encontrado." }
+     */
+    public function destroy(int|string $id): JsonResponse
+    {
+        $personero = is_numeric($id)
+            ? Personero::find($id)
+            : Personero::where('document_number', $id)->first();
+
+        if (!$personero) {
+            return response()->json(['message' => 'Personero no encontrado.'], 404);
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($personero) {
+            $personero->pollingStations()->detach();
+            \App\Models\SyncOperation::where('personero_id', $personero->id)->update(['personero_id' => null]);
+            \App\Models\Device::where('personero_id', $personero->id)->delete();
+
+            $user = $personero->user;
+            $personero->delete();
+
+            if ($user) {
+                $user->tokens()->delete();
+                $user->delete();
+            }
+        });
+
+        return response()->json([
+            'message' => 'Personero eliminado exitosamente del sistema.',
+        ]);
+    }
 }
 

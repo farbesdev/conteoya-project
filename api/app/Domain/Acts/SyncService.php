@@ -231,9 +231,12 @@ class SyncService
             if ($operation === 'DELETE') {
                 if ($personero) {
                     $personero->pollingStations()->detach();
+                    \App\Models\SyncOperation::where('personero_id', $personero->id)->update(['personero_id' => null]);
+                    \App\Models\Device::where('personero_id', $personero->id)->delete();
                     $user = $personero->user;
                     $personero->delete();
                     if ($user) {
+                        $user->tokens()->delete();
                         $user->delete();
                     }
                 }
