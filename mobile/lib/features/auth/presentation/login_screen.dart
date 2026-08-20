@@ -14,8 +14,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'personero.puertoinca@conteoya.pe');
-  final _passwordController = TextEditingController(text: 'Puertoinca123!');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
   @override
@@ -32,13 +32,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             password: _passwordController.text,
           );
     }
-  }
-
-  void _fillCredentials(String email, String password) {
-    setState(() {
-      _emailController.text = email;
-      _passwordController.text = password;
-    });
   }
 
   void _showServerConfigDialog() {
@@ -331,84 +324,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                     ),
                   ),
-                  const SizedBox(height: 28),
-
-                  // Acceso rápido para pruebas de desarrollo
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Credenciales Demo (Desarrollo):',
-                          style: TextStyle(
-                            color: theme.colorScheme.onSurface.withAlpha(128),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _buildRoleChip(
-                              label: 'Admin',
-                              email: 'admin@conteoya.pe',
-                              pass: 'Admin123!',
-                              color: AppColors.danger,
-                            ),
-                            _buildRoleChip(
-                              label: 'Director',
-                              email: 'director@conteoya.pe',
-                              pass: 'Director123!',
-                              color: AppColors.info,
-                            ),
-                            _buildRoleChip(
-                              label: 'Personero',
-                              email: 'personero@conteoya.pe',
-                              pass: 'Personero123!',
-                              color: AppColors.accent,
-                            ),
-                            _buildRoleChip(
-                              label: 'Puerto Inca',
-                              email: 'personero.puertoinca@conteoya.pe',
-                              pass: 'Puertoinca123!',
-                              color: AppColors.accent,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
                 ],
               ),
             ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildRoleChip({
-    required String label,
-    required String email,
-    required String pass,
-    required Color color,
-  }) {
-    return ActionChip(
-      backgroundColor: color.withValues(alpha: 0.12),
-      side: BorderSide.none,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      label: Text(
-        label,
-        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
-      ),
-      onPressed: () => _fillCredentials(email, pass),
     );
   }
 }
