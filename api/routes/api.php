@@ -35,13 +35,18 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::patch('/personeros/{personero}/toggle-access', [\App\Http\Controllers\Api\V1\PersoneroAccessController::class, 'toggleAccess']);
         Route::post('/users/{id}/reset-password', [\App\Http\Controllers\Api\V1\UserController::class, 'resetPassword']);
         Route::apiResource('users', \App\Http\Controllers\Api\V1\UserController::class);
+        Route::post('/candidates/sync-cvs', [\App\Http\Controllers\Api\V1\CandidateCvSyncController::class, 'startSync']);
+        Route::get('/candidates/sync-cvs/status', [\App\Http\Controllers\Api\V1\CandidateCvSyncController::class, 'getStatus']);
+        Route::post('/candidates/sync-cvs/cancel', [\App\Http\Controllers\Api\V1\CandidateCvSyncController::class, 'cancelSync']);
+        Route::apiResource('candidates', \App\Http\Controllers\Api\V1\CandidateController::class);
+        Route::post('/political-organizations/{id}', [\App\Http\Controllers\Api\V1\PoliticalOrganizationController::class, 'update']);
+        Route::apiResource('political-organizations', \App\Http\Controllers\Api\V1\PoliticalOrganizationController::class);
 
         // Catálogos Electorales y Ubigeos (Alto Rendimiento & Caching)
         Route::get('/departments', [CatalogController::class, 'departments']);
         Route::get('/provinces', [CatalogController::class, 'provinces']);
         Route::get('/districts', [CatalogController::class, 'districts']);
         Route::get('/elections', [CatalogController::class, 'elections']);
-        Route::get('/political-organizations', [CatalogController::class, 'politicalOrganizations']);
         Route::get('/electoral-lists', [CatalogController::class, 'electoralLists']);
         Route::get('/ballot-template', [CatalogController::class, 'ballotTemplate']);
 

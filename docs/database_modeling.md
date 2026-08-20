@@ -188,6 +188,20 @@ erDiagram
         timestamp updated_at
     }
 
+    candidate_cvs {
+        string id_hoja_vida PK
+        bigint candidate_id FK
+        json general_data
+        json academic_data
+        json work_experience
+        json political_trajectory
+        json sworn_declaration
+        json penal_sentences
+        json additional_info
+        timestamp created_at
+        timestamp updated_at
+    }
+
     roles {
         bigint id PK
         string name

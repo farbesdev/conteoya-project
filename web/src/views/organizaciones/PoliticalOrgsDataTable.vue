@@ -1,102 +1,103 @@
 <script setup lang="ts">
-import { mesasService, type PollingStationItem } from '@/api/mesas.service'
+import { politicalOrganizationsService, type PoliticalOrganizationFullItem } from '@/api/political-organizations.service'
 import { useDebounceFn } from '@vueuse/core'
 import DesktopDatatable from '@/components/DesktopDatatable.vue'
 import MovilCardList from '@/components/MovilCardList.vue'
-import MesaDetailDialog from './MesaDetailDialog.vue'
-import MesaFormDialog from './MesaFormDialog.vue'
+import PoliticalOrgDetailDialog from './PoliticalOrgDetailDialog.vue'
+import PoliticalOrgFormDialog from './PoliticalOrgFormDialog.vue'
 
 const search = ref('')
 const loading = ref(false)
-const mesas = ref<PollingStationItem[]>([])
+const orgs = ref<PoliticalOrganizationFullItem[]>([])
 const totalItems = ref(0)
 const page = ref(1)
 const itemsPerPage = ref(15)
 
-// Detalle
+// Modal Detalle
 const isDetailOpen = ref(false)
-const selectedMesa = ref<PollingStationItem | null>(null)
+const orgToDetail = ref<PoliticalOrganizationFullItem | null>(null)
 
-// Formulario Crear / Editar
+// Modal Crear / Editar
 const isFormOpen = ref(false)
-const mesaToEdit = ref<PollingStationItem | null>(null)
+const orgToEdit = ref<PoliticalOrganizationFullItem | null>(null)
 
-// Eliminar
+// Modal Eliminar
 const isDeleteDialogOpen = ref(false)
-const mesaToDelete = ref<PollingStationItem | null>(null)
+const orgToDelete = ref<PoliticalOrganizationFullItem | null>(null)
 const deleting = ref(false)
 
 const headers = [
-  { title: 'Mesa', key: 'code', sortable: false },
-  { title: 'Local de Votación', key: 'location_name', sortable: false },
-  { title: 'Ubigeo', key: 'ubigeo', sortable: false },
-  { title: 'Electores', key: 'registered_voters', sortable: false, align: 'center' as const },
+  { title: '#', key: 'index', sortable: false, align: 'center' as const },
+  { title: 'Logo', key: 'logo', sortable: false, align: 'center' as const },
+  { title: 'Organización Política', key: 'name', sortable: false },
+  { title: 'Sigla', key: 'short_name', sortable: false, align: 'center' as const },
+  { title: 'Tipo', key: 'org_type', sortable: false },
   { title: 'Acciones', key: 'actions', sortable: false, align: 'end' as const },
 ]
 
-const loadMesas = async () => {
+const loadOrgs = async () => {
   loading.value = true
   try {
-    const res = await mesasService.list({
+    const res = await politicalOrganizationsService.list({
       search: search.value || undefined,
       page: page.value,
       per_page: itemsPerPage.value,
     })
-    mesas.value = res.data
+    orgs.value = res.data
     totalItems.value = res.meta.total
   } catch (error) {
-    console.error('Error cargando mesas:', error)
+    console.error('Error cargando organizaciones políticas:', error)
   } finally {
     loading.value = false
   }
 }
 
 watch([page, itemsPerPage], () => {
-  loadMesas()
+  loadOrgs()
 })
 
 const onSearchInput = useDebounceFn(() => {
   page.value = 1
-  loadMesas()
+  loadOrgs()
 }, 400)
 
 const openCreateDialog = () => {
-  mesaToEdit.value = null
+  orgToEdit.value = null
   isFormOpen.value = true
 }
 
-const openEditDialog = (m: PollingStationItem) => {
-  mesaToEdit.value = m
+const openEditDialog = (org: PoliticalOrganizationFullItem) => {
+  orgToEdit.value = org
   isFormOpen.value = true
 }
 
-const openDetailDialog = (m: PollingStationItem) => {
-  selectedMesa.value = m
+const openDetailDialog = (org: PoliticalOrganizationFullItem) => {
+  orgToDetail.value = org
   isDetailOpen.value = true
 }
 
-const confirmDelete = (m: PollingStationItem) => {
-  mesaToDelete.value = m
+const confirmDelete = (org: PoliticalOrganizationFullItem) => {
+  orgToDelete.value = org
   isDeleteDialogOpen.value = true
 }
 
 const handleDelete = async () => {
-  if (!mesaToDelete.value) return
+  if (!orgToDelete.value) return
   deleting.value = true
   try {
-    await mesasService.delete(mesaToDelete.value.id)
+    await politicalOrganizationsService.delete(orgToDelete.value.id)
     isDeleteDialogOpen.value = false
-    mesaToDelete.value = null
-    await loadMesas()
+    orgToDelete.value = null
+    await loadOrgs()
   } catch (error) {
-    console.error('Error eliminando mesa:', error)
+    console.error('Error al eliminar organización política:', error)
   } finally {
     deleting.value = false
   }
 }
 
 onMounted(() => {
-  loadMesas()
+  loadOrgs()
 })
 </script>
 
@@ -108,11 +109,11 @@ onMounted(() => {
         <div class="d-flex align-center justify-space-between flex-wrap gap-3">
           <div class="d-flex align-center gap-x-2">
             <VAvatar color="primary" variant="tonal" size="40">
-              <VIcon icon="ri-archive-line" color="primary" size="22" />
+              <VIcon icon="ri-flag-2-line" color="primary" size="22" />
             </VAvatar>
             <div>
-              <span class="text-h6 font-weight-bold d-block">Explorador de Mesas Electorales</span>
-              <span class="text-caption text-medium-emphasis">Padrón de 87,000 mesas de sufragio a nivel nacional</span>
+              <span class="text-h6 font-weight-bold d-block">Organizaciones Políticas</span>
+              <span class="text-caption text-medium-emphasis">Partidos y movimientos registrados con logos optimizados en WebP</span>
             </div>
           </div>
           <div class="d-flex align-center gap-2 flex-wrap flex-grow-1 flex-sm-grow-0">
@@ -120,13 +121,13 @@ onMounted(() => {
               v-model="search"
               density="compact"
               variant="outlined"
-              placeholder="Buscar por código de mesa, local o ubigeo..."
+              placeholder="Buscar por partido o sigla..."
               prepend-inner-icon="ri-search-line"
+              style="min-width: 220px;"
               clearable
               hide-details
-              style="min-width: 220px;"
               @update:model-value="onSearchInput"
-              @click:clear="loadMesas"
+              @click:clear="loadOrgs"
             />
             <VBtn
               icon="ri-refresh-line"
@@ -134,7 +135,7 @@ onMounted(() => {
               color="secondary"
               density="comfortable"
               :loading="loading"
-              @click="loadMesas"
+              @click="loadOrgs"
             />
             <VBtn
               variant="flat"
@@ -143,59 +144,74 @@ onMounted(() => {
               density="comfortable"
               @click="openCreateDialog"
             >
-              Nueva Mesa
+              Nueva Organización
             </VBtn>
           </div>
         </div>
       </VCardItem>
     </VCard>
 
-    <!-- Vista Desktop: Tabla -->
+    <!-- Vista Desktop: Tabla con Logos -->
     <DesktopDatatable
       v-model:page="page"
       v-model:items-per-page="itemsPerPage"
       :headers="headers"
-      :items="mesas"
+      :items="orgs"
       :items-length="totalItems"
       :loading="loading"
-      loading-text="Cargando mesas de votación..."
-      no-data-text="No se encontraron mesas de votación."
+      loading-text="Cargando organizaciones políticas..."
+      no-data-text="No se encontraron organizaciones políticas."
     >
-      <!-- Mesa Code -->
-      <template #item.code="{ item }">
-        <span class="font-weight-bold text-primary cursor-pointer" @click="openDetailDialog(item)">
-          Nº {{ item.code }}
+      <!-- Numeración (#) -->
+      <template #item.index="{ index }">
+        <span class="font-weight-bold text-medium-emphasis">
+          #{{ (page - 1) * itemsPerPage + index + 1 }}
         </span>
       </template>
 
-      <!-- Local -->
-      <template #item.location_name="{ item }">
+      <!-- Logo Oficial Centrado -->
+      <template #item.logo="{ item }">
+        <div class="d-flex justify-center py-1">
+          <VAvatar size="36" class="elevation-1 border cursor-pointer" color="surface" @click="openDetailDialog(item)">
+            <VImg
+              v-if="item.logo_url"
+              :src="item.logo_url"
+              cover
+            />
+            <VIcon v-else icon="ri-flag-2-fill" size="18" color="primary" />
+          </VAvatar>
+        </div>
+      </template>
+
+      <!-- Nombre de la Organización -->
+      <template #item.name="{ item }">
         <div class="cursor-pointer" @click="openDetailDialog(item)">
-          <div class="font-weight-medium text-high-emphasis">{{ item.location_name }}</div>
-          <div class="text-caption text-medium-emphasis">{{ item.address || '—' }}</div>
+          <div class="font-weight-bold text-high-emphasis">{{ item.name }}</div>
+          <small v-if="item.jee_id" class="text-caption text-medium-emphasis">
+            ID JEE: <span class="text-primary">{{ item.jee_id }}</span>
+          </small>
         </div>
       </template>
 
-      <!-- Ubigeo Unificado (Distrito / Provincia / Departamento) -->
-      <template #item.ubigeo="{ item }">
-        <div class="text-body-2">
-          <span class="font-weight-medium text-high-emphasis">{{ item.district_name || 'DISTRITO' }}</span>
-          <span class="text-medium-emphasis"> / {{ item.province_name || 'PROVINCIA' }} / </span>
-          <span class="text-primary font-weight-medium">{{ item.department_name || 'REGIÓN' }}</span>
-        </div>
+      <!-- Sigla -->
+      <template #item.short_name="{ item }">
+        <VChip v-if="item.short_name" size="small" color="primary" variant="tonal" class="font-weight-bold">
+          {{ item.short_name }}
+        </VChip>
+        <span v-else class="text-disabled">—</span>
       </template>
 
-      <!-- Electores: Sólo cantidad -->
-      <template #item.registered_voters="{ item }">
-        <VChip size="small" color="primary" variant="tonal" class="font-weight-bold">
-          {{ item.registered_voters }}
+      <!-- Tipo de Organización -->
+      <template #item.org_type="{ item }">
+        <VChip size="x-small" color="secondary" variant="outlined">
+          {{ item.org_type || 'PARTIDO POLÍTICO' }}
         </VChip>
       </template>
 
       <!-- Acciones Completas CRUD -->
       <template #item.actions="{ item }">
         <div class="d-flex align-center justify-end gap-1">
-          <VTooltip text="Ver Ficha y Actas de la Mesa" location="top">
+          <VTooltip text="Ver Ficha" location="top">
             <template #activator="{ props: tipProps }">
               <VBtn
                 v-bind="tipProps"
@@ -208,7 +224,7 @@ onMounted(() => {
             </template>
           </VTooltip>
 
-          <VTooltip text="Editar Mesa" location="top">
+          <VTooltip text="Editar Organización y Logo" location="top">
             <template #activator="{ props: tipProps }">
               <VBtn
                 v-bind="tipProps"
@@ -221,7 +237,7 @@ onMounted(() => {
             </template>
           </VTooltip>
 
-          <VTooltip text="Eliminar Mesa" location="top">
+          <VTooltip text="Eliminar Organización" location="top">
             <template #activator="{ props: tipProps }">
               <VBtn
                 v-bind="tipProps"
@@ -237,56 +253,49 @@ onMounted(() => {
       </template>
     </DesktopDatatable>
 
-    <!-- Vista Móvil: Tarjetas -->
+    <!-- Vista Móvil: Tarjetas con Logo -->
     <MovilCardList
       v-model:page="page"
-      :items="mesas"
+      :items="orgs"
       :items-length="totalItems"
       :items-per-page="itemsPerPage"
       :loading="loading"
-      loading-text="Cargando mesas..."
-      no-data-text="No se encontraron mesas."
+      loading-text="Cargando organizaciones..."
+      no-data-text="No se encontraron organizaciones."
     >
       <template #card="{ item }">
         <div class="d-flex justify-space-between align-start mb-2">
-          <div class="d-flex align-center gap-x-2">
-            <VAvatar size="34" color="primary" variant="tonal">
-              <VIcon icon="ri-archive-line" size="18" />
+          <div class="d-flex align-center gap-x-3">
+            <VAvatar size="44" class="elevation-1 border" color="surface">
+              <VImg
+                v-if="item.logo_url"
+                :src="item.logo_url"
+                cover
+              />
+              <VIcon v-else icon="ri-flag-2-fill" size="20" color="primary" />
             </VAvatar>
             <div>
-              <div class="font-weight-bold text-subtitle-2 text-primary cursor-pointer" @click="openDetailDialog(item)">
-                Mesa Nº {{ item.code }}
+              <div class="font-weight-bold text-subtitle-2 line-clamp-1 cursor-pointer" @click="openDetailDialog(item)">
+                {{ item.name }}
               </div>
-              <div class="text-caption text-medium-emphasis">
-                {{ item.district_name }} / {{ item.province_name }} / {{ item.department_name }}
+              <div class="text-caption text-primary font-weight-medium">
+                {{ item.short_name || item.org_type }}
               </div>
             </div>
           </div>
-          <VChip size="x-small" color="primary" variant="tonal" class="font-weight-bold">
-            {{ item.registered_voters }}
+          <VChip size="x-small" color="secondary" variant="outlined">
+            {{ item.org_type }}
           </VChip>
-        </div>
-
-        <div class="bg-background pa-2 rounded mb-3 text-caption cursor-pointer" @click="openDetailDialog(item)">
-          <div class="font-weight-bold text-high-emphasis mb-0.5">
-            {{ item.location_name }}
-          </div>
-          <div v-if="item.address" class="text-disabled text-truncate mt-0.5">
-            {{ item.address }}
-          </div>
         </div>
 
         <div class="d-flex justify-end align-center gap-2 pt-2 border-t">
           <VBtn
             size="small"
-            variant="tonal"
-            color="primary"
-            prepend-icon="ri-eye-line"
-            class="flex-grow-1"
+            variant="text"
+            color="info"
+            icon="ri-eye-line"
             @click="openDetailDialog(item)"
-          >
-            Ver Actas
-          </VBtn>
+          />
           <VBtn
             size="small"
             variant="text"
@@ -305,36 +314,35 @@ onMounted(() => {
       </template>
     </MovilCardList>
 
-    <!-- Modal Detalle Mesa y Actas -->
-    <MesaDetailDialog
+    <!-- Modal Detalle -->
+    <PoliticalOrgDetailDialog
       v-model="isDetailOpen"
-      :mesa="selectedMesa"
+      :org="orgToDetail"
     />
 
-    <!-- Modal Crear / Editar Mesa -->
-    <MesaFormDialog
+    <!-- Modal Formulario Crear / Editar con Subida de Logo WebP -->
+    <PoliticalOrgFormDialog
       v-model="isFormOpen"
-      :mesa="mesaToEdit"
-      @saved="loadMesas"
+      :org="orgToEdit"
+      @saved="loadOrgs"
     />
 
-    <!-- Diálogo Confirmación Eliminar -->
+    <!-- Modal Confirmar Eliminación -->
     <VDialog v-model="isDeleteDialogOpen" max-width="450">
       <VCard class="pa-2">
         <VCardTitle class="d-flex align-center gap-x-2 text-error">
           <VIcon icon="ri-error-warning-line" />
-          <span>Eliminar Mesa Electoral</span>
+          <span>Eliminar Organización Política</span>
         </VCardTitle>
         <VCardText>
-          ¿Está seguro de que desea eliminar la mesa <strong>Nº {{ mesaToDelete?.code }}</strong>?
-          Esta acción desvinculará sus actas y personeros asignados.
+          ¿Está seguro de que desea eliminar la organización <strong>{{ orgToDelete?.name }}</strong>?
         </VCardText>
         <VCardActions class="d-flex justify-end gap-2">
           <VBtn variant="outlined" color="secondary" :disabled="deleting" @click="isDeleteDialogOpen = false">
             Cancelar
           </VBtn>
           <VBtn variant="flat" color="error" :loading="deleting" @click="handleDelete">
-            Eliminar Mesa
+            Eliminar Organización
           </VBtn>
         </VCardActions>
       </VCard>

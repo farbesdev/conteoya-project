@@ -3,6 +3,7 @@ import { apiClient } from './client'
 export interface PersoneroItem {
   id: number
   document_number: string
+  dni?: string
   first_name?: string | null
   last_name_paternal?: string | null
   last_name_maternal?: string | null
@@ -10,6 +11,8 @@ export interface PersoneroItem {
   phone_number?: string | null
   political_org_name?: string | null
   political_organization_name?: string | null
+  political_org_logo?: string | null
+  political_org_short_name?: string | null
   email?: string | null
   user_id?: number | null
   is_active?: boolean
@@ -54,7 +57,9 @@ export const personerosService = {
     name?: string
     email?: string
     phone_number?: string
+    political_organization_id?: number | null
     political_org_name?: string
+    abogado_responsable?: string
     polling_station_ids?: number[]
   }): Promise<{ message: string; data: PersoneroItem }> {
     return apiClient<{ message: string; data: PersoneroItem }>('/personeros', {
@@ -69,7 +74,9 @@ export const personerosService = {
     name?: string
     email?: string
     phone_number?: string
+    political_organization_id?: number | null
     political_org_name?: string
+    abogado_responsable?: string
     polling_station_ids?: number[]
     is_active?: boolean
   }): Promise<{ message: string; data: PersoneroItem }> {

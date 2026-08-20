@@ -19,4 +19,9 @@ class Candidate extends Model
     {
         return $this->hasMany(Candidacy::class, 'candidate_id');
     }
+
+    public function cv()
+    {
+        return $this->hasOne(CandidateCv::class, 'id_hoja_vida', 'id_hoja_vida');
+    }
 }

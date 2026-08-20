@@ -77,10 +77,22 @@ class CatalogController extends Controller
     }
 
     /**
-     * Retorna organizaciones políticas con caché en Redis de 12 horas.
+     * Retorna organizaciones políticas con caché en Redis de 12 horas o filtrado dinámico por búsqueda.
      */
-    public function politicalOrganizations()
+    public function politicalOrganizations(Request $request)
     {
+        if ($search = $request->query('search')) {
+            $search = trim($search);
+            $like = config('database.default') === 'pgsql' ? 'ILIKE' : 'LIKE';
+            $results = PoliticalOrganization::where('name', $like, "%{$search}%")
+                ->orWhere('short_name', $like, "%{$search}%")
+                ->orderBy('name')
+                ->limit(25)
+                ->get();
+
+            return response()->json($results);
+        }
+
         $orgs = Cache::remember('catalog:political_organizations', 43200, function () {
             return PoliticalOrganization::orderBy('name')->get();
         });

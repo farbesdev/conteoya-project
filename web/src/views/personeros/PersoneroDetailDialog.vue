@@ -67,7 +67,17 @@ const emit = defineEmits<{
           <VRow dense>
             <VCol cols="12" sm="6">
               <span class="text-caption text-medium-emphasis d-block">Organización Política:</span>
-              <span class="text-body-2 font-weight-medium">{{ personero.political_org_name || personero.political_organization_name || 'Sin partido registrado' }}</span>
+              <div class="d-flex align-center gap-x-2 mt-1">
+                <VAvatar size="26" class="elevation-1 border" color="surface">
+                  <VImg
+                    v-if="personero.political_org_logo"
+                    :src="personero.political_org_logo"
+                    cover
+                  />
+                  <VIcon v-else icon="ri-flag-2-fill" size="14" color="primary" />
+                </VAvatar>
+                <span class="text-body-2 font-weight-medium">{{ personero.political_org_name || personero.political_organization_name || 'Sin partido registrado' }}</span>
+              </div>
             </VCol>
             <VCol cols="12" sm="6">
               <span class="text-caption text-medium-emphasis d-block">Tipo de Personero:</span>

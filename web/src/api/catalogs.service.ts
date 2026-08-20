@@ -67,7 +67,9 @@ export const catalogsService = {
     return apiClient<{ data: ElectionItem[] }>('/elections')
   },
 
-  async getPoliticalOrganizations(): Promise<{ data: PoliticalOrgItem[] }> {
-    return apiClient<{ data: PoliticalOrgItem[] }>('/political-organizations')
+  async getPoliticalOrganizations(search?: string): Promise<{ data: PoliticalOrgItem[] }> {
+    return apiClient<{ data: PoliticalOrgItem[] }>('/political-organizations', {
+      params: search ? { search } : undefined,
+    })
   },
 }

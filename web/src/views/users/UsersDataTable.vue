@@ -33,7 +33,7 @@ const userToDelete = ref<UserItem | null>(null)
 const deleting = ref(false)
 
 const headers = [
-  { title: 'ID', key: 'id', sortable: false },
+  { title: '#', key: 'index', sortable: false, align: 'center' as const },
   { title: 'Nombre Completo', key: 'name', sortable: false },
   { title: 'Email', key: 'email', sortable: false },
   { title: 'Rol', key: 'role', sortable: false },
@@ -187,18 +187,25 @@ onMounted(() => {
       loading-text="Cargando usuarios..."
       no-data-text="No se encontraron usuarios registrados."
     >
-      <!-- ID -->
-      <template #item.id="{ item }">
-        <span class="font-weight-bold">#{{ item.id }}</span>
+      <!-- Numeración (#) -->
+      <template #item.index="{ index }">
+        <span class="font-weight-bold text-medium-emphasis">
+          #{{ (page - 1) * itemsPerPage + index + 1 }}
+        </span>
       </template>
 
-      <!-- Nombre -->
+      <!-- Nombre Completo con DNI debajo -->
       <template #item.name="{ item }">
-        <div class="d-flex align-center gap-x-2 cursor-pointer" @click="openDetailDialog(item)">
-          <VAvatar size="32" color="primary" variant="tonal">
+        <div class="d-flex align-center gap-x-3 cursor-pointer py-1" @click="openDetailDialog(item)">
+          <VAvatar size="34" color="primary" variant="tonal">
             <span class="text-caption font-weight-bold">{{ item.name ? item.name[0] : 'U' }}</span>
           </VAvatar>
-          <span class="font-weight-medium">{{ item.name }}</span>
+          <div>
+            <div class="font-weight-medium text-high-emphasis">{{ item.name }}</div>
+            <small class="text-caption text-medium-emphasis">
+              DNI: <span class="font-weight-bold text-primary">{{ item.personero?.document_number || '—' }}</span>
+            </small>
+          </div>
         </div>
       </template>
 
@@ -255,13 +262,11 @@ onMounted(() => {
               <VBtn
                 v-bind="tipProps"
                 size="small"
-                variant="tonal"
+                variant="text"
                 color="secondary"
-                prepend-icon="ri-key-2-line"
+                icon="ri-key-2-line"
                 @click="openResetDialog(item)"
-              >
-                Clave
-              </VBtn>
+              />
             </template>
           </VTooltip>
 
@@ -302,7 +307,7 @@ onMounted(() => {
                 {{ item.name }}
               </div>
               <div class="text-caption text-medium-emphasis">
-                {{ item.email }}
+                {{ item.email }} • DNI: {{ item.personero?.document_number || '—' }}
               </div>
             </div>
           </div>
@@ -323,7 +328,6 @@ onMounted(() => {
               {{ item.is_active ? 'Activo' : 'Inactivo' }}
             </span>
           </div>
-          <span class="text-disabled">ID: #{{ item.id }}</span>
         </div>
 
         <div class="d-flex justify-end align-center flex-wrap gap-2 pt-2 border-t">
@@ -343,13 +347,11 @@ onMounted(() => {
           />
           <VBtn
             size="small"
-            variant="tonal"
+            variant="text"
             color="secondary"
-            prepend-icon="ri-key-2-line"
+            icon="ri-key-2-line"
             @click="openResetDialog(item)"
-          >
-            Clave
-          </VBtn>
+          />
           <VBtn
             size="small"
             variant="text"

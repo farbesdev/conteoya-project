@@ -168,7 +168,7 @@ class JeeDatabaseSeeder extends Seeder
 
         // 6. LISTAS ELECTORALES
         $this->command->info("Cargando Listas Electorales...");
-        $stmt = $sqlite->query("SELECT id_solicitud_lista, organization_id, election_type, department_code, province_code, district_code, status FROM electoral_lists LIMIT 500");
+        $stmt = $sqlite->query("SELECT id_solicitud_lista, organization_id, election_type, department_code, province_code, district_code, status FROM electoral_lists");
         $electoralListsRows = [];
 
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
@@ -292,6 +292,64 @@ class JeeDatabaseSeeder extends Seeder
             $candidaciesRows,
             ['matchColumns' => ['electoral_list_id', 'candidate_id'], 'updateColumns' => ['position', 'list_number', 'status', 'updated_at']]
         );
+
+        // 9. HOJAS DE VIDA DE CANDIDATOS (candidate_cvs)
+        $this->command->info("Cargando Hojas de Vida de Candidatos (candidate_cvs)...");
+        $cvRows = [];
+        try {
+            $stmt = $sqlite->query("SELECT id_hoja_vida, candidate_id, general_data, academic_data, work_experience, political_trajectory, sworn_declaration, penal_sentences, additional_info FROM candidate_cvs");
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                if (!empty($row['id_hoja_vida'])) {
+                    $candId = $candidateMap[$row['candidate_id']] ?? null;
+                    $cvRows[] = [
+                        'id_hoja_vida'         => (string) $row['id_hoja_vida'],
+                        'candidate_id'         => $candId,
+                        'general_data'         => $row['general_data'] ?: null,
+                        'academic_data'        => $row['academic_data'] ?: null,
+                        'work_experience'      => $row['work_experience'] ?: null,
+                        'political_trajectory' => $row['political_trajectory'] ?: null,
+                        'sworn_declaration'    => $row['sworn_declaration'] ?: null,
+                        'penal_sentences'      => $row['penal_sentences'] ?: null,
+                        'additional_info'      => $row['additional_info'] ?: null,
+                        'created_at'           => $now,
+                        'updated_at'           => $now,
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            $this->command->warn("Aviso al leer candidate_cvs de SQLite: " . $e->getMessage());
+        }
+
+        // Si la tabla SQLite no tiene filas completas, generar registros base para los candidatos con id_hoja_vida
+        if (empty($cvRows)) {
+            foreach ($candidatesRows as $cRow) {
+                if (!empty($cRow['id_hoja_vida'])) {
+                    $candId = $candidateMap[$cRow['jee_candidate_id']] ?? null;
+                    $cvRows[] = [
+                        'id_hoja_vida'         => (string) $cRow['id_hoja_vida'],
+                        'candidate_id'         => $candId,
+                        'general_data'         => json_encode(['dni' => $cRow['document_number'], 'nombre_completo' => $cRow['full_name']]),
+                        'academic_data'        => json_encode([]),
+                        'work_experience'      => json_encode([]),
+                        'political_trajectory' => json_encode([]),
+                        'sworn_declaration'    => json_encode([]),
+                        'penal_sentences'      => json_encode([]),
+                        'additional_info'      => json_encode(['fuente' => 'JNE Declara ERM 2026']),
+                        'created_at'           => $now,
+                        'updated_at'           => $now,
+                    ];
+                }
+            }
+        }
+
+        if (!empty($cvRows)) {
+            $this->batchInsertOrUpdate(
+                'candidate_cvs',
+                ['id_hoja_vida', 'candidate_id', 'general_data', 'academic_data', 'work_experience', 'political_trajectory', 'sworn_declaration', 'penal_sentences', 'additional_info', 'created_at', 'updated_at'],
+                $cvRows,
+                ['matchColumns' => ['id_hoja_vida'], 'updateColumns' => ['candidate_id', 'general_data', 'academic_data', 'work_experience', 'political_trajectory', 'sworn_declaration', 'penal_sentences', 'additional_info', 'updated_at']]
+            );
+        }
 
         // 9. USUARIO DEMO & MESA DEMO
         $this->command->info("Creando Usuario Personero Demo y Mesa...");

@@ -33,10 +33,8 @@ const personeroToDelete = ref<PersoneroItem | null>(null)
 const deleting = ref(false)
 
 const headers = [
-  { title: 'DNI', key: 'document_number', sortable: false },
   { title: 'Personero', key: 'full_name', sortable: false },
-  { title: 'Organización Política', key: 'political_org_name', sortable: false },
-  { title: 'Teléfono', key: 'phone_number', sortable: false },
+  { title: 'Partido', key: 'political_org_name', sortable: false, align: 'center' as const },
   { title: 'Mesas Asignadas', key: 'polling_stations', sortable: false },
   { title: 'Acceso Activo', key: 'is_active', sortable: false },
   { title: 'Acciones', key: 'actions', sortable: false, align: 'end' as const },
@@ -174,37 +172,41 @@ onMounted(() => {
       loading-text="Cargando directorio de personeros..."
       no-data-text="No se encontraron personeros."
     >
-      <!-- DNI -->
-      <template #item.document_number="{ item }">
-        <span class="font-weight-bold text-primary cursor-pointer" @click="openDetailDialog(item)">
-          {{ item.document_number }}
-        </span>
-      </template>
-
-      <!-- Nombres -->
+      <!-- Personero: Nombre + DNI debajo -->
       <template #item.full_name="{ item }">
-        <div class="d-flex align-center gap-x-2">
-          <VAvatar size="30" color="primary" variant="tonal">
+        <div class="d-flex align-center gap-x-3 cursor-pointer py-1" @click="openDetailDialog(item)">
+          <VAvatar size="34" color="primary" variant="tonal">
             <span class="text-caption font-weight-bold">
               {{ item.first_name ? item.first_name[0] : (item.full_name ? item.full_name[0] : 'P') }}
             </span>
           </VAvatar>
-          <span class="font-weight-medium cursor-pointer" @click="openDetailDialog(item)">
-            {{ item.full_name || `${item.first_name || ''} ${item.last_name_paternal || ''} ${item.last_name_maternal || ''}`.trim() || 'Sin Nombre' }}
-          </span>
+          <div>
+            <div class="font-weight-medium text-high-emphasis">
+              {{ item.full_name || `${item.first_name || ''} ${item.last_name_paternal || ''} ${item.last_name_maternal || ''}`.trim() || 'Sin Nombre' }}
+            </div>
+            <small class="text-caption text-medium-emphasis">
+              DNI: <span class="font-weight-bold text-primary">{{ item.document_number || item.dni }}</span>
+            </small>
+          </div>
         </div>
       </template>
 
-      <!-- Organización Política -->
+      <!-- Partido: Solo Logo Centrado con Tooltip -->
       <template #item.political_org_name="{ item }">
-        <span class="text-body-2 text-medium-emphasis">
-          {{ item.political_org_name || item.political_organization_name || 'N/A' }}
-        </span>
-      </template>
-
-      <!-- Teléfono -->
-      <template #item.phone_number="{ item }">
-        <span class="text-body-2">{{ item.phone_number || '—' }}</span>
+        <div class="d-flex justify-center">
+          <VTooltip :text="item.political_org_name || item.political_organization_name || 'Sin partido registrado'" location="top">
+            <template #activator="{ props: tipProps }">
+              <VAvatar v-bind="tipProps" size="34" class="elevation-1 border cursor-pointer" color="surface">
+                <VImg
+                  v-if="item.political_org_logo"
+                  :src="item.political_org_logo"
+                  cover
+                />
+                <VIcon v-else icon="ri-flag-2-fill" size="18" color="primary" />
+              </VAvatar>
+            </template>
+          </VTooltip>
+        </div>
       </template>
 
       <!-- Mesas Asignadas -->
@@ -272,13 +274,11 @@ onMounted(() => {
               <VBtn
                 v-bind="tipProps"
                 size="small"
-                variant="tonal"
+                variant="text"
                 color="primary"
-                prepend-icon="ri-archive-line"
+                icon="ri-archive-line"
                 @click="openAssignDialog(item)"
-              >
-                Mesas
-              </VBtn>
+              />
             </template>
           </VTooltip>
 
@@ -321,7 +321,7 @@ onMounted(() => {
                 {{ item.full_name || item.document_number }}
               </div>
               <div class="text-caption text-primary font-weight-medium">
-                DNI: {{ item.document_number }}
+                DNI: {{ item.document_number || item.dni }}
               </div>
             </div>
           </div>
@@ -329,13 +329,16 @@ onMounted(() => {
         </div>
 
         <div class="text-caption text-medium-emphasis mb-2">
-          <div class="d-flex align-center gap-1 mb-1">
-            <VIcon icon="ri-flag-line" size="14" />
-            <span>{{ item.political_org_name || item.political_organization_name || 'Sin partido registrado' }}</span>
-          </div>
-          <div v-if="item.phone_number" class="d-flex align-center gap-1">
-            <VIcon icon="ri-phone-line" size="14" />
-            <span>{{ item.phone_number }}</span>
+          <div class="d-flex align-center gap-2 mb-1">
+            <VAvatar size="22" class="elevation-1 border" color="surface">
+              <VImg
+                v-if="item.political_org_logo"
+                :src="item.political_org_logo"
+                cover
+              />
+              <VIcon v-else icon="ri-flag-line" size="12" color="primary" />
+            </VAvatar>
+            <span class="font-weight-medium text-high-emphasis">{{ item.political_org_name || item.political_organization_name || 'Sin partido registrado' }}</span>
           </div>
         </div>
 
@@ -384,16 +387,14 @@ onMounted(() => {
           />
           <VBtn
             size="small"
-            variant="tonal"
+            variant="text"
             color="primary"
-            prepend-icon="ri-archive-line"
+            icon="ri-archive-line"
             @click="openAssignDialog(item)"
-          >
-            Mesas
-          </VBtn>
+          />
           <VBtn
             size="small"
-            variant="outlined"
+            variant="text"
             color="error"
             icon="ri-delete-bin-line"
             @click="confirmDelete(item)"
