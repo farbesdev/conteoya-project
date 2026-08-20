@@ -43,14 +43,16 @@ La interfaz móvil fue optimizada siguiendo los estándares de **`mobile-design`
 
 ### 2.2. Accesibilidad Cromática y Anti-Chromostereopsis (WCAG 2.1 AA/AAA)
 - Los colores de estado (`warning`, `success`, `danger`, `info`, `accent`) se adaptan dinámicamente según el brillo del entorno mediante helpers semánticos contextuales en `AppColors`:
-  - `warningOf(context)`: **Amber 400 (`#FBBF24`)** en modo oscuro (evita la vibración cromática sobre fondos azul marino/slate) y **Amber 600 (`#D97706`)** en modo claro (garantiza ratio ≥ 4.5:1).
+  - `warningOf(context)`: **Amber 400 (`#FBBF24`)** en modo oscuro (evita la vibración cromática sobre fondos azul marino/slate) y **Amber 700 (`#B45309`)** en modo claro (garantiza ratio de contraste superior a **5.5:1** para visualización óptima bajo luz solar).
   - `successOf(context)`: Emerald 400 / Emerald 600.
   - `dangerOf(context)`: Rose 400 / Rose 600.
+  - `surfaceOf(context)` y `backgroundOf(context)`: Responden en tiempo real al cambio de tema (*Dark/Light Mode Switcher* con rotación animada en AppBar).
 
-### 2.3. Ergonomía Táctil y Anti-Colisión
+### 2.3. Ergonomía Táctil, Anti-Colisión y Prevención de Desbordamientos
 - **Padding Anti-Colisión (110dp):** Todos los `ListView.builder` principales cuentan con `padding: EdgeInsets.fromLTRB(16, 16, 16, 110)` para evitar que los botones de la última tarjeta queden ocultos por el botón flotante (*Extended FAB* o *SpeedDial*).
 - **Touch Targets ≥ 44dp:** Los botones de acción en tarjetas (`Clave`, `Editar`, `Eliminar`) utilizan `IconButton` con `minimumSize: Size(44, 44)` y padding de 10dp.
 - **Filtros Ergonómicos:** Carrusel horizontal táctil con `BouncingScrollPhysics` en lugar de filas de botones estáticas.
+- **Prevención de Desbordamiento en Desplegables (*No-Overflow*):** Todos los `DropdownButtonFormField` y `DropdownMenuItem` en modales (`AddMesaModal`, `UserFormModal`, `PersoneroFormModal`) cuentan con `isExpanded: true` y `Text(..., overflow: TextOverflow.ellipsis)` para evitar excepciones de `RenderFlex overflow`.
 
 ---
 
@@ -74,4 +76,6 @@ Para optimizar la experiencia de usuario y el consumo de red en catálogos exten
 - **Indicador de Búsqueda en Vivo:** Durante la ejecución de la consulta remota, el icono de la barra de búsqueda cambia a un `CircularProgressIndicator` sutil sin congelar ni hacer saltos bruscos en la interfaz.
 - **Paginación en Memoria (*Infinite Scroll*):** La vista remota (`_remoteMesas`) acumula los resultados paginados (`per_page: 10/15`) y carga la siguiente página de manera transparente al alcanzar el final del scroll.
 - **Reset Limpio:** Al vaciar la caja de búsqueda (`query.isEmpty`), se restablece el estado a la vista local reactiva de Drift de inmediato.
+- **Asignación Multi-Mesa a Personeros:** Soporte para asignar múltiples mesas electorales a un personero mediante modal interactivo con búsqueda remota paginada (`MesaSearchSelectorModal`).
+
 

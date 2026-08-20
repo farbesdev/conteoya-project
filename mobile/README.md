@@ -138,8 +138,12 @@ PENDING → PROCESSING → DONE
 
 La aplicación implementa las directrices de los skills **`mobile-design`**, **`ui-styling`** y **`ui-ux-pro-max`**:
 
+- **Dark / Light Mode Switcher:** Toggle animado con rotación en el AppBar que conmuta instantáneamente entre temas claro y oscuro adaptando todas las superficies, modales y campos de entrada.
 - **Anti-Border Hell:** Se eliminó la sobrecarga de bordes duros de 1px. La jerarquía se logra mediante **elevación tonal** (`surface` / `surfaceElevated`) y bordes *hairline* ultra-sutiles de `0.5px` (`0x1AFFFFFF` en Dark / `0x0F0F172A` en Light).
-- **Anti-Chromostereopsis (WCAG 2.1 AA/AAA):** Helpers dinámicos (`warningOf`, `successOf`, `dangerOf`) evitan la vibración cromática del amarillo/naranja sobre fondos oscuros (usando *Amber 400* `#FBBF24` en modo oscuro).
+- **Anti-Chromostereopsis y Calibración WCAG 2.1 AAA:** Helpers dinámicos (`warningOf`, `successOf`, `dangerOf`) ajustan la gama cromática:
+  - `Amber 400` (`#FBBF24`) en modo oscuro para evitar fatiga visual sobre fondo oscuro.
+  - `Amber 700` (`#B45309`) en modo claro garantizando contraste superior a **5.5:1** para lectura bajo luz solar directa.
+- **Prevención de Desbordamientos (*RenderFlex Overflow*):** Todos los selectores desplegables en modales cuentan con `isExpanded: true` y truncamiento con elipsis.
 - **Ergonomía Táctil:**
   - **Padding Anti-Colisión:** `110dp` en listas para que el FAB no tape la última tarjeta ni sus botones.
   - **Touch Targets:** Botones de acción ergonómicos con `minimumSize: Size(44, 44)`.
@@ -152,9 +156,10 @@ La aplicación implementa las directrices de los skills **`mobile-design`**, **`
 1. **Offline es el modo normal.** Toda acción del usuario funciona sin red. La sync es siempre asíncrona.
 2. **La IA nunca confirma un acta.** OCR/IA solo propone valores con `source: AI|OCR` y `confidence`. El personero siempre confirma.
 3. **SHA-256 se calcula en el cliente** antes de guardar localmente y antes de subir a R2.
-4. **Null safety estricto.** No se usa `dynamic` ni el operador `!` sin justificación.
-5. **Riverpod para estado global.** No se usa `setState` para estado de aplicación.
-6. **Autenticación controlada:** `SyncEngine` comprueba `hasAuthToken` y gestiona respuestas `401/403` de forma resiliente.
+4. **Validaciones no bloqueantes (Soft Warnings):** Discrepancias en la suma de votos se advierten visualmente pero no impiden registrar el acta física.
+5. **Null safety estricto.** No se usa `dynamic` ni el operador `!` sin justificación.
+6. **Riverpod para estado global.** No se usa `setState` para estado de aplicación.
+7. **Autenticación controlada:** `SyncEngine` comprueba `hasAuthToken` y gestiona respuestas `401/403` de forma resiliente.
 
 ---
 

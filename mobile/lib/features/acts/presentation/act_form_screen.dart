@@ -933,14 +933,21 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
   @override
   Widget build(BuildContext context) {
     final currentLevel = getElectoralLevelById(_selectedLevelId);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textSecondary = AppColors.textSecondaryOf(context);
+    final textMuted = AppColors.textMutedOf(context);
+    final warningColor = AppColors.warningOf(context);
+    final borderColor = AppColors.borderOf(context);
+    final surfaceColor = AppColors.surfaceOf(context);
+    final inputFill = isDark ? const Color(0xFF0B1120) : const Color(0xFFF1F5F9);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
         title: Text(
           'Acta ${currentLevel.shortTitle} — Mesa ${widget.pollingStationCode}',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textPrimary),
         ),
         actions: [
           IconButton(
@@ -963,22 +970,22 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                       margin: const EdgeInsets.only(bottom: 16),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.warning.withValues(alpha: 0.15),
+                        color: warningColor.withValues(alpha: isDark ? 0.15 : 0.08),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.warning),
+                        border: Border.all(color: warningColor.withValues(alpha: isDark ? 0.6 : 0.4)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Row(
+                          Row(
                             children: [
-                              Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 22),
-                              SizedBox(width: 8),
+                              Icon(Icons.warning_amber_rounded, color: warningColor, size: 22),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   'Advertencias de Consistencia Numérica',
                                   style: TextStyle(
-                                    color: AppColors.warning,
+                                    color: warningColor,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
                                   ),
@@ -992,7 +999,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                               padding: const EdgeInsets.only(top: 4),
                               child: Text(
                                 '• ${w.message}',
-                                style: const TextStyle(color: AppColors.textPrimary, fontSize: 12),
+                                style: TextStyle(color: textPrimary, fontSize: 12),
                               ),
                             ),
                           ),
@@ -1014,7 +1021,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                           const SizedBox(height: 8),
                           Text(
                             'SHA-256: ${_photoSha256?.substring(0, 16)}...',
-                            style: const TextStyle(color: AppColors.textMuted, fontSize: 11, fontFamily: 'monospace'),
+                            style: TextStyle(color: textMuted, fontSize: 11, fontFamily: 'monospace'),
                           ),
                           const SizedBox(height: 12),
                         ],
@@ -1080,9 +1087,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.surfaceElevated,
+                              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFFFFFFF),
                               borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: AppColors.border),
+                              border: Border.all(color: borderColor),
                             ),
                             child: Row(
                               children: [
@@ -1101,8 +1108,8 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                                     children: [
                                       Text(
                                         party.name,
-                                        style: const TextStyle(
-                                          color: AppColors.textPrimary,
+                                        style: TextStyle(
+                                          color: textPrimary,
                                           fontWeight: FontWeight.w600,
                                           fontSize: 13,
                                         ),
@@ -1133,18 +1140,22 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                                             controller: party.votesProvincialController,
                                             keyboardType: TextInputType.number,
                                             textAlign: TextAlign.center,
-                                            style: const TextStyle(
-                                              color: AppColors.textPrimary,
+                                            style: TextStyle(
+                                              color: textPrimary,
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
                                             ),
                                             decoration: InputDecoration(
                                               contentPadding: const EdgeInsets.symmetric(vertical: 8),
                                               filled: true,
-                                              fillColor: AppColors.background,
+                                              fillColor: inputFill,
                                               border: OutlineInputBorder(
                                                 borderRadius: BorderRadius.circular(8),
-                                                borderSide: const BorderSide(color: AppColors.border),
+                                                borderSide: BorderSide(color: borderColor),
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                                borderSide: BorderSide(color: borderColor),
                                               ),
                                             ),
                                             onChanged: (_) => _recalculateValidation(),
@@ -1152,14 +1163,14 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                                         : Container(
                                             padding: const EdgeInsets.symmetric(vertical: 8),
                                             decoration: BoxDecoration(
-                                              color: AppColors.background.withValues(alpha: 0.5),
+                                              color: inputFill.withValues(alpha: 0.5),
                                               borderRadius: BorderRadius.circular(8),
-                                              border: Border.all(color: AppColors.border.withValues(alpha: 0.4)),
+                                              border: Border.all(color: borderColor.withValues(alpha: 0.4)),
                                             ),
-                                            child: const Text(
+                                            child: Text(
                                               'No postula',
                                               textAlign: TextAlign.center,
-                                              style: TextStyle(color: AppColors.textMuted, fontSize: 10),
+                                              style: TextStyle(color: textMuted, fontSize: 10),
                                             ),
                                           ),
                                   ),
@@ -1172,18 +1183,22 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                                             controller: party.votesDistritalController,
                                             keyboardType: TextInputType.number,
                                             textAlign: TextAlign.center,
-                                            style: const TextStyle(
-                                              color: AppColors.textPrimary,
+                                            style: TextStyle(
+                                              color: textPrimary,
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
                                             ),
                                             decoration: InputDecoration(
                                               contentPadding: const EdgeInsets.symmetric(vertical: 8),
                                               filled: true,
-                                              fillColor: AppColors.background,
+                                              fillColor: inputFill,
                                               border: OutlineInputBorder(
                                                 borderRadius: BorderRadius.circular(8),
-                                                borderSide: const BorderSide(color: AppColors.border),
+                                                borderSide: BorderSide(color: borderColor),
+                                              ),
+                                              enabledBorder: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                                borderSide: BorderSide(color: borderColor),
                                               ),
                                             ),
                                             onChanged: (_) => _recalculateValidation(),
@@ -1191,14 +1206,14 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                                         : Container(
                                             padding: const EdgeInsets.symmetric(vertical: 8),
                                             decoration: BoxDecoration(
-                                              color: AppColors.background.withValues(alpha: 0.5),
+                                              color: inputFill.withValues(alpha: 0.5),
                                               borderRadius: BorderRadius.circular(8),
-                                              border: Border.all(color: AppColors.border.withValues(alpha: 0.4)),
+                                              border: Border.all(color: borderColor.withValues(alpha: 0.4)),
                                             ),
-                                            child: const Text(
+                                            child: Text(
                                               'No postula',
                                               textAlign: TextAlign.center,
-                                              style: TextStyle(color: AppColors.textMuted, fontSize: 10),
+                                              style: TextStyle(color: textMuted, fontSize: 10),
                                             ),
                                           ),
                                   ),
@@ -1209,18 +1224,22 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                                       controller: party.votesController,
                                       keyboardType: TextInputType.number,
                                       textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        color: AppColors.textPrimary,
+                                      style: TextStyle(
+                                        color: textPrimary,
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
                                       ),
                                       decoration: InputDecoration(
                                         contentPadding: const EdgeInsets.symmetric(vertical: 8),
                                         filled: true,
-                                        fillColor: AppColors.background,
+                                        fillColor: inputFill,
                                         border: OutlineInputBorder(
                                           borderRadius: BorderRadius.circular(8),
-                                          borderSide: const BorderSide(color: AppColors.border),
+                                          borderSide: BorderSide(color: borderColor),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                          borderSide: BorderSide(color: borderColor),
                                         ),
                                       ),
                                       onChanged: (_) => _recalculateValidation(),
@@ -1247,7 +1266,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                           _buildNumberField('Votos en Blanco', _provBlankVotesController),
                           _buildNumberField('Votos Nulos', _provNullVotesController),
                           _buildNumberField('Votos Impugnados', _provChallengedVotesController),
-                          const Divider(color: AppColors.border, height: 24),
+                          Divider(color: borderColor, height: 24),
                           _buildNumberField('Total Votos Emitidos (Provincial)', _provTotalVotesController),
                         ],
                       ),
@@ -1262,7 +1281,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                           _buildNumberField('Votos en Blanco', _distBlankVotesController),
                           _buildNumberField('Votos Nulos', _distNullVotesController),
                           _buildNumberField('Votos Impugnados', _distChallengedVotesController),
-                          const Divider(color: AppColors.border, height: 24),
+                          Divider(color: borderColor, height: 24),
                           _buildNumberField('Total Votos Emitidos (Distrital)', _distTotalVotesController),
                         ],
                       ),
@@ -1288,7 +1307,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                           _buildNumberField('Electores Hábiles', _registeredVotersController),
                           _buildNumberField('Ciudadanos que Votaron', _votersWhoVotedController),
                           _buildNumberField('Total de Votos Emitidos', _totalVotesController),
-                          const Divider(color: AppColors.border, height: 24),
+                          Divider(color: borderColor, height: 24),
                           _buildNumberField('Votos en Blanco', _blankVotesController),
                           _buildNumberField('Votos Nulos', _nullVotesController),
                           _buildNumberField('Votos Impugnados', _challengedVotesController),
@@ -1308,11 +1327,11 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                           flex: 2,
                           child: OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.textPrimary,
-                              side: const BorderSide(color: AppColors.border, width: 1.5),
+                              foregroundColor: textPrimary,
+                              side: BorderSide(color: borderColor, width: 1.5),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              backgroundColor: AppColors.surfaceElevated,
+                              backgroundColor: surfaceColor,
                             ),
                             icon: const Icon(Icons.bookmark_border_rounded, size: 18),
                             label: const Text(
@@ -1366,9 +1385,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceOf(context),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: AppColors.borderOf(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1380,8 +1399,8 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: AppColors.textPrimaryOf(context),
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -1397,6 +1416,10 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
   }
 
   Widget _buildNumberField(String label, TextEditingController controller) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final inputFill = isDark ? const Color(0xFF0B1120) : const Color(0xFFF1F5F9);
+    final borderColor = AppColors.borderOf(context);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -1405,7 +1428,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+              style: TextStyle(color: AppColors.textSecondaryOf(context), fontSize: 13),
             ),
           ),
           SizedBox(
@@ -1414,14 +1437,18 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
               controller: controller,
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+              style: TextStyle(color: AppColors.textPrimaryOf(context), fontWeight: FontWeight.bold),
               decoration: InputDecoration(
                 contentPadding: const EdgeInsets.symmetric(vertical: 8),
                 filled: true,
-                fillColor: AppColors.background,
+                fillColor: inputFill,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.border),
+                  borderSide: BorderSide(color: borderColor),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: borderColor),
                 ),
               ),
               onChanged: (_) => _recalculateValidation(),

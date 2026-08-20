@@ -16,17 +16,17 @@ class ActDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final db = ref.watch(appDatabaseProvider);
+    final textPrimary = AppColors.textPrimaryOf(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        title: const Text(
+        title: Text(
           'Detalle de Acta Electoral',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.textPrimary),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: textPrimary),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          icon: Icon(Icons.arrow_back_rounded, color: textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -59,31 +59,31 @@ class ActDetailScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header Card
-                _buildHeaderCard(act, levelOption),
+                _buildHeaderCard(context, act, levelOption),
                 const SizedBox(height: 16),
 
                 // Resumen de Totales
                 if (totals != null) ...[
-                  _buildTotalsCard(totals),
+                  _buildTotalsCard(context, totals),
                   const SizedBox(height: 16),
                 ],
 
                 // Desglose por Organización Política
-                const Text(
+                Text(
                   'Resultados por Organización Política',
                   style: TextStyle(
-                    color: AppColors.textPrimary,
+                    color: textPrimary,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 10),
-                _buildResultsTable(results),
+                _buildResultsTable(context, results),
                 const SizedBox(height: 16),
 
                 // Evidencia Fotográfica
                 if (evidence != null) ...[
-                  _buildEvidenceCard(evidence),
+                  _buildEvidenceCard(context, evidence),
                   const SizedBox(height: 20),
                 ],
               ],
@@ -108,7 +108,11 @@ class ActDetailScreen extends ConsumerWidget {
     };
   }
 
-  Widget _buildHeaderCard(LocalAct act, ElectoralLevelOption level) {
+  Widget _buildHeaderCard(BuildContext context, LocalAct act, ElectoralLevelOption level) {
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textMuted = AppColors.textMutedOf(context);
+    final borderColor = AppColors.borderOf(context);
+
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,8 +134,8 @@ class ActDetailScreen extends ConsumerWidget {
                   children: [
                     Text(
                       level.title,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
+                      style: TextStyle(
+                        color: textPrimary,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -158,16 +162,16 @@ class ActDetailScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 12),
-          const Divider(color: AppColors.border, height: 1),
+          Divider(color: borderColor, height: 1),
           const SizedBox(height: 10),
           Row(
             children: [
-              const Icon(Icons.fingerprint_rounded, color: AppColors.textMuted, size: 14),
+              Icon(Icons.fingerprint_rounded, color: textMuted, size: 14),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   'UUID: ${act.clientActUuid}',
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 11, fontFamily: 'monospace'),
+                  style: TextStyle(color: textMuted, fontSize: 11, fontFamily: 'monospace'),
                 ),
               ),
             ],
@@ -177,31 +181,34 @@ class ActDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTotalsCard(LocalActTotal totals) {
+  Widget _buildTotalsCard(BuildContext context, LocalActTotal totals) {
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final borderColor = AppColors.borderOf(context);
+
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Totales del Acta',
-            style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 15),
+            style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 15),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _buildTotalItem('Electores Hábiles', '${totals.registeredVoters}')),
-              Expanded(child: _buildTotalItem('Ciudadanos que Votaron', '${totals.votersWhoVoted}')),
-              Expanded(child: _buildTotalItem('Total Votos Emitidos', '${totals.totalVotes}')),
+              Expanded(child: _buildTotalItem(context, 'Electores Hábiles', '${totals.registeredVoters}')),
+              Expanded(child: _buildTotalItem(context, 'Ciudadanos que Votaron', '${totals.votersWhoVoted}')),
+              Expanded(child: _buildTotalItem(context, 'Total Votos Emitidos', '${totals.totalVotes}')),
             ],
           ),
           const SizedBox(height: 10),
-          const Divider(color: AppColors.border, height: 1),
+          Divider(color: borderColor, height: 1),
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: _buildTotalItem('Votos en Blanco', '${totals.blankVotes}')),
-              Expanded(child: _buildTotalItem('Votos Nulos', '${totals.nullVotes}')),
-              Expanded(child: _buildTotalItem('Votos Impugnados', '${totals.challengedVotes}')),
+              Expanded(child: _buildTotalItem(context, 'Votos en Blanco', '${totals.blankVotes}')),
+              Expanded(child: _buildTotalItem(context, 'Votos Nulos', '${totals.nullVotes}')),
+              Expanded(child: _buildTotalItem(context, 'Votos Impugnados', '${totals.challengedVotes}')),
             ],
           ),
         ],
@@ -209,28 +216,36 @@ class ActDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTotalItem(String label, String value) {
+  Widget _buildTotalItem(BuildContext context, String label, String value) {
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textMuted = AppColors.textMutedOf(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(value, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+        Text(value, style: TextStyle(color: textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+        Text(label, style: TextStyle(color: textMuted, fontSize: 11)),
       ],
     );
   }
 
-  Widget _buildResultsTable(List<LocalActResult> results) {
+  Widget _buildResultsTable(BuildContext context, List<LocalActResult> results) {
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final borderColor = AppColors.borderOf(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final rowBadgeBg = isDark ? const Color(0xFF0B1120) : const Color(0xFFF1F5F9);
+
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surfaceOf(context),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
+        border: Border.all(color: borderColor),
       ),
       child: ListView.separated(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: results.length,
-        separatorBuilder: (_, __) => const Divider(color: AppColors.border, height: 1),
+        separatorBuilder: (_, __) => Divider(color: borderColor, height: 1),
         itemBuilder: (context, index) {
           final res = results[index];
           return Padding(
@@ -249,15 +264,15 @@ class ActDetailScreen extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     res.politicalOrganizationName ?? 'Organización ${index + 1}',
-                    style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
+                    style: TextStyle(color: textPrimary, fontWeight: FontWeight.w600, fontSize: 14),
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppColors.background,
+                    color: rowBadgeBg,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(color: borderColor),
                   ),
                   child: Text(
                     '${res.votes} votos',
@@ -272,17 +287,21 @@ class ActDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEvidenceCard(LocalActEvidence evidence) {
+  Widget _buildEvidenceCard(BuildContext context, LocalActEvidence evidence) {
     final file = File(evidence.localFilePath);
     final exists = file.existsSync();
+    final textPrimary = AppColors.textPrimaryOf(context);
+    final textMuted = AppColors.textMutedOf(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final placeholderBg = isDark ? const Color(0xFF0B1120) : const Color(0xFFF1F5F9);
 
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Evidencia Fotográfica del Acta',
-            style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 15),
+            style: TextStyle(color: textPrimary, fontWeight: FontWeight.bold, fontSize: 15),
           ),
           const SizedBox(height: 12),
           if (exists)
@@ -300,15 +319,15 @@ class ActDetailScreen extends ConsumerWidget {
               height: 120,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppColors.background,
+                color: placeholderBg,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Text('Foto guardada en almacenamiento local', style: TextStyle(color: AppColors.textMuted)),
+              child: Text('Foto guardada en almacenamiento local', style: TextStyle(color: textMuted)),
             ),
           const SizedBox(height: 8),
           Text(
             'SHA-256: ${evidence.sha256Hash}',
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 11, fontFamily: 'monospace'),
+            style: TextStyle(color: textMuted, fontSize: 11, fontFamily: 'monospace'),
           ),
         ],
       ),
