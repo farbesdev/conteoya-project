@@ -260,6 +260,7 @@ class PollingStationController extends Controller
             'district_name'     => $districtName,
             'province_name'     => $provinceName,
             'department_name'   => $departmentName,
+            'odpe'              => $station->odpe,
             'registered_voters' => $station->registered_voters,
             'status'            => $station->status,
         ];

@@ -411,7 +411,7 @@ class _MesaSearchSelectorModalState extends ConsumerState<MesaSearchSelectorModa
                                           ),
                                         ),
                                         Text(
-                                          '${mesa.districtName} — ${mesa.provinceName}, ${mesa.departmentName}',
+                                          '${mesa.odpe != null && mesa.odpe!.trim().isNotEmpty ? 'ODPE ${mesa.odpe!.toUpperCase().replaceAll("ODPE ", "")} • ' : ''}${mesa.districtName} — ${mesa.provinceName}, ${mesa.departmentName}',
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(

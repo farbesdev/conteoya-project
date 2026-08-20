@@ -183,7 +183,7 @@ class PersoneroActasScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '${mesa.locationName} — ${mesa.districtName}, ${mesa.provinceName}',
+            '${mesa.locationName} — ${mesa.odpe != null && mesa.odpe!.trim().isNotEmpty ? 'ODPE ${mesa.odpe!.toUpperCase().replaceAll("ODPE ", "")} • ' : ''}${mesa.districtName}, ${mesa.provinceName}, ${mesa.departmentName}',
             style: TextStyle(color: textMuted, fontSize: 12),
           ),
         ],

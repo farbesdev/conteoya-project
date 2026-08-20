@@ -4,7 +4,6 @@ import '../../../core/providers.dart';
 import '../../../core/sync/sync_engine.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/app_card.dart';
-import '../../acts/presentation/act_detail_screen.dart';
 import '../../acts/presentation/act_form_screen.dart';
 import '../../auth/domain/auth_state.dart';
 import '../../auth/presentation/auth_notifier.dart';
@@ -218,9 +217,12 @@ class PersoneroDashboardScreen extends ConsumerWidget {
             children: [
               Icon(Icons.location_on_outlined, color: textMuted, size: 15),
               const SizedBox(width: 6),
-              Text(
-                '${mesa.districtName} • ${mesa.provinceName}',
-                style: TextStyle(color: textSecondary, fontSize: 12),
+              Expanded(
+                child: Text(
+                  '${mesa.odpe != null && mesa.odpe!.trim().isNotEmpty ? 'ODPE ${mesa.odpe!.toUpperCase().replaceAll("ODPE ", "")} • ' : ''}${mesa.districtName} • ${mesa.provinceName} • ${mesa.departmentName}',
+                  style: TextStyle(color: textSecondary, fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),

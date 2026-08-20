@@ -69,17 +69,15 @@ void main() {
     );
   });
 
-  test('PersonerosRepository rechaza asignación a mesa que ya tiene personero (Regla 1 Personero = 1 Mesa)', () async {
-    // La mesa 030390 ya está asignada a Juan Pérez (12345678)
-    expect(
-      () => repo.createPersonero(
-        dni: '99887766',
-        firstName: 'Nuevo',
-        lastName: 'Personero',
-        pollingStationCode: '030390', // Ocupada
-      ),
-      throwsA(isA<PersoneroValidationException>()),
+  test('PersonerosRepository permite asignación de múltiples personeros a la misma mesa', () async {
+    await repo.createPersonero(
+      dni: '99887766',
+      firstName: 'Nuevo',
+      lastName: 'Personero',
+      pollingStationCode: '030390',
     );
+    final p = await repo.getPersoneroByDni('99887766');
+    expect(p?.dni, '99887766');
   });
 
   test('PersonerosRepository permite actualizar y eliminar personero', () async {

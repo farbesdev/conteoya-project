@@ -86,6 +86,7 @@ class LocalPollingStationsTable extends Table {
   TextColumn get districtName => text().withDefault(const Constant('LIMA - CERCADO'))();
   TextColumn get provinceName => text().withDefault(const Constant('LIMA'))();
   TextColumn get departmentName => text().withDefault(const Constant('LIMA'))();
+  TextColumn get odpe => text().nullable()();
   IntColumn get registeredVoters => integer().withDefault(const Constant(300))();
   TextColumn get status => text().withDefault(const Constant('ACTIVA'))();
 }

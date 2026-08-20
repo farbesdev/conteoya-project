@@ -212,6 +212,7 @@ class SyncEngine {
                   districtName: Value(item['district_name']?.toString() ?? 'DISTRITO'),
                   provinceName: Value(item['province_name']?.toString() ?? 'PROVINCIA'),
                   departmentName: Value(item['department_name']?.toString() ?? 'DEPARTAMENTO'),
+                  odpe: Value(item['odpe']?.toString()),
                   registeredVoters: Value((item['registered_voters'] as int?) ?? 300),
                   status: Value(item['status']?.toString() ?? 'ACTIVE'),
                 ),

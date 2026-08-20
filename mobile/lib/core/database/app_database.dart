@@ -22,7 +22,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -42,6 +42,11 @@ class AppDatabase extends _$AppDatabase {
               await migrator.addColumn(localPersonerosTable, localPersonerosTable.isActive);
             } catch (_) {}
           }
+          if (from < 8) {
+            try {
+              await migrator.addColumn(localPollingStationsTable, localPollingStationsTable.odpe);
+            } catch (_) {}
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
@@ -53,7 +58,8 @@ class AppDatabase extends _$AppDatabase {
           try {
             final stationColumns = await customSelect("PRAGMA table_info('local_polling_stations_table')").get();
             final hasDistrictName = stationColumns.any((row) => row.read<String>('name') == 'district_name');
-            if (!hasDistrictName) {
+            final hasOdpe = stationColumns.any((row) => row.read<String>('name') == 'odpe');
+            if (!hasDistrictName || !hasOdpe) {
               await m.drop(localPollingStationsTable);
               await m.createTable(localPollingStationsTable);
             }

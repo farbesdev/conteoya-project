@@ -324,8 +324,9 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
                     return m.code.toLowerCase().contains(_searchQuery) ||
                         m.locationName.toLowerCase().contains(_searchQuery) ||
                         m.districtName.toLowerCase().contains(_searchQuery) ||
-                        (m.provinceName?.toLowerCase().contains(_searchQuery) ?? false) ||
-                        (m.departmentName?.toLowerCase().contains(_searchQuery) ?? false);
+                        (m.odpe?.toLowerCase().contains(_searchQuery) ?? false) ||
+                        (m.provinceName.toLowerCase().contains(_searchQuery)) ||
+                        (m.departmentName.toLowerCase().contains(_searchQuery));
                   }).toList();
                 }
 
@@ -435,7 +436,7 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Mesa + Electores
+          // Header Mesa + ODPE + Electores
           Row(
             children: [
               Container(
@@ -453,6 +454,29 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
                   ),
                 ),
               ),
+              if (mesa.odpe != null && mesa.odpe!.trim().isNotEmpty) ...[
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.info.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      mesa.odpe!.toUpperCase().startsWith('ODPE')
+                          ? mesa.odpe!.toUpperCase()
+                          : 'ODPE ${mesa.odpe!.toUpperCase()}',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColors.info,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               const Spacer(),
               Text(
                 '${mesa.registeredVoters} electores',
@@ -462,7 +486,7 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
           ),
           const SizedBox(height: 8),
 
-          // Local y Distrito
+          // Local de Votación
           Text(
             mesa.locationName,
             style: TextStyle(
@@ -471,9 +495,21 @@ class _AdminActasScreenState extends ConsumerState<AdminActasScreen> {
               fontSize: 15,
             ),
           ),
-          Text(
-            mesa.districtName,
-            style: TextStyle(color: textSecondary, fontSize: 12),
+          const SizedBox(height: 2),
+
+          // Ubigeo: Distrito • Provincia • Departamento
+          Row(
+            children: [
+              Icon(Icons.location_on_outlined, color: textMuted, size: 13),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  '${mesa.districtName} • ${mesa.provinceName} • ${mesa.departmentName}',
+                  style: TextStyle(color: textSecondary, fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 6),
 

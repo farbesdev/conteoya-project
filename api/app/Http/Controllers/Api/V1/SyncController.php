@@ -117,6 +117,7 @@ class SyncController extends Controller
                 'district_name'     => $dist?->name ?? $station->district_name ?? 'DISTRITO',
                 'province_name'     => $prov?->name ?? $station->province_name ?? 'PROVINCIA',
                 'department_name'   => $dept?->name ?? $station->department_name ?? 'DEPARTAMENTO',
+                'odpe'              => $station->odpe,
                 'registered_voters' => $station->registered_voters,
                 'status'            => $station->status,
             ];

@@ -25,6 +25,7 @@ class MesaModel {
   final String districtName;
   final String provinceName;
   final String departmentName;
+  final String? odpe;
   final int registeredVoters;
   final String status;
   final String? assignedPersoneroName;
@@ -40,6 +41,7 @@ class MesaModel {
     required this.districtName,
     required this.provinceName,
     required this.departmentName,
+    this.odpe,
     required this.registeredVoters,
     required this.status,
     this.assignedPersoneroName,

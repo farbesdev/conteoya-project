@@ -3449,6 +3449,15 @@ class $LocalPollingStationsTableTable extends LocalPollingStationsTable
     requiredDuringInsert: false,
     defaultValue: const Constant('LIMA'),
   );
+  static const VerificationMeta _odpeMeta = const VerificationMeta('odpe');
+  @override
+  late final GeneratedColumn<String> odpe = GeneratedColumn<String>(
+    'odpe',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _registeredVotersMeta = const VerificationMeta(
     'registeredVoters',
   );
@@ -3480,6 +3489,7 @@ class $LocalPollingStationsTableTable extends LocalPollingStationsTable
     districtName,
     provinceName,
     departmentName,
+    odpe,
     registeredVoters,
     status,
   ];
@@ -3553,6 +3563,12 @@ class $LocalPollingStationsTableTable extends LocalPollingStationsTable
         ),
       );
     }
+    if (data.containsKey('odpe')) {
+      context.handle(
+        _odpeMeta,
+        odpe.isAcceptableOrUnknown(data['odpe']!, _odpeMeta),
+      );
+    }
     if (data.containsKey('registered_voters')) {
       context.handle(
         _registeredVotersMeta,
@@ -3605,6 +3621,10 @@ class $LocalPollingStationsTableTable extends LocalPollingStationsTable
         DriftSqlType.string,
         data['${effectivePrefix}department_name'],
       )!,
+      odpe: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}odpe'],
+      ),
       registeredVoters: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}registered_voters'],
@@ -3631,6 +3651,7 @@ class LocalPollingStation extends DataClass
   final String districtName;
   final String provinceName;
   final String departmentName;
+  final String? odpe;
   final int registeredVoters;
   final String status;
   const LocalPollingStation({
@@ -3641,6 +3662,7 @@ class LocalPollingStation extends DataClass
     required this.districtName,
     required this.provinceName,
     required this.departmentName,
+    this.odpe,
     required this.registeredVoters,
     required this.status,
   });
@@ -3654,6 +3676,9 @@ class LocalPollingStation extends DataClass
     map['district_name'] = Variable<String>(districtName);
     map['province_name'] = Variable<String>(provinceName);
     map['department_name'] = Variable<String>(departmentName);
+    if (!nullToAbsent || odpe != null) {
+      map['odpe'] = Variable<String>(odpe);
+    }
     map['registered_voters'] = Variable<int>(registeredVoters);
     map['status'] = Variable<String>(status);
     return map;
@@ -3668,6 +3693,7 @@ class LocalPollingStation extends DataClass
       districtName: Value(districtName),
       provinceName: Value(provinceName),
       departmentName: Value(departmentName),
+      odpe: odpe == null && nullToAbsent ? const Value.absent() : Value(odpe),
       registeredVoters: Value(registeredVoters),
       status: Value(status),
     );
@@ -3686,6 +3712,7 @@ class LocalPollingStation extends DataClass
       districtName: serializer.fromJson<String>(json['districtName']),
       provinceName: serializer.fromJson<String>(json['provinceName']),
       departmentName: serializer.fromJson<String>(json['departmentName']),
+      odpe: serializer.fromJson<String?>(json['odpe']),
       registeredVoters: serializer.fromJson<int>(json['registeredVoters']),
       status: serializer.fromJson<String>(json['status']),
     );
@@ -3701,6 +3728,7 @@ class LocalPollingStation extends DataClass
       'districtName': serializer.toJson<String>(districtName),
       'provinceName': serializer.toJson<String>(provinceName),
       'departmentName': serializer.toJson<String>(departmentName),
+      'odpe': serializer.toJson<String?>(odpe),
       'registeredVoters': serializer.toJson<int>(registeredVoters),
       'status': serializer.toJson<String>(status),
     };
@@ -3714,6 +3742,7 @@ class LocalPollingStation extends DataClass
     String? districtName,
     String? provinceName,
     String? departmentName,
+    Value<String?> odpe = const Value.absent(),
     int? registeredVoters,
     String? status,
   }) => LocalPollingStation(
@@ -3724,6 +3753,7 @@ class LocalPollingStation extends DataClass
     districtName: districtName ?? this.districtName,
     provinceName: provinceName ?? this.provinceName,
     departmentName: departmentName ?? this.departmentName,
+    odpe: odpe.present ? odpe.value : this.odpe,
     registeredVoters: registeredVoters ?? this.registeredVoters,
     status: status ?? this.status,
   );
@@ -3748,6 +3778,7 @@ class LocalPollingStation extends DataClass
       departmentName: data.departmentName.present
           ? data.departmentName.value
           : this.departmentName,
+      odpe: data.odpe.present ? data.odpe.value : this.odpe,
       registeredVoters: data.registeredVoters.present
           ? data.registeredVoters.value
           : this.registeredVoters,
@@ -3765,6 +3796,7 @@ class LocalPollingStation extends DataClass
           ..write('districtName: $districtName, ')
           ..write('provinceName: $provinceName, ')
           ..write('departmentName: $departmentName, ')
+          ..write('odpe: $odpe, ')
           ..write('registeredVoters: $registeredVoters, ')
           ..write('status: $status')
           ..write(')'))
@@ -3780,6 +3812,7 @@ class LocalPollingStation extends DataClass
     districtName,
     provinceName,
     departmentName,
+    odpe,
     registeredVoters,
     status,
   );
@@ -3794,6 +3827,7 @@ class LocalPollingStation extends DataClass
           other.districtName == this.districtName &&
           other.provinceName == this.provinceName &&
           other.departmentName == this.departmentName &&
+          other.odpe == this.odpe &&
           other.registeredVoters == this.registeredVoters &&
           other.status == this.status);
 }
@@ -3807,6 +3841,7 @@ class LocalPollingStationsTableCompanion
   final Value<String> districtName;
   final Value<String> provinceName;
   final Value<String> departmentName;
+  final Value<String?> odpe;
   final Value<int> registeredVoters;
   final Value<String> status;
   const LocalPollingStationsTableCompanion({
@@ -3817,6 +3852,7 @@ class LocalPollingStationsTableCompanion
     this.districtName = const Value.absent(),
     this.provinceName = const Value.absent(),
     this.departmentName = const Value.absent(),
+    this.odpe = const Value.absent(),
     this.registeredVoters = const Value.absent(),
     this.status = const Value.absent(),
   });
@@ -3828,6 +3864,7 @@ class LocalPollingStationsTableCompanion
     this.districtName = const Value.absent(),
     this.provinceName = const Value.absent(),
     this.departmentName = const Value.absent(),
+    this.odpe = const Value.absent(),
     this.registeredVoters = const Value.absent(),
     this.status = const Value.absent(),
   }) : code = Value(code),
@@ -3840,6 +3877,7 @@ class LocalPollingStationsTableCompanion
     Expression<String>? districtName,
     Expression<String>? provinceName,
     Expression<String>? departmentName,
+    Expression<String>? odpe,
     Expression<int>? registeredVoters,
     Expression<String>? status,
   }) {
@@ -3851,6 +3889,7 @@ class LocalPollingStationsTableCompanion
       if (districtName != null) 'district_name': districtName,
       if (provinceName != null) 'province_name': provinceName,
       if (departmentName != null) 'department_name': departmentName,
+      if (odpe != null) 'odpe': odpe,
       if (registeredVoters != null) 'registered_voters': registeredVoters,
       if (status != null) 'status': status,
     });
@@ -3864,6 +3903,7 @@ class LocalPollingStationsTableCompanion
     Value<String>? districtName,
     Value<String>? provinceName,
     Value<String>? departmentName,
+    Value<String?>? odpe,
     Value<int>? registeredVoters,
     Value<String>? status,
   }) {
@@ -3875,6 +3915,7 @@ class LocalPollingStationsTableCompanion
       districtName: districtName ?? this.districtName,
       provinceName: provinceName ?? this.provinceName,
       departmentName: departmentName ?? this.departmentName,
+      odpe: odpe ?? this.odpe,
       registeredVoters: registeredVoters ?? this.registeredVoters,
       status: status ?? this.status,
     );
@@ -3904,6 +3945,9 @@ class LocalPollingStationsTableCompanion
     if (departmentName.present) {
       map['department_name'] = Variable<String>(departmentName.value);
     }
+    if (odpe.present) {
+      map['odpe'] = Variable<String>(odpe.value);
+    }
     if (registeredVoters.present) {
       map['registered_voters'] = Variable<int>(registeredVoters.value);
     }
@@ -3923,6 +3967,7 @@ class LocalPollingStationsTableCompanion
           ..write('districtName: $districtName, ')
           ..write('provinceName: $provinceName, ')
           ..write('departmentName: $departmentName, ')
+          ..write('odpe: $odpe, ')
           ..write('registeredVoters: $registeredVoters, ')
           ..write('status: $status')
           ..write(')'))
@@ -6506,6 +6551,7 @@ typedef $$LocalPollingStationsTableTableCreateCompanionBuilder =
       Value<String> districtName,
       Value<String> provinceName,
       Value<String> departmentName,
+      Value<String?> odpe,
       Value<int> registeredVoters,
       Value<String> status,
     });
@@ -6518,6 +6564,7 @@ typedef $$LocalPollingStationsTableTableUpdateCompanionBuilder =
       Value<String> districtName,
       Value<String> provinceName,
       Value<String> departmentName,
+      Value<String?> odpe,
       Value<int> registeredVoters,
       Value<String> status,
     });
@@ -6563,6 +6610,11 @@ class $$LocalPollingStationsTableTableFilterComposer
 
   ColumnFilters<String> get departmentName => $composableBuilder(
     column: $table.departmentName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get odpe => $composableBuilder(
+    column: $table.odpe,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6621,6 +6673,11 @@ class $$LocalPollingStationsTableTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get odpe => $composableBuilder(
+    column: $table.odpe,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get registeredVoters => $composableBuilder(
     column: $table.registeredVoters,
     builder: (column) => ColumnOrderings(column),
@@ -6671,6 +6728,9 @@ class $$LocalPollingStationsTableTableAnnotationComposer
     column: $table.departmentName,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get odpe =>
+      $composableBuilder(column: $table.odpe, builder: (column) => column);
 
   GeneratedColumn<int> get registeredVoters => $composableBuilder(
     column: $table.registeredVoters,
@@ -6734,6 +6794,7 @@ class $$LocalPollingStationsTableTableTableManager
                 Value<String> districtName = const Value.absent(),
                 Value<String> provinceName = const Value.absent(),
                 Value<String> departmentName = const Value.absent(),
+                Value<String?> odpe = const Value.absent(),
                 Value<int> registeredVoters = const Value.absent(),
                 Value<String> status = const Value.absent(),
               }) => LocalPollingStationsTableCompanion(
@@ -6744,6 +6805,7 @@ class $$LocalPollingStationsTableTableTableManager
                 districtName: districtName,
                 provinceName: provinceName,
                 departmentName: departmentName,
+                odpe: odpe,
                 registeredVoters: registeredVoters,
                 status: status,
               ),
@@ -6756,6 +6818,7 @@ class $$LocalPollingStationsTableTableTableManager
                 Value<String> districtName = const Value.absent(),
                 Value<String> provinceName = const Value.absent(),
                 Value<String> departmentName = const Value.absent(),
+                Value<String?> odpe = const Value.absent(),
                 Value<int> registeredVoters = const Value.absent(),
                 Value<String> status = const Value.absent(),
               }) => LocalPollingStationsTableCompanion.insert(
@@ -6766,6 +6829,7 @@ class $$LocalPollingStationsTableTableTableManager
                 districtName: districtName,
                 provinceName: provinceName,
                 departmentName: departmentName,
+                odpe: odpe,
                 registeredVoters: registeredVoters,
                 status: status,
               ),
