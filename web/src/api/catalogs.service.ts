@@ -35,6 +35,14 @@ export interface ElectionItem {
   }>
 }
 
+export interface PoliticalOrgItem {
+  id: number
+  name: string
+  short_name?: string
+  logo_url?: string
+  status?: string
+}
+
 export const catalogsService = {
   async getDepartments(): Promise<{ data: DepartmentItem[] }> {
     return apiClient<{ data: DepartmentItem[] }>('/departments')
@@ -57,5 +65,9 @@ export const catalogsService = {
 
   async getElections(): Promise<{ data: ElectionItem[] }> {
     return apiClient<{ data: ElectionItem[] }>('/elections')
+  },
+
+  async getPoliticalOrganizations(): Promise<{ data: PoliticalOrgItem[] }> {
+    return apiClient<{ data: PoliticalOrgItem[] }>('/political-organizations')
   },
 }

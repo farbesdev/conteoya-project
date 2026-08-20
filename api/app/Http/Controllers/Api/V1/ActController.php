@@ -179,4 +179,61 @@ class ActController extends Controller
             'data'    => new ActResource($confirmed),
         ]);
     }
+
+    /**
+     * Actualizar Acta Electoral (Admin / Director)
+     */
+    public function update(Request $request, Act $act): JsonResponse
+    {
+        Gate::authorize('update', $act);
+
+        if ($request->has('status')) {
+            $act->status = $request->input('status');
+            if ($act->status === 'CONFIRMED' && !$act->confirmed_at) {
+                $act->confirmed_at = now();
+            }
+        }
+        if ($request->filled('act_code')) {
+            $act->act_code = $request->input('act_code');
+        }
+        $act->save();
+
+        if ($request->filled('totals') && is_array($request->input('totals'))) {
+            $totals = $request->input('totals');
+            $act->totals()->updateOrCreate(
+                ['act_id' => $act->id],
+                array_filter([
+                    'total_votes'      => $totals['total_votes'] ?? null,
+                    'voters_who_voted' => $totals['voters_who_voted'] ?? null,
+                    'blank_votes'      => $totals['blank_votes'] ?? null,
+                    'null_votes'       => $totals['null_votes'] ?? null,
+                    'challenged_votes' => $totals['challenged_votes'] ?? null,
+                ], fn ($v) => !is_null($v))
+            );
+        }
+
+        return response()->json([
+            'message' => 'Acta electoral actualizada exitosamente.',
+            'data'    => new ActResource($act->fresh(['totals', 'results.politicalOrganization', 'evidences', 'pollingStation'])),
+        ]);
+    }
+
+    /**
+     * Eliminar Acta Electoral (Admin)
+     */
+    public function destroy(Request $request, Act $act): JsonResponse
+    {
+        Gate::authorize('delete', $act);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($act) {
+            $act->evidence()->delete();
+            $act->results()->delete();
+            $act->totals()->delete();
+            $act->delete();
+        });
+
+        return response()->json([
+            'message' => 'Acta electoral eliminada exitosamente del sistema.',
+        ]);
+    }
 }

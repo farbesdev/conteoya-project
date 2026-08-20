@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useResultsStore } from '@/stores/useResultsStore'
 import { useRealtimeStore } from '@/stores/useRealtimeStore'
+import { useAuthStore } from '@/stores/useAuthStore'
+import NavbarThemeSwitcher from '@/layouts/components/NavbarThemeSwitcher.vue'
 import ResultsSummaryCards from '@/views/resultados/ResultsSummaryCards.vue'
 import ElectionBarsChart from '@/views/resultados/ElectionBarsChart.vue'
 import UbigeoCascadeFilter from '@/views/resultados/UbigeoCascadeFilter.vue'
@@ -15,6 +17,7 @@ definePage({
 
 const resultsStore = useResultsStore()
 const realtimeStore = useRealtimeStore()
+const authStore = useAuthStore()
 
 const isPresentationOpen = ref(false)
 
@@ -30,9 +33,9 @@ onUnmounted(() => {
 
 <template>
   <div class="results-public-layout min-h-screen bg-surface">
-    <!-- Navbar Superior Público -->
+    <!-- Navbar Superior Público Standalone (Sin layout default) -->
     <header class="public-header border-b bg-background px-4 py-3 sticky-top">
-      <div class="d-flex align-center justify-space-between max-w-7xl mx-auto">
+      <div class="d-flex align-center justify-space-between max-w-7xl mx-auto flex-wrap gap-2">
         <!-- Logo y Título -->
         <div class="d-flex align-center gap-x-3">
           <VAvatar color="primary" variant="flat" size="42" class="elevation-1">
@@ -48,8 +51,9 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Acciones: Live Indicator, TV Mode, Login -->
+        <!-- Acciones: Indicador en Vivo, Selector de Tema, Modo TV, Botón de Acceso -->
         <div class="d-flex align-center gap-x-2">
+          <!-- Indicador Realtime -->
           <VChip
             :color="realtimeStore.isConnected ? 'success' : 'warning'"
             variant="tonal"
@@ -60,6 +64,10 @@ onUnmounted(() => {
             {{ realtimeStore.isConnected ? 'EN VIVO' : 'ACTUALIZANDO' }}
           </VChip>
 
+          <!-- Selector de Tema (Light / Dark / System) -->
+          <NavbarThemeSwitcher />
+
+          <!-- Modo TV / Proyección -->
           <VBtn
             variant="tonal"
             color="primary"
@@ -70,7 +78,20 @@ onUnmounted(() => {
             Modo TV
           </VBtn>
 
+          <!-- Acceso al Panel / Login -->
           <VBtn
+            v-if="authStore.isAuthenticated"
+            to="/admin/dashboard"
+            variant="flat"
+            color="primary"
+            prepend-icon="ri-dashboard-line"
+            size="small"
+          >
+            Panel Admin
+          </VBtn>
+
+          <VBtn
+            v-else
             to="/login"
             variant="outlined"
             color="secondary"

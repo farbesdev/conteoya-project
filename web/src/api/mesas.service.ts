@@ -35,22 +35,42 @@ export const mesasService = {
     return apiClient<{ message: string; data: PollingStationItem }>(`/polling-stations/${id}`)
   },
 
-  async create(data: { code: string; registered_voters: number; status?: string; location_name?: string }): Promise<any> {
-    return apiClient('/polling-stations', {
+  async create(data: {
+    code: string
+    registered_voters: number
+    status?: string
+    location_name?: string
+    address?: string
+    department_name?: string
+    province_name?: string
+    district_name?: string
+    odpe?: string
+  }): Promise<{ message: string; data: PollingStationItem }> {
+    return apiClient<{ message: string; data: PollingStationItem }>('/polling-stations', {
       method: 'POST',
       body: data,
     })
   },
 
-  async update(id: number, data: { code?: string; registered_voters?: number; status?: string }): Promise<any> {
-    return apiClient(`/polling-stations/${id}`, {
+  async update(id: number, data: {
+    code?: string
+    registered_voters?: number
+    status?: string
+    location_name?: string
+    address?: string
+    department_name?: string
+    province_name?: string
+    district_name?: string
+    odpe?: string
+  }): Promise<{ message: string; data: PollingStationItem }> {
+    return apiClient<{ message: string; data: PollingStationItem }>(`/polling-stations/${id}`, {
       method: 'PUT',
       body: data,
     })
   },
 
-  async delete(id: number): Promise<any> {
-    return apiClient(`/polling-stations/${id}`, {
+  async delete(id: number): Promise<{ message: string }> {
+    return apiClient<{ message: string }>(`/polling-stations/${id}`, {
       method: 'DELETE',
     })
   },

@@ -25,6 +25,9 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
 
         // Personero, Users & Mesas
         Route::get('/personeros', [\App\Http\Controllers\Api\V1\PersoneroController::class, 'index']);
+        Route::post('/personeros', [\App\Http\Controllers\Api\V1\PersoneroController::class, 'store']);
+        Route::get('/personeros/{id}', [\App\Http\Controllers\Api\V1\PersoneroController::class, 'show']);
+        Route::put('/personeros/{id}', [\App\Http\Controllers\Api\V1\PersoneroController::class, 'update']);
         Route::delete('/personeros/{id}', [\App\Http\Controllers\Api\V1\PersoneroController::class, 'destroy']);
         Route::post('/personeros/{id}/polling-stations', [\App\Http\Controllers\Api\V1\PersoneroController::class, 'assignPollingStations']);
         Route::apiResource('polling-stations', \App\Http\Controllers\Api\V1\PollingStationController::class);
@@ -54,6 +57,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         });
 
         Route::get('/acts/{act}', [\App\Http\Controllers\Api\V1\ActController::class, 'show']);
+        Route::put('/acts/{act}', [\App\Http\Controllers\Api\V1\ActController::class, 'update']);
+        Route::delete('/acts/{act}', [\App\Http\Controllers\Api\V1\ActController::class, 'destroy']);
         Route::get('/acts/{act}/evidence/{evidence}/download', [\App\Http\Controllers\Api\V1\EvidenceController::class, 'download']);
 
         // Reconocimiento Asistido OCR / IA (Human-in-the-Loop)

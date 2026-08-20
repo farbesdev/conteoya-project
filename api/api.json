@@ -491,6 +491,128 @@
                         "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
+            },
+            "put": {
+                "operationId": "act.update",
+                "summary": "Actualizar Acta Electoral (Admin / Director)",
+                "tags": [
+                    "Actas Electorales",
+                    "Act"
+                ],
+                "parameters": [
+                    {
+                        "name": "act",
+                        "in": "path",
+                        "required": true,
+                        "description": "The act ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "status": {
+                                        "type": "string"
+                                    },
+                                    "act_code": {
+                                        "type": "string"
+                                    },
+                                    "totals": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Acta electoral actualizada exitosamente."
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/ActResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "act.destroy",
+                "summary": "Eliminar Acta Electoral (Admin)",
+                "tags": [
+                    "Actas Electorales",
+                    "Act"
+                ],
+                "parameters": [
+                    {
+                        "name": "act",
+                        "in": "path",
+                        "required": true,
+                        "description": "The act ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Acta electoral eliminada exitosamente del sistema."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
             }
         },
         "/v1/login": {
@@ -2832,9 +2954,485 @@
                         "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
+            },
+            "post": {
+                "operationId": "personero.store",
+                "summary": "Crear nuevo personero",
+                "tags": [
+                    "Personeros",
+                    "Personero"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "document_number": {
+                                        "type": "string",
+                                        "minLength": 8,
+                                        "maxLength": 12
+                                    },
+                                    "first_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 100
+                                    },
+                                    "last_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 100
+                                    },
+                                    "name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 200
+                                    },
+                                    "email": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "format": "email",
+                                        "maxLength": 150
+                                    },
+                                    "phone_number": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 30
+                                    },
+                                    "political_org_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 200
+                                    },
+                                    "polling_station_codes": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "polling_station_ids": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "required": [
+                                    "document_number"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Personero registrado exitosamente."
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Personero"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
             }
         },
         "/v1/personeros/{id}": {
+            "get": {
+                "operationId": "personero.show",
+                "summary": "Ver Ficha Detallada de Personero",
+                "tags": [
+                    "Personeros",
+                    "Personero"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Ficha de personero obtenida exitosamente."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "user_id": {
+                                                    "type": "string"
+                                                },
+                                                "document_number": {
+                                                    "type": "string"
+                                                },
+                                                "dni": {
+                                                    "type": "string"
+                                                },
+                                                "first_name": {},
+                                                "last_name": {
+                                                    "type": "string"
+                                                },
+                                                "full_name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "Personero Registrado"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "Personero Registrado"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "phone_number": {
+                                                    "type": "string"
+                                                },
+                                                "email": {
+                                                    "type": "string"
+                                                },
+                                                "political_organization_name": {
+                                                    "type": "string"
+                                                },
+                                                "political_org_name": {
+                                                    "type": "string"
+                                                },
+                                                "personero_type": {
+                                                    "type": "string"
+                                                },
+                                                "abogado_responsable": {
+                                                    "type": "string"
+                                                },
+                                                "jee_name": {
+                                                    "type": "string"
+                                                },
+                                                "department_name": {
+                                                    "type": "string"
+                                                },
+                                                "province_name": {
+                                                    "type": "string"
+                                                },
+                                                "district_name": {
+                                                    "type": "string"
+                                                },
+                                                "is_active": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "boolean"
+                                                        }
+                                                    ]
+                                                },
+                                                "status": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "RECONOCIDO"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "assigned_polling_stations": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/PollingStation"
+                                                    }
+                                                },
+                                                "polling_station_codes": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "user_id",
+                                                "document_number",
+                                                "dni",
+                                                "first_name",
+                                                "last_name",
+                                                "full_name",
+                                                "name",
+                                                "phone_number",
+                                                "email",
+                                                "political_organization_name",
+                                                "political_org_name",
+                                                "personero_type",
+                                                "abogado_responsable",
+                                                "jee_name",
+                                                "department_name",
+                                                "province_name",
+                                                "district_name",
+                                                "is_active",
+                                                "status",
+                                                "assigned_polling_stations",
+                                                "polling_station_codes"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Personero no encontrado."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "personero.update",
+                "summary": "Actualizar datos del personero",
+                "tags": [
+                    "Personeros",
+                    "Personero"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "first_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 100
+                                    },
+                                    "last_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 100
+                                    },
+                                    "name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 200
+                                    },
+                                    "phone_number": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 30
+                                    },
+                                    "email": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "format": "email",
+                                        "maxLength": 150
+                                    },
+                                    "political_org_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 200
+                                    },
+                                    "polling_station_ids": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "polling_station_codes": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "is_active": {
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Personero actualizado exitosamente."
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Personero"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Personero no encontrado."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
             "delete": {
                 "operationId": "personero.destroy",
                 "description": "Elimina el perfil de personero, sus asignaciones de mesas y su cuenta de usuario asociada.",
@@ -5247,6 +5845,16 @@
                 "additionalItems": false,
                 "title": "ElectoralList"
             },
+            "Personero": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "minItems": 0,
+                "maxItems": 0,
+                "additionalItems": false,
+                "title": "Personero"
+            },
             "PoliticalOrganization": {
                 "type": "array",
                 "items": {
@@ -5256,6 +5864,16 @@
                 "maxItems": 0,
                 "additionalItems": false,
                 "title": "PoliticalOrganization"
+            },
+            "PollingStation": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "minItems": 0,
+                "maxItems": 0,
+                "additionalItems": false,
+                "title": "PollingStation"
             },
             "Province": {
                 "type": "array",
