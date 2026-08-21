@@ -106,4 +106,66 @@ class CandidateCvSyncController extends Controller
             'data'    => $current,
         ]);
     }
+
+    /**
+     * Obtener Hoja de Vida de un Candidato
+     */
+    public function getCv(int $candidateId): JsonResponse
+    {
+        $candidate = Candidate::findOrFail($candidateId);
+        $cv = CandidateCv::where('candidate_id', $candidate->id)
+            ->orWhere('id_hoja_vida', (string) $candidate->id_hoja_vida)
+            ->first();
+
+        return response()->json([
+            'message'   => 'Hoja de vida obtenida.',
+            'candidate' => $candidate,
+            'data'      => $cv,
+        ]);
+    }
+
+    /**
+     * Crear o Actualizar Hoja de Vida de un Candidato con Editor de Texto/JSON
+     */
+    public function updateCv(Request $request, int $candidateId): JsonResponse
+    {
+        $candidate = Candidate::findOrFail($candidateId);
+
+        $request->validate([
+            'id_hoja_vida'         => 'nullable|string|max:100',
+            'general_data'         => 'nullable',
+            'academic_data'        => 'nullable',
+            'work_experience'      => 'nullable',
+            'political_trajectory' => 'nullable',
+            'sworn_declaration'    => 'nullable',
+            'penal_sentences'      => 'nullable',
+            'additional_info'      => 'nullable',
+        ]);
+
+        $idHojaVida = $request->input('id_hoja_vida', $candidate->id_hoja_vida) ?: ('HV_' . $candidate->id);
+
+        // Si cambió el id_hoja_vida, actualizarlo en el candidato
+        if ($request->filled('id_hoja_vida') && $request->input('id_hoja_vida') !== $candidate->id_hoja_vida) {
+            $candidate->update(['id_hoja_vida' => $request->input('id_hoja_vida')]);
+        }
+
+        $cv = CandidateCv::updateOrCreate(
+            ['id_hoja_vida' => (string) $idHojaVida],
+            [
+                'candidate_id'         => $candidate->id,
+                'general_data'         => $request->input('general_data'),
+                'academic_data'        => $request->input('academic_data'),
+                'work_experience'      => $request->input('work_experience'),
+                'political_trajectory' => $request->input('political_trajectory'),
+                'sworn_declaration'    => $request->input('sworn_declaration'),
+                'penal_sentences'      => $request->input('penal_sentences'),
+                'additional_info'      => $request->input('additional_info'),
+            ]
+        );
+
+        return response()->json([
+            'message' => 'Hoja de vida guardada exitosamente.',
+            'data'    => $cv,
+        ]);
+    }
 }

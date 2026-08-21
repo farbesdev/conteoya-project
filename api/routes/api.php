@@ -38,6 +38,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::post('/candidates/sync-cvs', [\App\Http\Controllers\Api\V1\CandidateCvSyncController::class, 'startSync']);
         Route::get('/candidates/sync-cvs/status', [\App\Http\Controllers\Api\V1\CandidateCvSyncController::class, 'getStatus']);
         Route::post('/candidates/sync-cvs/cancel', [\App\Http\Controllers\Api\V1\CandidateCvSyncController::class, 'cancelSync']);
+        Route::get('/candidates/{id}/cv', [\App\Http\Controllers\Api\V1\CandidateCvSyncController::class, 'getCv']);
+        Route::put('/candidates/{id}/cv', [\App\Http\Controllers\Api\V1\CandidateCvSyncController::class, 'updateCv']);
         Route::apiResource('candidates', \App\Http\Controllers\Api\V1\CandidateController::class);
         Route::post('/political-organizations/{id}', [\App\Http\Controllers\Api\V1\PoliticalOrganizationController::class, 'update']);
         Route::apiResource('political-organizations', \App\Http\Controllers\Api\V1\PoliticalOrganizationController::class);

@@ -78,7 +78,7 @@ const emit = defineEmits<{
             <span class="text-caption text-medium-emphasis d-block">Estado de Candidatura:</span>
             <VChip
               size="small"
-              :color="(candidate.status || '').includes('ADMIT') || (candidate.status || '').includes('INSCRIT') ? 'success' : 'primary'"
+              :color="(candidate.status || '').includes('ADMIT') || (candidate.status || '').includes('INSCRIT') ? 'success' : ((candidate.status || '').includes('IMPROC') || (candidate.status || '').includes('EXCLU') || (candidate.status || '').includes('RETIRO') || (candidate.status || '').includes('RENUNC') ? 'error' : 'warning')"
               variant="tonal"
               class="font-weight-bold mt-1"
             >

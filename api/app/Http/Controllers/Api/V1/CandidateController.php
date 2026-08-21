@@ -47,7 +47,45 @@ class CandidateController extends Controller
             });
         }
 
-        $paginated = $query->orderBy('id')->paginate($perPage);
+        if ($status = $request->input('status')) {
+            $status = trim($status);
+            $query->whereHas('candidacies', function ($cQ) use ($status) {
+                $cQ->whereRaw('UPPER(status) = ?', [mb_strtoupper($status, 'UTF-8')]);
+            });
+        }
+
+        // Ordenamiento prioritario por Estado de Candidato (candidacies.status) y luego por ID
+        $statusOrder = [
+            'ADMITIDO'              => 1,
+            'INSCRITO'              => 2,
+            'PUBLICADO PARA TACHAS' => 3,
+            'IMPROCEDENTE'          => 4,
+            'RECIBIDO'              => 5,
+            'INADMISIBLE'           => 6,
+            'TACHA EN TRAMITE'      => 7,
+            'APELACIÓN'             => 8,
+            'RENUNCIA'              => 9,
+            'EXCLUSION'             => 10,
+            'RETIRO'                => 11,
+            'TACHADO'               => 12,
+            'FALLECIDO'             => 13,
+        ];
+
+        $cases = [];
+        $driver = config('database.default');
+        foreach ($statusOrder as $st => $priority) {
+            $cases[] = "WHEN UPPER(candidacies.status) = '{$st}' THEN {$priority}";
+        }
+        $caseSql = "CASE " . implode(' ', $cases) . " ELSE 99 END";
+
+        $paginated = $query
+            ->leftJoin('candidacies', 'candidacies.candidate_id', '=', 'candidates.id')
+            ->select('candidates.*')
+            ->selectRaw("MIN({$caseSql}) as status_priority")
+            ->groupBy('candidates.id')
+            ->orderBy('status_priority', 'ASC')
+            ->orderBy('candidates.id', 'ASC')
+            ->paginate($perPage);
 
         $base = request()->getSchemeAndHttpHost();
 
@@ -89,10 +127,16 @@ class CandidateController extends Controller
             $org = $list?->politicalOrganization;
             $level = $list?->electoralLevel;
 
-            // Resolver URL de foto de candidato
-            $photoUrl = $c->photo_url ?: $c->local_photo_url;
-            if ($photoUrl && str_starts_with($photoUrl, '/storage/')) {
-                $photoUrl = $base . $photoUrl;
+            // Resolver URL de foto de candidato: Prioridad absoluta a la foto local del storage
+            $photoUrl = null;
+            if ($c->local_photo_url) {
+                $photoUrl = $base . '/storage/candidates/' . ltrim($c->local_photo_url, '/');
+            } elseif ($c->photo_url) {
+                if (str_starts_with($c->photo_url, 'http://localhost/storage/') || str_starts_with($c->photo_url, '/storage/')) {
+                    $photoUrl = str_starts_with($c->photo_url, '/storage/') ? ($base . $c->photo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $c->photo_url);
+                } else {
+                    $photoUrl = $c->photo_url;
+                }
             }
 
             // Resolver Organización Política y Logo
@@ -116,7 +160,7 @@ class CandidateController extends Controller
             }
 
             $position = $candidacy?->position ?: 'CANDIDATO';
-            $status = $list?->status ?: 'INSCRITO';
+            $status = $candidacy?->status ?: ($list?->status ?: 'INSCRITO');
             $cvUrl = $c->id_hoja_vida ? "https://declara.jne.gob.pe/HojaVida/HojaVida?idHojaVida={$c->id_hoja_vida}" : null;
             $votoInformadoUrl = $c->id_hoja_vida ? "https://votoinformado.jne.gob.pe/voto/hoja-de-vida/{$c->id_hoja_vida}" : null;
 
@@ -127,7 +171,8 @@ class CandidateController extends Controller
                 'full_name'               => $c->full_name,
                 'name'                    => $c->full_name,
                 'photo_url'               => $photoUrl,
-                'local_photo_url'         => $c->local_photo_url,
+                'remote_photo_url'        => $c->photo_url,
+                'local_photo_url'         => $c->local_photo_url ? ($base . '/storage/candidates/' . ltrim($c->local_photo_url, '/')) : null,
                 'id_hoja_vida'            => $c->id_hoja_vida,
                 'cv_url'                  => $cvUrl,
                 'voto_informado_url'      => $votoInformadoUrl,
@@ -177,9 +222,15 @@ class CandidateController extends Controller
         $org = $list?->politicalOrganization;
         $level = $list?->electoralLevel;
 
-        $photoUrl = $c->photo_url ?: $c->local_photo_url;
-        if ($photoUrl && str_starts_with($photoUrl, '/storage/')) {
-            $photoUrl = $base . $photoUrl;
+        $photoUrl = null;
+        if ($c->local_photo_url) {
+            $photoUrl = $base . '/storage/candidates/' . ltrim($c->local_photo_url, '/');
+        } elseif ($c->photo_url) {
+            if (str_starts_with($c->photo_url, 'http://localhost/storage/') || str_starts_with($c->photo_url, '/storage/')) {
+                $photoUrl = str_starts_with($c->photo_url, '/storage/') ? ($base . $c->photo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $c->photo_url);
+            } else {
+                $photoUrl = $c->photo_url;
+            }
         }
 
         $orgLogo = null;
@@ -194,7 +245,7 @@ class CandidateController extends Controller
         }
 
         $position = $candidacy?->position ?: 'CANDIDATO';
-        $status = $list?->status ?: 'INSCRITO';
+        $status = $candidacy?->status ?: ($list?->status ?: 'INSCRITO');
         $cvUrl = $c->id_hoja_vida ? "https://declara.jne.gob.pe/HojaVida/HojaVida?idHojaVida={$c->id_hoja_vida}" : null;
         $votoInformadoUrl = $c->id_hoja_vida ? "https://votoinformado.jne.gob.pe/voto/hoja-de-vida/{$c->id_hoja_vida}" : null;
 
@@ -207,7 +258,8 @@ class CandidateController extends Controller
                 'full_name'               => $c->full_name,
                 'name'                    => $c->full_name,
                 'photo_url'               => $photoUrl,
-                'local_photo_url'         => $c->local_photo_url,
+                'remote_photo_url'        => $c->photo_url,
+                'local_photo_url'         => $c->local_photo_url ? ($base . '/storage/candidates/' . ltrim($c->local_photo_url, '/')) : null,
                 'id_hoja_vida'            => $c->id_hoja_vida,
                 'cv_url'                  => $cvUrl,
                 'voto_informado_url'      => $votoInformadoUrl,
@@ -235,14 +287,24 @@ class CandidateController extends Controller
             'document_number' => 'required|string|max:12',
             'full_name'       => 'required|string|max:200',
             'photo_url'       => 'nullable|string|max:500',
+            'photo_file'      => 'nullable|image|max:5120',
             'position'        => 'nullable|string|max:150',
             'id_hoja_vida'    => 'nullable|string|max:50',
         ]);
+
+        $localPhotoUrl = null;
+        if ($request->hasFile('photo_file')) {
+            $file = $request->file('photo_file');
+            $docNumber = trim($request->input('document_number'));
+            $path = $file->storeAs($docNumber, 'foto.' . $file->getClientOriginalExtension(), 'candidates');
+            $localPhotoUrl = $path;
+        }
 
         $candidate = Candidate::create([
             'document_number' => trim($request->input('document_number')),
             'full_name'       => trim($request->input('full_name')),
             'photo_url'       => $request->input('photo_url'),
+            'local_photo_url' => $localPhotoUrl,
             'id_hoja_vida'    => $request->input('id_hoja_vida'),
         ]);
 
@@ -262,14 +324,31 @@ class CandidateController extends Controller
         $request->validate([
             'full_name'       => 'nullable|string|max:200',
             'photo_url'       => 'nullable|string|max:500',
+            'photo_file'      => 'nullable|image|max:5120',
             'id_hoja_vida'    => 'nullable|string|max:50',
         ]);
 
-        $candidate->update(array_filter([
-            'full_name'    => $request->input('full_name', $candidate->full_name),
-            'photo_url'    => $request->input('photo_url', $candidate->photo_url),
-            'id_hoja_vida' => $request->input('id_hoja_vida', $candidate->id_hoja_vida),
-        ], fn ($v) => !is_null($v)));
+        $localPhotoUrl = $candidate->local_photo_url;
+        if ($request->hasFile('photo_file')) {
+            $file = $request->file('photo_file');
+            $docNumber = $candidate->document_number ?: ('cand_' . $candidate->id);
+            $path = $file->storeAs($docNumber, 'foto.' . $file->getClientOriginalExtension(), 'candidates');
+            $localPhotoUrl = $path;
+        }
+
+        $updateData = [
+            'full_name'       => $request->input('full_name', $candidate->full_name),
+            'id_hoja_vida'    => $request->input('id_hoja_vida', $candidate->id_hoja_vida),
+        ];
+
+        if ($request->has('photo_url')) {
+            $updateData['photo_url'] = $request->input('photo_url');
+        }
+        if ($localPhotoUrl !== $candidate->local_photo_url) {
+            $updateData['local_photo_url'] = $localPhotoUrl;
+        }
+
+        $candidate->update($updateData);
 
         return response()->json([
             'message' => 'Candidato actualizado exitosamente.',

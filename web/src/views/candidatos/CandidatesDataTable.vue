@@ -5,13 +5,32 @@ import DesktopDatatable from '@/components/DesktopDatatable.vue'
 import MovilCardList from '@/components/MovilCardList.vue'
 import CandidateDetailDialog from './CandidateDetailDialog.vue'
 import CandidateFormDialog from './CandidateFormDialog.vue'
+import CandidateCvDialog from './CandidateCvDialog.vue'
 
 const search = ref('')
+const selectedStatus = ref<string | null>(null)
 const loading = ref(false)
 const candidates = ref<CandidateItem[]>([])
 const totalItems = ref(0)
 const page = ref(1)
 const itemsPerPage = ref(15)
+
+const statusOptions = [
+  { title: 'Todos los estados', value: null },
+  { title: 'ADMITIDO', value: 'ADMITIDO' },
+  { title: 'INSCRITO', value: 'INSCRITO' },
+  { title: 'PUBLICADO PARA TACHAS', value: 'PUBLICADO PARA TACHAS' },
+  { title: 'IMPROCEDENTE', value: 'IMPROCEDENTE' },
+  { title: 'RECIBIDO', value: 'RECIBIDO' },
+  { title: 'INADMISIBLE', value: 'INADMISIBLE' },
+  { title: 'TACHA EN TRAMITE', value: 'TACHA EN TRAMITE' },
+  { title: 'APELACIÓN', value: 'APELACIÓN' },
+  { title: 'RENUNCIA', value: 'RENUNCIA' },
+  { title: 'EXCLUSION', value: 'EXCLUSION' },
+  { title: 'RETIRO', value: 'RETIRO' },
+  { title: 'TACHADO', value: 'TACHADO' },
+  { title: 'FALLECIDO', value: 'FALLECIDO' },
+]
 
 // Sincronización Asíncrona de Hojas de Vida (Redis Queue)
 const syncProgress = ref<CandidateCvSyncProgress | null>(null)
@@ -23,6 +42,10 @@ const syncMessage = ref<string | null>(null)
 // Modal Mostrar Detalle
 const isDetailOpen = ref(false)
 const candidateToDetail = ref<CandidateItem | null>(null)
+
+// Modal Hoja de Vida (Visor y Editor)
+const isCvOpen = ref(false)
+const candidateToCv = ref<CandidateItem | null>(null)
 
 // Modal Crear / Editar
 const isFormOpen = ref(false)
@@ -45,9 +68,9 @@ const headers = [
 const getStatusColor = (status?: string) => {
   const s = (status || '').toUpperCase()
   if (s.includes('ADMIT') || s.includes('INSCRIT') || s.includes('OFICIAL')) return 'success'
-  if (s.includes('EXCLU') || s.includes('TACHA') || s.includes('RECHAZ') || s.includes('IMPROC')) return 'error'
-  if (s.includes('TRAMIT') || s.includes('OBSERV') || s.includes('PEND')) return 'warning'
-  return 'primary'
+  if (s.includes('TACHA EN TRAMITE') || s.includes('PUBLICADO') || s.includes('APELACI') || s.includes('RECIBID') || s.includes('INADMIS')) return 'warning'
+  if (s.includes('IMPROC') || s.includes('EXCLU') || s.includes('TACHADO') || s.includes('RETIRO') || s.includes('RENUNC') || s.includes('FALLEC')) return 'error'
+  return 'secondary'
 }
 
 const loadCandidates = async () => {
@@ -55,6 +78,7 @@ const loadCandidates = async () => {
   try {
     const res = await candidatesService.list({
       search: search.value || undefined,
+      status: selectedStatus.value || undefined,
       page: page.value,
       per_page: itemsPerPage.value,
     })
@@ -138,6 +162,11 @@ watch([page, itemsPerPage], () => {
   loadCandidates()
 })
 
+watch(selectedStatus, () => {
+  page.value = 1
+  loadCandidates()
+})
+
 const onSearchInput = useDebounceFn(() => {
   page.value = 1
   loadCandidates()
@@ -151,6 +180,11 @@ const openCreateDialog = () => {
 const openEditDialog = (c: CandidateItem) => {
   candidateToEdit.value = c
   isFormOpen.value = true
+}
+
+const openCvDialog = (c: CandidateItem) => {
+  candidateToCv.value = c
+  isCvOpen.value = true
 }
 
 const openDetailDialog = (c: CandidateItem) => {
@@ -273,6 +307,19 @@ onUnmounted(() => {
             </div>
           </div>
           <div class="d-flex align-center gap-2 flex-wrap flex-grow-1 flex-sm-grow-0">
+            <VSelect
+              v-model="selectedStatus"
+              :items="statusOptions"
+              item-title="title"
+              item-value="value"
+              density="compact"
+              variant="outlined"
+              placeholder="Filtrar por estado"
+              prepend-inner-icon="ri-filter-3-line"
+              style="min-width: 190px;"
+              clearable
+              hide-details
+            />
             <VTextField
               v-model="search"
               density="compact"
@@ -416,6 +463,19 @@ onUnmounted(() => {
             </template>
           </VTooltip>
 
+          <VTooltip text="Ver / Editar Hoja de Vida" location="top">
+            <template #activator="{ props: tipProps }">
+              <VBtn
+                v-bind="tipProps"
+                size="small"
+                variant="text"
+                color="warning"
+                icon="ri-file-text-line"
+                @click="openCvDialog(item)"
+              />
+            </template>
+          </VTooltip>
+
           <VTooltip text="Editar Candidato" location="top">
             <template #activator="{ props: tipProps }">
               <VBtn
@@ -510,6 +570,13 @@ onUnmounted(() => {
           <VBtn
             size="small"
             variant="text"
+            color="warning"
+            icon="ri-file-text-line"
+            @click="openCvDialog(item)"
+          />
+          <VBtn
+            size="small"
+            variant="text"
             color="primary"
             icon="ri-edit-line"
             @click="openEditDialog(item)"
@@ -529,6 +596,13 @@ onUnmounted(() => {
     <CandidateDetailDialog
       v-model="isDetailOpen"
       :candidate="candidateToDetail"
+    />
+
+    <!-- Modal Hoja de Vida (Visor y Editor) -->
+    <CandidateCvDialog
+      v-model="isCvOpen"
+      :candidate="candidateToCv"
+      @saved="loadCandidates"
     />
 
     <!-- Modal Crear / Editar Candidato -->

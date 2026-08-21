@@ -37,7 +37,7 @@ export interface CandidateCvSyncProgress {
 }
 
 export const candidatesService = {
-  async list(params?: { search?: string; page?: number; per_page?: number }): Promise<PaginatedResponse<CandidateItem>> {
+  async list(params?: { search?: string; status?: string; page?: number; per_page?: number }): Promise<PaginatedResponse<CandidateItem>> {
     return apiClient<PaginatedResponse<CandidateItem>>('/candidates', {
       params,
     })
@@ -60,6 +60,13 @@ export const candidatesService = {
     })
   },
 
+  async createFormData(formData: FormData): Promise<{ message: string; data: CandidateItem }> {
+    return apiClient<{ message: string; data: CandidateItem }>('/candidates', {
+      method: 'POST',
+      body: formData,
+    })
+  },
+
   async update(id: number, data: {
     full_name?: string
     photo_url?: string
@@ -69,6 +76,13 @@ export const candidatesService = {
     return apiClient<{ message: string; data: CandidateItem }>(`/candidates/${id}`, {
       method: 'PUT',
       body: data,
+    })
+  },
+
+  async updateFormData(id: number, formData: FormData): Promise<{ message: string; data: CandidateItem }> {
+    return apiClient<{ message: string; data: CandidateItem }>(`/candidates/${id}`, {
+      method: 'POST',
+      body: formData,
     })
   },
 
@@ -92,6 +106,17 @@ export const candidatesService = {
   async cancelCvSync(): Promise<{ message: string; data: CandidateCvSyncProgress }> {
     return apiClient<{ message: string; data: CandidateCvSyncProgress }>('/candidates/sync-cvs/cancel', {
       method: 'POST',
+    })
+  },
+
+  async getCv(candidateId: number): Promise<{ message: string; candidate: CandidateItem; data: any }> {
+    return apiClient<{ message: string; candidate: CandidateItem; data: any }>(`/candidates/${candidateId}/cv`)
+  },
+
+  async updateCv(candidateId: number, data: any): Promise<{ message: string; data: any }> {
+    return apiClient<{ message: string; data: any }>(`/candidates/${candidateId}/cv`, {
+      method: 'PUT',
+      body: data,
     })
   },
 }

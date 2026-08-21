@@ -82,10 +82,10 @@ class PersoneroController extends Controller
             return \App\Models\PoliticalOrganization::all()->mapWithKeys(function ($org) use ($base) {
                 $logo = null;
                 if ($org->local_logo_url) {
-                    $logo = $base . '/storage/political-organizationals/' . $org->local_logo_url;
+                    $logo = $base . '/storage/political-organizationals/' . ltrim($org->local_logo_url, '/');
                 } elseif ($org->logo_url) {
-                    if (str_starts_with($org->logo_url, 'http://localhost/storage/')) {
-                        $logo = str_replace('http://localhost/storage/', $base . '/storage/', $org->logo_url);
+                    if (str_starts_with($org->logo_url, 'http://localhost/storage/') || str_starts_with($org->logo_url, '/storage/')) {
+                        $logo = str_starts_with($org->logo_url, '/storage/') ? ($base . $org->logo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $org->logo_url);
                     } else {
                         $logo = $org->logo_url;
                     }
@@ -115,9 +115,19 @@ class PersoneroController extends Controller
 
             $orgNameKey = mb_strtoupper(trim($p->political_organization_name ?? ''), 'UTF-8');
             $resolvedOrg = $orgLogoMap[$orgNameKey] ?? null;
-            $logoUrl = $p->politicalOrganization?->logo_url 
-                ?: $p->politicalOrganization?->local_logo_url 
-                ?: ($resolvedOrg['logo_url'] ?? null);
+
+            $logoUrl = null;
+            if ($p->politicalOrganization?->local_logo_url) {
+                $base = request()->getSchemeAndHttpHost();
+                $logoUrl = $base . '/storage/political-organizationals/' . ltrim($p->politicalOrganization->local_logo_url, '/');
+            } elseif ($resolvedOrg && !empty($resolvedOrg['logo_url'])) {
+                $logoUrl = $resolvedOrg['logo_url'];
+            } elseif ($p->politicalOrganization?->logo_url) {
+                $base = request()->getSchemeAndHttpHost();
+                $pLogo = $p->politicalOrganization->logo_url;
+                $logoUrl = str_starts_with($pLogo, '/storage/') ? ($base . $pLogo) : str_replace('http://localhost/storage/', $base . '/storage/', $pLogo);
+            }
+
             $shortName = $p->politicalOrganization?->short_name 
                 ?: ($resolvedOrg['short_name'] ?? null);
 

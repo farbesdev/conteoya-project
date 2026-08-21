@@ -151,6 +151,7 @@ class ResultsAggregationService
             $provinceCode,
             $districtCode
         ) {
+            $base = request()->getSchemeAndHttpHost();
             $summary = $this->getSummary($electionId, $departmentCode, $provinceCode, $districtCode);
             $validVotes = $summary['valid_votes'];
             $totalVotes = $summary['total_votes'];
@@ -181,7 +182,8 @@ class ResultsAggregationService
                     'act_results.political_organization_id',
                     'political_organizations.name',
                     'political_organizations.short_name',
-                    'political_organizations.logo_url'
+                    'political_organizations.logo_url',
+                    'political_organizations.local_logo_url'
                 )
                 ->orderByDesc('total_votes')
                 ->get();
@@ -189,29 +191,47 @@ class ResultsAggregationService
             // Si no hay votos todavía pero existen organizaciones para esta elección, devolvemos las organizaciones con 0 votos
             if ($orgResults->isEmpty()) {
                 $allOrgs = PoliticalOrganization::all();
-                $orgResults = $allOrgs->map(function ($org) {
+                $orgResults = $allOrgs->map(function ($org) use ($base) {
+                    $logo = null;
+                    if ($org->local_logo_url) {
+                        $logo = $base . '/storage/political-organizationals/' . ltrim($org->local_logo_url, '/');
+                    } elseif ($org->logo_url) {
+                        $logo = str_starts_with($org->logo_url, '/storage/') ? ($base . $org->logo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $org->logo_url);
+                    }
                     return (object) [
                         'political_organization_id' => $org->id,
                         'organization_name'         => $org->name,
                         'short_name'                => $org->short_name,
-                        'logo_url'                  => $org->logo_url,
+                        'logo_url'                  => $logo,
+                        'local_logo_url'            => $org->local_logo_url,
                         'total_votes'               => 0,
                     ];
                 });
             }
 
+            // Mapeo O(1) de logos locales de organizaciones
+            $localLogos = PoliticalOrganization::pluck('local_logo_url', 'id')->all();
+
             $ranking = 1;
-            $items = $orgResults->map(function ($row) use (&$ranking, $validVotes, $totalVotes) {
+            $items = $orgResults->map(function ($row) use (&$ranking, $validVotes, $totalVotes, $base, $localLogos) {
                 $votes = (int) $row->total_votes;
                 $pctValid = $validVotes > 0 ? round(($votes / $validVotes) * 100, 2) : 0.0;
                 $pctTotal = $totalVotes > 0 ? round(($votes / $totalVotes) * 100, 2) : 0.0;
+
+                $logoUrl = null;
+                $locLogo = $localLogos[$row->political_organization_id] ?? ($row->local_logo_url ?? null);
+                if ($locLogo) {
+                    $logoUrl = $base . '/storage/political-organizationals/' . ltrim($locLogo, '/');
+                } elseif (!empty($row->logo_url)) {
+                    $logoUrl = str_starts_with($row->logo_url, '/storage/') ? ($base . $row->logo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $row->logo_url);
+                }
 
                 return [
                     'rank'                      => $ranking++,
                     'political_organization_id' => $row->political_organization_id,
                     'organization_name'         => $row->organization_name,
                     'short_name'                => $row->short_name ?? $row->organization_name,
-                    'logo_url'                  => $row->logo_url,
+                    'logo_url'                  => $logoUrl,
                     'votes'                     => $votes,
                     'percentage_valid_votes'    => $pctValid,
                     'percentage_total_votes'    => $pctTotal,
@@ -232,6 +252,94 @@ class ResultsAggregationService
                 'updated_at'    => now()->toIso8601String(),
             ];
         });
+    }
+
+    /**
+     * Obtiene el desglose de resultados por cada mesa electoral con soporte de filtros.
+     */
+    public function getTableBreakdown(
+        int $electionId,
+        ?int $electoralLevelId = null,
+        ?string $departmentCode = null,
+        ?string $provinceCode = null,
+        ?string $districtCode = null,
+        int $perPage = 20
+    ): array {
+        $base = request()->getSchemeAndHttpHost();
+        $query = Act::query()
+            ->with(['pollingStation.electoralLocation.district.province.department', 'totals', 'results.politicalOrganization', 'evidences'])
+            ->whereIn('status', ['CONFIRMED', 'SYNCED'])
+            ->where('election_id', $electionId);
+
+        if ($electoralLevelId) {
+            $query->where('electoral_level_id', $electoralLevelId);
+        }
+
+        if ($departmentCode || $provinceCode || $districtCode) {
+            $query->whereHas('pollingStation', function ($stQ) use ($departmentCode, $provinceCode, $districtCode) {
+                $this->applyUbigeoFilterToStations($stQ, $departmentCode, $provinceCode, $districtCode);
+            });
+        }
+
+        $paginated = $query->orderBy('polling_station_id')->paginate($perPage);
+
+        return [
+            'meta' => [
+                'total_acts'   => $paginated->total(),
+                'current_page' => $paginated->currentPage(),
+                'last_page'    => $paginated->lastPage(),
+                'per_page'     => $paginated->perPage(),
+            ],
+            'acts' => collect($paginated->items())->map(function ($act) use ($base) {
+                return [
+                    'act_id'             => $act->id,
+                    'polling_station_id' => $act->polling_station_id,
+                    'station_code'       => $act->pollingStation?->code,
+                    'department'         => $act->pollingStation?->electoralLocation?->district?->province?->department?->name,
+                    'province'           => $act->pollingStation?->electoralLocation?->district?->province?->name,
+                    'district'           => $act->pollingStation?->electoralLocation?->district?->name,
+                    'location_name'      => $act->pollingStation?->electoralLocation?->name,
+                    'status'             => $act->status,
+                    'totals'             => $act->totals ? [
+                        'registered_voters' => $act->totals->registered_voters,
+                        'voters_who_voted'  => $act->totals->voters_who_voted,
+                        'total_votes'       => $act->totals->total_votes,
+                        'blank_votes'       => $act->totals->blank_votes,
+                        'null_votes'        => $act->totals->null_votes,
+                        'challenged_votes'  => $act->totals->challenged_votes,
+                        'is_valid_total'    => (bool) $act->totals->is_valid_total,
+                    ] : null,
+                    'results' => $act->results->map(function ($res) use ($base) {
+                        $org = $res->politicalOrganization;
+                        $logoUrl = null;
+                        if ($org?->local_logo_url) {
+                            $logoUrl = $base . '/storage/political-organizationals/' . ltrim($org->local_logo_url, '/');
+                        } elseif ($org?->logo_url) {
+                            $logoUrl = str_starts_with($org->logo_url, '/storage/') ? ($base . $org->logo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $org->logo_url);
+                        }
+                        return [
+                            'political_organization_id' => $res->political_organization_id,
+                            'organization_name'         => $org?->name,
+                            'short_name'                => $org?->short_name,
+                            'logo_url'                  => $logoUrl,
+                            'votes'                     => $res->votes,
+                            'source'                    => $res->source,
+                            'confidence'                => $res->confidence,
+                        ];
+                    }),
+                    'evidences' => $act->evidences->map(function ($ev) {
+                        return [
+                            'id'           => $ev->id,
+                            'evidence_type'=> $ev->evidence_type,
+                            'file_path'    => $ev->file_path,
+                            'file_hash'    => $ev->file_hash,
+                            'status'       => $ev->status,
+                            'created_at'   => $ev->created_at?->toIso8601String(),
+                        ];
+                    }),
+                ];
+            }),
+        ];
     }
 
     /**

@@ -70,7 +70,32 @@ class SyncCandidateCvsJob implements ShouldQueue
             $candidateQuery->limit($this->maxLimit);
         }
 
-        $candidateQuery->chunk($this->chunkSize, function ($candidates) use ($cvService, &$processed, &$successCount, &$errorCount, $total) {
+        $csvDir = base_path('../database/files');
+        if (!file_exists($csvDir)) {
+            @mkdir($csvDir, 0755, true);
+        }
+        $csvPath = $csvDir . '/candidate_cvs.csv';
+
+        // Si el archivo CSV no existe, crearlo con sus cabeceras
+        if (!file_exists($csvPath)) {
+            $fp = @fopen($csvPath, 'w');
+            if ($fp) {
+                fputcsv($fp, [
+                    'id_hoja_vida',
+                    'candidate_id',
+                    'general_data',
+                    'academic_data',
+                    'work_experience',
+                    'political_trajectory',
+                    'sworn_declaration',
+                    'penal_sentences',
+                    'additional_info',
+                ]);
+                fclose($fp);
+            }
+        }
+
+        $candidateQuery->chunk($this->chunkSize, function ($candidates) use ($cvService, &$processed, &$successCount, &$errorCount, $total, $csvPath) {
             // Verificar si el usuario solicitó cancelar/pausar la sincronización
             $currentStatus = Cache::get(self::CACHE_KEY);
             if (isset($currentStatus['status']) && $currentStatus['status'] === 'canceled') {
@@ -78,11 +103,21 @@ class SyncCandidateCvsJob implements ShouldQueue
                 return false; // Rompe el chunk loop
             }
 
+            $csvFile = @fopen($csvPath, 'a');
+
             foreach ($candidates as $candidate) {
                 try {
                     $cvData = $cvService->fetchCandidateCv((string) $candidate->id_hoja_vida);
 
                     if ($cvData) {
+                        $genData    = isset($cvData['general_data']) ? json_encode($cvData['general_data'], JSON_UNESCAPED_UNICODE) : null;
+                        $acadData   = isset($cvData['academic_data']) ? json_encode($cvData['academic_data'], JSON_UNESCAPED_UNICODE) : null;
+                        $workExp    = isset($cvData['work_experience']) ? json_encode($cvData['work_experience'], JSON_UNESCAPED_UNICODE) : null;
+                        $polTraj    = isset($cvData['political_trajectory']) ? json_encode($cvData['political_trajectory'], JSON_UNESCAPED_UNICODE) : null;
+                        $swornDecl  = isset($cvData['sworn_declaration']) ? json_encode($cvData['sworn_declaration'], JSON_UNESCAPED_UNICODE) : null;
+                        $penalSent  = isset($cvData['penal_sentences']) ? json_encode($cvData['penal_sentences'], JSON_UNESCAPED_UNICODE) : null;
+                        $addInfo    = isset($cvData['additional_info']) ? (is_string($cvData['additional_info']) ? $cvData['additional_info'] : json_encode($cvData['additional_info'], JSON_UNESCAPED_UNICODE)) : null;
+
                         CandidateCv::updateOrCreate(
                             ['id_hoja_vida' => (string) $candidate->id_hoja_vida],
                             [
@@ -96,6 +131,22 @@ class SyncCandidateCvsJob implements ShouldQueue
                                 'additional_info'      => $cvData['additional_info'] ?? null,
                             ]
                         );
+
+                        // Escribir fila en el archivo CSV para backup y futuras ejecuciones de Seeders
+                        if ($csvFile) {
+                            fputcsv($csvFile, [
+                                (string) $candidate->id_hoja_vida,
+                                (string) $candidate->id,
+                                $genData,
+                                $acadData,
+                                $workExp,
+                                $polTraj,
+                                $swornDecl,
+                                $penalSent,
+                                $addInfo,
+                            ]);
+                        }
+
                         $successCount++;
                     } else {
                         $errorCount++;
@@ -127,6 +178,10 @@ class SyncCandidateCvsJob implements ShouldQueue
                         'updated_at'         => now()->toIso8601String(),
                     ], 86400);
                 }
+            }
+
+            if ($csvFile) {
+                fclose($csvFile);
             }
         });
 

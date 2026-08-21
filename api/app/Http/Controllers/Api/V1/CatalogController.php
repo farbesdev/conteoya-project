@@ -202,19 +202,27 @@ class CatalogController extends Controller
 
                 $orgsMap = [];
 
+                $base = request()->getSchemeAndHttpHost();
                 foreach ($provLists as $list) {
                     $org = $list->politicalOrganization;
                     if (!$org)
                         continue;
                     $orgId = $org->id;
+                    $orgLogo = null;
+                    if ($org->local_logo_url) {
+                        $orgLogo = $base . '/storage/political-organizationals/' . ltrim($org->local_logo_url, '/');
+                    } elseif ($org->logo_url) {
+                        $orgLogo = str_starts_with($org->logo_url, '/storage/') ? ($base . $org->logo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $org->logo_url);
+                    }
+
                     if (!isset($orgsMap[$orgId])) {
                         $orgsMap[$orgId] = [
                             'electoral_list_id' => $list->id,
                             'political_organization_id' => $org->id,
                             'political_organization_name' => $org->name,
                             'political_organization_short_name' => $org->short_name,
-                            'logo_url' => $org->logo_url,
-                            'local_logo_url' => $org->local_logo_url,
+                            'logo_url' => $orgLogo,
+                            'local_logo_url' => $org->local_logo_url ? ($base . '/storage/political-organizationals/' . ltrim($org->local_logo_url, '/')) : null,
                             'is_provincial_admitted' => true,
                             'is_distrital_admitted' => false,
                             'candidates' => [],
@@ -229,14 +237,21 @@ class CatalogController extends Controller
                     if (!$org)
                         continue;
                     $orgId = $org->id;
+                    $orgLogo = null;
+                    if ($org->local_logo_url) {
+                        $orgLogo = $base . '/storage/political-organizationals/' . ltrim($org->local_logo_url, '/');
+                    } elseif ($org->logo_url) {
+                        $orgLogo = str_starts_with($org->logo_url, '/storage/') ? ($base . $org->logo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $org->logo_url);
+                    }
+
                     if (!isset($orgsMap[$orgId])) {
                         $orgsMap[$orgId] = [
                             'electoral_list_id' => $list->id,
                             'political_organization_id' => $org->id,
                             'political_organization_name' => $org->name,
                             'political_organization_short_name' => $org->short_name,
-                            'logo_url' => $org->logo_url,
-                            'local_logo_url' => $org->local_logo_url,
+                            'logo_url' => $orgLogo,
+                            'local_logo_url' => $org->local_logo_url ? ($base . '/storage/political-organizationals/' . ltrim($org->local_logo_url, '/')) : null,
                             'is_provincial_admitted' => false,
                             'is_distrital_admitted' => true,
                             'candidates' => [],
@@ -249,6 +264,7 @@ class CatalogController extends Controller
                 $lists = array_values($orgsMap);
             } else {
                 // Nivel Simple (Regional u otro)
+                $base = request()->getSchemeAndHttpHost();
                 $listsQuery = ElectoralList::where('electoral_level_id', $levelId)
                     ->where('status', 'INSCRITO')
                     ->with(['politicalOrganization', 'candidacies.candidate']);
@@ -259,23 +275,38 @@ class CatalogController extends Controller
                     });
                 }
 
-                $lists = $listsQuery->get()->map(function ($list) {
+                $lists = $listsQuery->get()->map(function ($list) use ($base) {
+                    $org = $list->political_organization;
+                    $orgLogo = null;
+                    if ($org?->local_logo_url) {
+                        $orgLogo = $base . '/storage/political-organizationals/' . ltrim($org->local_logo_url, '/');
+                    } elseif ($org?->logo_url) {
+                        $orgLogo = str_starts_with($org->logo_url, '/storage/') ? ($base . $org->logo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $org->logo_url);
+                    }
+
                     return [
                         'electoral_list_id' => $list->id,
                         'political_organization_id' => $list->political_organization_id,
-                        'political_organization_name' => $list->political_organization?->name,
-                        'political_organization_short_name' => $list->political_organization?->short_name,
-                        'logo_url' => $list->political_organization?->logo_url,
-                        'local_logo_url' => $list->political_organization?->local_logo_url,
+                        'political_organization_name' => $org?->name,
+                        'political_organization_short_name' => $org?->short_name,
+                        'logo_url' => $orgLogo,
+                        'local_logo_url' => $org?->local_logo_url ? ($base . '/storage/political-organizationals/' . ltrim($org->local_logo_url, '/')) : null,
                         'is_provincial_admitted' => true,
                         'is_distrital_admitted' => true,
-                        'candidates' => $list->candidacies->map(function ($c) {
+                        'candidates' => $list->candidacies->map(function ($c) use ($base) {
+                            $photo = null;
+                            if ($c->candidate?->local_photo_url) {
+                                $photo = $base . '/storage/candidates/' . ltrim($c->candidate->local_photo_url, '/');
+                            } elseif ($c->candidate?->photo_url) {
+                                $photo = str_starts_with($c->candidate->photo_url, '/storage/') ? ($base . $c->candidate->photo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $c->candidate->photo_url);
+                            }
+
                             return [
                                 'candidate_id' => $c->candidate_id,
                                 'candidate_name' => $c->candidate?->full_name,
                                 'candidate_document' => $c->candidate?->document_number,
-                                'photo_url' => $c->candidate?->photo_url,
-                                'local_photo_url' => $c->candidate?->local_photo_url,
+                                'photo_url' => $photo,
+                                'local_photo_url' => $c->candidate?->local_photo_url ? ($base . '/storage/candidates/' . ltrim($c->candidate->local_photo_url, '/')) : null,
                                 'position' => $c->position,
                                 'list_number' => $c->list_number,
                             ];

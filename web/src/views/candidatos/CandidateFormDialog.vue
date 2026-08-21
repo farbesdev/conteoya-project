@@ -21,13 +21,26 @@ const form = ref({
   id_hoja_vida: '',
 })
 
+const photoFile = ref<File | null>(null)
+const photoPreview = ref<string | null>(null)
+
 const saving = ref(false)
 const errorMessage = ref<string | null>(null)
+
+const onFileChange = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    photoFile.value = target.files[0]
+    photoPreview.value = URL.createObjectURL(target.files[0])
+  }
+}
 
 watch(
   () => props.candidate,
   (val) => {
+    photoFile.value = null
     if (val) {
+      photoPreview.value = val.photo_url || null
       form.value = {
         document_number: val.document_number || '',
         full_name: val.full_name || '',
@@ -36,6 +49,7 @@ watch(
         id_hoja_vida: val.id_hoja_vida || '',
       }
     } else {
+      photoPreview.value = null
       form.value = {
         document_number: '',
         full_name: '',
@@ -59,10 +73,19 @@ const handleSave = async () => {
   errorMessage.value = null
 
   try {
+    const formData = new FormData()
+    formData.append('document_number', form.value.document_number)
+    formData.append('full_name', form.value.full_name)
+    if (form.value.position) formData.append('position', form.value.position)
+    if (form.value.id_hoja_vida) formData.append('id_hoja_vida', form.value.id_hoja_vida)
+    if (form.value.photo_url) formData.append('photo_url', form.value.photo_url)
+    if (photoFile.value) formData.append('photo_file', photoFile.value)
+
     if (isEdit.value && props.candidate) {
-      await candidatesService.update(props.candidate.id, form.value)
+      formData.append('_method', 'PUT')
+      await candidatesService.updateFormData(props.candidate.id, formData)
     } else {
-      await candidatesService.create(form.value)
+      await candidatesService.createFormData(formData)
     }
 
     emit('saved')
@@ -78,7 +101,7 @@ const handleSave = async () => {
 <template>
   <VDialog
     :model-value="modelValue"
-    max-width="560"
+    max-width="600"
     @update:model-value="emit('update:modelValue', $event)"
   >
     <VCard>
@@ -94,6 +117,33 @@ const handleSave = async () => {
           {{ errorMessage }}
         </VAlert>
 
+        <!-- Preview y Selector de Fotografía Local -->
+        <div class="d-flex align-center gap-x-4 mb-4 pa-3 bg-background rounded border">
+          <VAvatar size="64" rounded="lg" color="primary" variant="tonal" class="elevation-1 border">
+            <VImg
+              v-if="photoPreview"
+              :src="photoPreview"
+              cover
+            />
+            <span v-else class="text-h5 font-weight-bold">
+              {{ form.full_name ? form.full_name[0] : 'C' }}
+            </span>
+          </VAvatar>
+          <div class="flex-grow-1">
+            <div class="text-caption font-weight-bold mb-1">Fotografía del Candidato (Local Storage)</div>
+            <VFileInput
+              label="Subir / Cambiar fotografía"
+              density="compact"
+              variant="outlined"
+              accept="image/*"
+              prepend-icon=""
+              prepend-inner-icon="ri-upload-2-line"
+              hide-details
+              @change="onFileChange"
+            />
+          </div>
+        </div>
+
         <VRow dense>
           <VCol cols="12" sm="6">
             <VTextField
@@ -104,24 +154,6 @@ const handleSave = async () => {
               density="comfortable"
               :disabled="isEdit"
               maxlength="12"
-            />
-          </VCol>
-          <VCol cols="12" sm="6">
-            <VTextField
-              v-model="form.position"
-              label="Cargo al que Postula"
-              placeholder="Gobernador Regional"
-              variant="outlined"
-              density="comfortable"
-            />
-          </VCol>
-          <VCol cols="12">
-            <VTextField
-              v-model="form.full_name"
-              label="Nombre Completo del Candidato"
-              placeholder="María Elena Cornejo"
-              variant="outlined"
-              density="comfortable"
             />
           </VCol>
           <VCol cols="12" sm="6">
@@ -143,20 +175,20 @@ const handleSave = async () => {
               density="comfortable"
             />
           </VCol>
-          <VCol cols="12" sm="6">
+          <VCol cols="12">
             <VTextField
-              v-model="form.id_hoja_vida"
-              label="ID Hoja de Vida JNE"
-              placeholder="135790"
+              v-model="form.full_name"
+              label="Nombre Completo del Candidato"
+              placeholder="María Elena Cornejo"
               variant="outlined"
               density="comfortable"
             />
           </VCol>
           <VCol cols="12">
             <VTextField
-              v-model="form.photo_url"
-              label="URL Fotografía Oficial (JNE / Servidor)"
-              placeholder="https://declara.jne.gob.pe/fotocandidato.jpg"
+              v-model="form.id_hoja_vida"
+              label="ID Hoja de Vida JNE"
+              placeholder="135790"
               variant="outlined"
               density="comfortable"
             />

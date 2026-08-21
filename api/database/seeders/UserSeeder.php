@@ -56,66 +56,6 @@ class UserSeeder extends Seeder
 
         $this->command->info('✅  Usuario DIRECTOR creado: director@conteoya.pe / Director123!');
 
-        // ─── PERSONERO ───────────────────────────────────────────────────────
-        $personeroRole = Role::where('name', Role::PERSONERO)->firstOrFail();
-
-        $personeroUser = User::updateOrCreate(
-            ['email' => 'personero@conteoya.pe'],
-            [
-                'name'      => 'Juan Pérez Demo',
-                'password'  => Hash::make('Personero123!'),
-                'role'      => Role::PERSONERO,
-                'role_id'   => $personeroRole->id,
-                'is_active' => true,
-            ]
-        );
-
-        $this->command->info('✅  Usuario PERSONERO creado: personero@conteoya.pe / Personero123!');
-
-        // Crear perfil de personero asociado
-        $personeroDemo = Personero::updateOrCreate(
-            ['user_id' => $personeroUser->id],
-            [
-                'document_number' => '12345678',
-                'phone_number'    => '+51 987 654 321',
-            ]
-        );
-
-        $this->command->info('✅  Perfil Personero creado: DNI 12345678 / Juan Pérez Demo');
-
-        // ─── MESA LIMA CERCADO (Mesa 030390 para personero demo) ─────────────
-        // Asegurar que existan los registros geográficos necesarios
-        \Illuminate\Support\Facades\DB::table('departments')->updateOrInsert(
-            ['code' => '15'],
-            ['name' => 'LIMA', 'updated_at' => now(), 'created_at' => now()]
-        );
-        \Illuminate\Support\Facades\DB::table('provinces')->updateOrInsert(
-            ['code' => '1501'],
-            ['department_code' => '15', 'name' => 'LIMA', 'updated_at' => now(), 'created_at' => now()]
-        );
-        \Illuminate\Support\Facades\DB::table('districts')->updateOrInsert(
-            ['code' => '150101'],
-            ['province_code' => '1501', 'department_code' => '15', 'name' => 'LIMA', 'updated_at' => now(), 'created_at' => now()]
-        );
-
-        $electoralLocationDemo = \App\Models\ElectoralLocation::firstOrCreate(
-            ['name' => 'I.E. NUESTRA SEÑORA DE GUADALUPE', 'district_code' => '150101'],
-            ['address' => 'Jr. Azángaro 1075, Lima Cercado']
-        );
-
-        $mesaLima = \App\Models\PollingStation::firstOrCreate(
-            ['code' => '030390'],
-            [
-                'electoral_location_id' => $electoralLocationDemo->id,
-                'registered_voters'     => 300,
-                'status'                => 'ACTIVE',
-            ]
-        );
-
-        $personeroDemo->pollingStations()->sync([$mesaLima->id]);
-
-        $this->command->info('✅  Mesa 030390 asignada al personero demo: personero@conteoya.pe');
-
         // ─── PERSONERO PUERTO INCA (YUYAPICHIS) ──────────────────────────────
         $puertoIncaUser = User::updateOrCreate(
             ['email' => 'personero.puertoinca@conteoya.pe'],
@@ -193,7 +133,7 @@ class UserSeeder extends Seeder
             ]
         );
         
-        $inactivePersonero->pollingStations()->sync([$mesaLima->id]); // Reusa mesaLima para probar
+        $inactivePersonero->pollingStations()->sync([$mesaYuyapichis->id]);
         $this->command->info('✅  Usuario PERSONERO INACTIVO creado: personero.inactivo@conteoya.pe / Personero123!');
 
         $this->command->newLine();
