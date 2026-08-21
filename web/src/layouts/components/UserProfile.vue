@@ -1,65 +1,40 @@
 <script setup lang="ts">
 import { PerfectScrollbar } from 'vue3-perfect-scrollbar'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 const router = useRouter()
-const ability = useAbility()
+const authStore = useAuthStore()
 
-// TODO: Get type from backend
-const userData = useCookie<any>('userData')
+const userData = computed(() => authStore.user || useCookie<any>('userData').value)
 
 const logout = async () => {
-  // Remove "accessToken" from cookie
-  useCookie('accessToken').value = null
-
-  // Remove "userData" from cookie
-  userData.value = null
-
-  // Redirect to login page
-  await router.push('/login')
-
-  // ℹ️ We had to remove abilities in then block because if we don't nav menu items mutation is visible while redirecting user to login page
-  // Remove "userAbilities" from cookie
-  useCookie('userAbilityRules').value = null
-
-  // Reset ability to initial ability
-  ability.update([])
+  await authStore.logout()
+  await router.replace('/login')
 }
 
-const userProfileList = [
+const userProfileList = computed(() => [
   { type: 'divider' },
   {
     type: 'navItem',
-    icon: 'ri-user-line',
-    title: 'Profile',
-    to: { name: 'apps-user-view-id', params: { id: 21 } },
+    icon: 'ri-dashboard-line',
+    title: 'Panel de Control',
+    to: { path: '/admin/dashboard' },
   },
   {
     type: 'navItem',
-    icon: 'ri-settings-4-line',
-    title: 'Settings',
-    to: { name: 'pages-account-settings-tab', params: { tab: 'account' } },
+    icon: 'ri-bar-chart-box-line',
+    title: 'Resultados Públicos',
+    to: { path: '/resultados' },
   },
-  {
-    type: 'navItem',
-    icon: 'ri-file-text-line',
-    title: 'Billing Plan',
-    to: { name: 'pages-account-settings-tab', params: { tab: 'billing-plans' } },
-    chipsProps: { color: 'error', text: '4', size: 'small' },
-  },
-  { type: 'divider' },
-  {
-    type: 'navItem',
-    icon: 'ri-money-dollar-circle-line',
-    title: 'Pricing',
-    to: { name: 'pages-pricing' },
-  },
-  {
-    type: 'navItem',
-    icon: 'ri-question-line',
-    title: 'FAQ',
-    to: { name: 'pages-faq' },
-  },
-]
+  ...(authStore.isAdmin ? [
+    {
+      type: 'navItem',
+      icon: 'ri-shield-user-line',
+      title: 'Gestión de Usuarios',
+      to: { path: '/admin/usuarios' },
+    },
+  ] : []),
+])
 </script>
 
 <template>
@@ -91,7 +66,7 @@ const userProfileList = [
       <!-- SECTION Menu -->
       <VMenu
         activator="parent"
-        width="230"
+        width="240"
         location="bottom end"
         offset="15px"
       >
@@ -114,10 +89,10 @@ const userProfileList = [
 
               <div>
                 <div class="text-body-2 font-weight-medium text-high-emphasis">
-                  {{ userData.fullName || userData.username }}
+                  {{ userData.name || userData.fullName || userData.email }}
                 </div>
                 <div class="text-capitalize text-caption text-disabled">
-                  {{ userData.role }}
+                  {{ userData.role || 'Usuario' }}
                 </div>
               </div>
             </div>
@@ -125,8 +100,8 @@ const userProfileList = [
 
           <PerfectScrollbar :options="{ wheelPropagation: false }">
             <template
-              v-for="item in userProfileList"
-              :key="item.title"
+              v-for="(item, idx) in userProfileList"
+              :key="idx"
             >
               <VListItem
                 v-if="item.type === 'navItem'"
@@ -141,16 +116,6 @@ const userProfileList = [
                 </template>
 
                 <VListItemTitle>{{ item.title }}</VListItemTitle>
-
-                <template
-                  v-if="item.chipsProps"
-                  #append
-                >
-                  <VChip
-                    v-bind="item.chipsProps"
-                    variant="elevated"
-                  />
-                </template>
               </VListItem>
 
               <VDivider
@@ -158,6 +123,8 @@ const userProfileList = [
                 class="my-1"
               />
             </template>
+
+            <VDivider class="my-1" />
 
             <VListItem class="px-4">
               <VBtn
@@ -167,7 +134,7 @@ const userProfileList = [
                 append-icon="ri-logout-box-r-line"
                 @click="logout"
               >
-                Logout
+                Cerrar Sesión
               </VBtn>
             </VListItem>
           </PerfectScrollbar>
