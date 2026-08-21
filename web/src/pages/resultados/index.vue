@@ -53,15 +53,15 @@ onUnmounted(() => {
 
         <!-- Acciones: Indicador en Vivo, Selector de Tema, Modo TV, Botón de Acceso -->
         <div class="d-flex align-center gap-x-2">
-          <!-- Indicador Realtime -->
+          <!-- Indicador Realtime / Cómputo -->
           <VChip
-            :color="realtimeStore.isConnected ? 'success' : 'warning'"
+            :color="realtimeStore.isPaused ? 'secondary' : (realtimeStore.isConnected ? 'success' : 'warning')"
             variant="tonal"
             size="small"
             class="font-weight-bold d-none d-sm-flex"
           >
-            <VIcon icon="ri-pulse-line" class="me-1" />
-            {{ realtimeStore.isConnected ? 'EN VIVO' : 'ACTUALIZANDO' }}
+            <VIcon :icon="realtimeStore.isPaused ? 'ri-shield-check-line' : 'ri-pulse-line'" class="me-1" />
+            {{ realtimeStore.isPaused ? 'CÓMPUTO OFICIAL' : (realtimeStore.isConnected ? 'EN VIVO' : 'ACTUALIZANDO') }}
           </VChip>
 
           <!-- Selector de Tema (Light / Dark / System) -->

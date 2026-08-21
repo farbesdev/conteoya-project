@@ -42,15 +42,17 @@ const formatNumber = (val?: number) => {
       </div>
 
       <div class="d-flex align-center gap-x-2">
-        <VChip
-          :color="realtimeStore.isConnected ? 'success' : 'warning'"
-          variant="tonal"
+        <!-- Indicador y Toggle de Tiempo Real / Pausa (Ahorro de Recursos) -->
+        <VBtn
+          :color="realtimeStore.isPaused ? 'secondary' : (realtimeStore.isConnected ? 'success' : 'warning')"
+          :variant="realtimeStore.isPaused ? 'outlined' : 'tonal'"
           size="small"
           class="font-weight-bold"
+          :prepend-icon="realtimeStore.isPaused ? 'ri-pause-circle-line' : 'ri-pulse-line'"
+          @click="realtimeStore.togglePause()"
         >
-          <VIcon icon="ri-pulse-line" class="me-1" />
-          {{ realtimeStore.isConnected ? 'Reverb Conectado' : 'Modo Polling' }}
-        </VChip>
+          {{ realtimeStore.isPaused ? 'En Pausa (Ahorro VPS)' : (realtimeStore.isConnected ? 'En Vivo (Reverb)' : 'En Vivo (Polling)') }}
+        </VBtn>
 
         <VBtn
           to="/resultados"
@@ -101,8 +103,14 @@ const formatNumber = (val?: number) => {
                   <VIcon icon="ri-radar-line" color="primary" />
                   <span class="text-subtitle-1 font-weight-bold">Actividad en Vivo</span>
                 </div>
-                <VChip size="x-small" color="primary" variant="tonal">
-                  Tiempo Real
+                <VChip
+                  size="x-small"
+                  :color="realtimeStore.isPaused ? 'secondary' : 'primary'"
+                  variant="tonal"
+                  class="cursor-pointer font-weight-bold"
+                  @click="realtimeStore.togglePause()"
+                >
+                  {{ realtimeStore.isPaused ? 'Pausado' : 'Tiempo Real' }}
                 </VChip>
               </div>
             </template>
@@ -111,7 +119,13 @@ const formatNumber = (val?: number) => {
           <VDivider />
 
           <VCardText class="pa-4">
-            <div v-if="!realtimeStore.recentActivities.length" class="text-center py-8 text-medium-emphasis">
+            <div v-if="realtimeStore.isPaused" class="text-center py-8 text-medium-emphasis">
+              <VIcon icon="ri-pause-circle-line" size="40" class="mb-2 text-secondary" />
+              <p class="text-body-2 font-weight-medium mb-1">Actualización en tiempo real pausada</p>
+              <span class="text-caption text-disabled">Modo ahorro de CPU/RAM activo. Haz clic en el botón superior para reanudar o refresca manualmente.</span>
+            </div>
+
+            <div v-else-if="!realtimeStore.recentActivities.length" class="text-center py-8 text-medium-emphasis">
               <VIcon icon="ri-broadcast-line" size="40" class="mb-2 text-primary" />
               <p class="text-body-2 mb-0">Esperando confirmación de nuevas actas electorales...</p>
             </div>
