@@ -45,31 +45,41 @@ export interface PoliticalOrgItem {
 
 export const catalogsService = {
   async getDepartments(): Promise<{ data: DepartmentItem[] }> {
-    return apiClient<{ data: DepartmentItem[] }>('/departments')
+    const res = await apiClient<DepartmentItem[] | { data: DepartmentItem[] }>('/departments')
+    const list = Array.isArray(res) ? res : (res?.data || [])
+    return { data: list }
   },
 
   async getProvinces(departmentCode?: string): Promise<{ data: ProvinceItem[] }> {
-    return apiClient<{ data: ProvinceItem[] }>('/provinces', {
+    const res = await apiClient<ProvinceItem[] | { data: ProvinceItem[] }>('/provinces', {
       params: departmentCode ? { department_code: departmentCode } : undefined,
     })
+    const list = Array.isArray(res) ? res : (res?.data || [])
+    return { data: list }
   },
 
   async getDistricts(provinceCode?: string, departmentCode?: string): Promise<{ data: DistrictItem[] }> {
-    return apiClient<{ data: DistrictItem[] }>('/districts', {
+    const res = await apiClient<DistrictItem[] | { data: DistrictItem[] }>('/districts', {
       params: {
         province_code: provinceCode,
         department_code: departmentCode,
       },
     })
+    const list = Array.isArray(res) ? res : (res?.data || [])
+    return { data: list }
   },
 
   async getElections(): Promise<{ data: ElectionItem[] }> {
-    return apiClient<{ data: ElectionItem[] }>('/elections')
+    const res = await apiClient<ElectionItem[] | { data: ElectionItem[] }>('/elections')
+    const list = Array.isArray(res) ? res : (res?.data || [])
+    return { data: list }
   },
 
   async getPoliticalOrganizations(search?: string): Promise<{ data: PoliticalOrgItem[] }> {
-    return apiClient<{ data: PoliticalOrgItem[] }>('/political-organizations', {
+    const res = await apiClient<PoliticalOrgItem[] | { data: PoliticalOrgItem[] }>('/political-organizations', {
       params: search ? { search } : undefined,
     })
+    const list = Array.isArray(res) ? res : (res?.data || [])
+    return { data: list }
   },
 }

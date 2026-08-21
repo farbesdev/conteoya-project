@@ -437,29 +437,29 @@ class ResultsAggregationService
         ?string $districtCode,
         string $prefix = ''
     ): void {
-        if ($districtCode) {
-            $like = config('database.default') === 'pgsql' ? 'ILIKE' : 'LIKE';
-            $query->where(function ($q) use ($districtCode, $prefix, $like) {
-                $q->where("{$prefix}district_name", $like, "%{$districtCode}%")
-                  ->orWhereHas('electoralLocation.district', function ($sub) use ($districtCode) {
-                      $sub->where('code', $districtCode)->orWhere('name', 'LIKE', "%{$districtCode}%");
-                  });
+        $like = config('database.default') === 'pgsql' ? 'ILIKE' : 'LIKE';
+
+        if (!empty($departmentCode)) {
+            $deptName = \App\Models\Department::where('code', $departmentCode)->value('name') ?? $departmentCode;
+            $query->where(function ($q) use ($deptName, $departmentCode, $prefix, $like) {
+                $q->where("{$prefix}department_name", $like, "%{$deptName}%")
+                  ->orWhere("{$prefix}department_name", $like, "%{$departmentCode}%");
             });
-        } elseif ($provinceCode) {
-            $like = config('database.default') === 'pgsql' ? 'ILIKE' : 'LIKE';
-            $query->where(function ($q) use ($provinceCode, $prefix, $like) {
-                $q->where("{$prefix}province_name", $like, "%{$provinceCode}%")
-                  ->orWhereHas('electoralLocation.district.province', function ($sub) use ($provinceCode) {
-                      $sub->where('code', $provinceCode)->orWhere('name', 'LIKE', "%{$provinceCode}%");
-                  });
+        }
+
+        if (!empty($provinceCode)) {
+            $provName = \App\Models\Province::where('code', $provinceCode)->value('name') ?? $provinceCode;
+            $query->where(function ($q) use ($provName, $provinceCode, $prefix, $like) {
+                $q->where("{$prefix}province_name", $like, "%{$provName}%")
+                  ->orWhere("{$prefix}province_name", $like, "%{$provinceCode}%");
             });
-        } elseif ($departmentCode) {
-            $like = config('database.default') === 'pgsql' ? 'ILIKE' : 'LIKE';
-            $query->where(function ($q) use ($departmentCode, $prefix, $like) {
-                $q->where("{$prefix}department_name", $like, "%{$departmentCode}%")
-                  ->orWhereHas('electoralLocation.district.province.department', function ($sub) use ($departmentCode) {
-                      $sub->where('code', $departmentCode)->orWhere('name', 'LIKE', "%{$departmentCode}%");
-                  });
+        }
+
+        if (!empty($districtCode)) {
+            $distName = \App\Models\District::where('code', $districtCode)->value('name') ?? $districtCode;
+            $query->where(function ($q) use ($distName, $districtCode, $prefix, $like) {
+                $q->where("{$prefix}district_name", $like, "%{$distName}%")
+                  ->orWhere("{$prefix}district_name", $like, "%{$districtCode}%");
             });
         }
     }

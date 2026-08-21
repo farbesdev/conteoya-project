@@ -3,6 +3,7 @@ import { useResultsStore } from '@/stores/useResultsStore'
 import { useRealtimeStore } from '@/stores/useRealtimeStore'
 import ResultsSummaryCards from '@/views/resultados/ResultsSummaryCards.vue'
 import ElectionBarsChart from '@/views/resultados/ElectionBarsChart.vue'
+import UbigeoCascadeFilter from '@/views/resultados/UbigeoCascadeFilter.vue'
 
 definePage({
   meta: {
@@ -75,6 +76,9 @@ const formatNumber = (val?: number) => {
         />
       </div>
     </div>
+
+    <!-- Filtros de Ubigeo -->
+    <UbigeoCascadeFilter class="mb-4" />
 
     <!-- KPIs Principales -->
     <ResultsSummaryCards
