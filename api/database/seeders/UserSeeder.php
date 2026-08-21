@@ -57,6 +57,8 @@ class UserSeeder extends Seeder
         $this->command->info('✅  Usuario DIRECTOR creado: director@conteoya.pe / Director123!');
 
         // ─── PERSONERO PUERTO INCA (YUYAPICHIS) ──────────────────────────────
+        $personeroRole = Role::where('name', Role::PERSONERO)->firstOrFail();
+
         $puertoIncaUser = User::updateOrCreate(
             ['email' => 'personero.puertoinca@conteoya.pe'],
             [
