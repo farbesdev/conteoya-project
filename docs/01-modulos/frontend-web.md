@@ -65,3 +65,18 @@ El frontend consume directamente los activos visuales desde las rutas locales ge
 - **Logos de Organizaciones Políticas**: `/storage/political-organizationals/{id}.webp`
 
 Se incluye soporte para previsualización inmediata y carga de archivos mediante `VFileInput` y `FormData` en los formularios de candidatos.
+
+---
+
+## 5. Filtro de Ubigeo en Cascada y Normalización de Catálogos (`UbigeoCascadeFilter`)
+
+El sistema incluye un selector en cascada para exploración territorial de resultados electorales:
+
+1. **Normalización de Respuestas de API (`catalogs.service.ts`)**:
+   - Resuelve discrepancias entre la API REST de Laravel (retorno directo de arreglos `[...]`) y el cliente `ofetch`, garantizando la deserialización segura en objetos `{ data: [...] }`.
+2. **Navegación Jerárquica en Cascada**:
+   - **Departamento / Región**: Carga los 25 departamentos al montar el componente.
+   - **Provincia**: Se habilita al seleccionar un departamento y consulta `/api/v1/provinces?department_code={code}`.
+   - **Distrito**: Se habilita al seleccionar una provincia y consulta `/api/v1/districts?province_code={code}`.
+3. **Integración Multipanel**:
+   - Disponible en el Dashboard Público (`/resultados`) y en el Panel Administrativo (`/admin/dashboard`), actualizando de forma reactiva el estado de Pinia en `useResultsStore`.
