@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "dev:clean": "vite --force",
-    "build": "vite build",
+    "build": "vite build --mode production",
+    "build:prod": "vite build --mode production",
+    "build:dev": "vite build --mode development",
     "preview": "vite preview --port 5050",
     "typecheck": "vue-tsc --noEmit",
     "lint": "eslint . -c .eslintrc.cjs --fix --rulesdir eslint-internal-rules/ --ext .ts,.js,.cjs,.vue,.tsx,.jsx",
