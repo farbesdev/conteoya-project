@@ -71,23 +71,23 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
   late int _selectedLevelId;
 
   // Controllers de Totales Regional
-  final TextEditingController _registeredVotersController = TextEditingController(text: '300');
-  final TextEditingController _votersWhoVotedController = TextEditingController(text: '280');
-  final TextEditingController _totalVotesController = TextEditingController(text: '280');
-  final TextEditingController _blankVotesController = TextEditingController(text: '10');
-  final TextEditingController _nullVotesController = TextEditingController(text: '5');
+  final TextEditingController _registeredVotersController = TextEditingController(text: '0');
+  final TextEditingController _votersWhoVotedController = TextEditingController(text: '0');
+  final TextEditingController _totalVotesController = TextEditingController(text: '0');
+  final TextEditingController _blankVotesController = TextEditingController(text: '0');
+  final TextEditingController _nullVotesController = TextEditingController(text: '0');
   final TextEditingController _challengedVotesController = TextEditingController(text: '0');
 
   // Controllers de Totales Municipal Provincial
-  final TextEditingController _provTotalVotesController = TextEditingController(text: '574');
-  final TextEditingController _provBlankVotesController = TextEditingController(text: '8');
-  final TextEditingController _provNullVotesController = TextEditingController(text: '12');
+  final TextEditingController _provTotalVotesController = TextEditingController(text: '0');
+  final TextEditingController _provBlankVotesController = TextEditingController(text: '0');
+  final TextEditingController _provNullVotesController = TextEditingController(text: '0');
   final TextEditingController _provChallengedVotesController = TextEditingController(text: '0');
 
   // Controllers de Totales Municipal Distrital
-  final TextEditingController _distTotalVotesController = TextEditingController(text: '577');
-  final TextEditingController _distBlankVotesController = TextEditingController(text: '8');
-  final TextEditingController _distNullVotesController = TextEditingController(text: '12');
+  final TextEditingController _distTotalVotesController = TextEditingController(text: '0');
+  final TextEditingController _distBlankVotesController = TextEditingController(text: '0');
+  final TextEditingController _distNullVotesController = TextEditingController(text: '0');
   final TextEditingController _distChallengedVotesController = TextEditingController(text: '0');
 
   List<PartyFormEntry> _partyEntries = [];
@@ -140,7 +140,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
 
     if (mounted) {
       _registeredVotersController.text = registeredVoters.toString();
-      _votersWhoVotedController.text = (registeredVoters > 20 ? registeredVoters - 10 : registeredVoters).toString();
+      _votersWhoVotedController.text = '0';
     }
 
     List<Map<String, Object?>> selectedParties;
@@ -148,9 +148,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
     if (isHuanucoPuertoInca) {
       if (_selectedLevelId == 1) {
         // 🏛️ Elección Regional — Huánuco (Candidaturas Oficiales JEE)
-        _totalVotesController.text = _votersWhoVotedController.text;
-        _blankVotesController.text = '8';
-        _nullVotesController.text = '7';
+        _totalVotesController.text = '0';
+        _blankVotesController.text = '0';
+        _nullVotesController.text = '0';
 
         selectedParties = [
           {
@@ -158,9 +158,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             'name': 'PARTIDO POLITICO PERU PRIMERO',
             'shortName': 'PERU PRIMERO',
             'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2925.png',
-            'votes': '75',
-            'provVotes': '75',
-            'distVotes': '75',
+            'votes': '0',
+            'provVotes': '0',
+            'distVotes': '0',
             'provAdmitted': true,
             'distAdmitted': true,
           },
@@ -169,9 +169,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             'name': 'PARTIDO DEMOCRATICO SOMOS PERU',
             'shortName': 'SOMOS PERU',
             'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/14.png',
-            'votes': '65',
-            'provVotes': '65',
-            'distVotes': '65',
+            'votes': '0',
+            'provVotes': '0',
+            'distVotes': '0',
             'provAdmitted': true,
             'distAdmitted': true,
           },
@@ -180,9 +180,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             'name': 'RENOVACION POPULAR PERU',
             'shortName': 'RENOVACION',
             'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/3040.png',
-            'votes': '55',
-            'provVotes': '55',
-            'distVotes': '55',
+            'votes': '0',
+            'provVotes': '0',
+            'distVotes': '0',
             'provAdmitted': true,
             'distAdmitted': true,
           },
@@ -191,9 +191,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             'name': 'PARTIDO PAIS PARA TODOS',
             'shortName': 'PAIS PARA TODOS',
             'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2956.png',
-            'votes': '40',
-            'provVotes': '40',
-            'distVotes': '40',
+            'votes': '0',
+            'provVotes': '0',
+            'distVotes': '0',
             'provAdmitted': true,
             'distAdmitted': true,
           },
@@ -202,9 +202,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             'name': 'LIBERTAD POPULAR',
             'shortName': 'LIBERTAD',
             'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2933.png',
-            'votes': '20',
-            'provVotes': '20',
-            'distVotes': '20',
+            'votes': '0',
+            'provVotes': '0',
+            'distVotes': '0',
             'provAdmitted': true,
             'distAdmitted': true,
           },
@@ -213,9 +213,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             'name': 'UNIDOS POR EL DESARROLLO DE HUANUCO - UDH',
             'shortName': 'UDH',
             'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2938.png',
-            'votes': '15',
-            'provVotes': '15',
-            'distVotes': '15',
+            'votes': '0',
+            'provVotes': '0',
+            'distVotes': '0',
             'provAdmitted': true,
             'distAdmitted': true,
           },
@@ -224,9 +224,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             'name': 'MOVIMIENTO REGIONAL HUANUCO PRIMERO',
             'shortName': 'HUANUCO 1RO',
             'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2162.png',
-            'votes': '10',
-            'provVotes': '10',
-            'distVotes': '10',
+            'votes': '0',
+            'provVotes': '0',
+            'distVotes': '0',
             'provAdmitted': true,
             'distAdmitted': true,
           },
@@ -235,24 +235,23 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             'name': 'FRENTE POPULAR AGRICOLA FIA DEL PERU - FREPAP',
             'shortName': 'FREPAP',
             'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2901.png',
-            'votes': '5',
-            'provVotes': '5',
-            'distVotes': '5',
+            'votes': '0',
+            'provVotes': '0',
+            'distVotes': '0',
             'provAdmitted': true,
             'distAdmitted': true,
           },
         ];
       } else {
         // 🏙️ Elección Municipal Provincial (Puerto Inca) y Distrital (Yuyapichis / Codo del Pozuzo)
-        final votersCount = int.tryParse(_votersWhoVotedController.text) ?? 290;
-        _provTotalVotesController.text = votersCount.toString();
-        _provBlankVotesController.text = '5';
-        _provNullVotesController.text = '5';
+        _provTotalVotesController.text = '0';
+        _provBlankVotesController.text = '0';
+        _provNullVotesController.text = '0';
         _provChallengedVotesController.text = '0';
 
-        _distTotalVotesController.text = votersCount.toString();
-        _distBlankVotesController.text = '15';
-        _distNullVotesController.text = '15';
+        _distTotalVotesController.text = '0';
+        _distBlankVotesController.text = '0';
+        _distNullVotesController.text = '0';
         _distChallengedVotesController.text = '0';
 
         selectedParties = [
@@ -261,9 +260,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             'name': 'PARTIDO POLITICO PERU PRIMERO',
             'shortName': 'PERU PRIMERO',
             'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2925.png',
-            'votes': '80',
-            'provVotes': '80',
-            'distVotes': '80',
+            'votes': '0',
+            'provVotes': '0',
+            'distVotes': '0',
             'provAdmitted': true, // Postula a Provincial Puerto Inca
             'distAdmitted': true, // Postula a Distrital Yuyapichis
           },
@@ -272,9 +271,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             'name': 'PARTIDO DEMOCRATICO SOMOS PERU',
             'shortName': 'SOMOS PERU',
             'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/14.png',
-            'votes': '70',
-            'provVotes': '70',
-            'distVotes': '70',
+            'votes': '0',
+            'provVotes': '0',
+            'distVotes': '0',
             'provAdmitted': true, // Postula a Provincial Puerto Inca
             'distAdmitted': true, // Postula a Distrital Yuyapichis
           },
@@ -283,9 +282,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             'name': 'RENOVACION POPULAR PERU',
             'shortName': 'RENOVACION',
             'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/3040.png',
-            'votes': '60',
-            'provVotes': '60',
-            'distVotes': '60',
+            'votes': '0',
+            'provVotes': '0',
+            'distVotes': '0',
             'provAdmitted': true, // Postula a Provincial Puerto Inca
             'distAdmitted': true, // Postula a Distrital Yuyapichis
           },
@@ -294,9 +293,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             'name': 'PARTIDO PAIS PARA TODOS',
             'shortName': 'PAIS PARA TODOS',
             'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2956.png',
-            'votes': '40',
-            'provVotes': '40',
-            'distVotes': '50',
+            'votes': '0',
+            'provVotes': '0',
+            'distVotes': '0',
             'provAdmitted': true, // Postula a Provincial Puerto Inca
             'distAdmitted': true, // Postula a Distrital Yuyapichis
           },
@@ -305,8 +304,8 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             'name': 'ACCION POPULAR',
             'shortName': 'AP',
             'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/4.png',
-            'votes': '15',
-            'provVotes': '15',
+            'votes': '0',
+            'provVotes': '0',
             'distVotes': '0',
             'provAdmitted': true, // Postula a Provincial Puerto Inca
             'distAdmitted': false, // No postula a Distrital Yuyapichis
@@ -316,8 +315,8 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             'name': 'AHORA NACION - AN',
             'shortName': 'AN',
             'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2980.png',
-            'votes': '10',
-            'provVotes': '10',
+            'votes': '0',
+            'provVotes': '0',
             'distVotes': '0',
             'provAdmitted': true, // Postula a Provincial Puerto Inca
             'distAdmitted': false, // No postula a Distrital Yuyapichis
@@ -327,8 +326,8 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             'name': 'FRENTE POPULAR AGRICOLA FIA DEL PERU - FREPAP',
             'shortName': 'FREPAP',
             'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2901.png',
-            'votes': '5',
-            'provVotes': '5',
+            'votes': '0',
+            'provVotes': '0',
             'distVotes': '0',
             'provAdmitted': true, // Postula a Provincial Puerto Inca
             'distAdmitted': false, // No postula a Distrital Yuyapichis
@@ -338,19 +337,19 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
     } else {
       // 🏛️ Elección Lima Metropolitana / Lima Cercado
       if (_selectedLevelId == 1) {
-        _totalVotesController.text = '280';
-        _blankVotesController.text = '10';
-        _nullVotesController.text = '5';
+        _totalVotesController.text = '0';
+        _blankVotesController.text = '0';
+        _nullVotesController.text = '0';
         _challengedVotesController.text = '0';
       } else {
-        _provTotalVotesController.text = '280';
-        _provBlankVotesController.text = '8';
-        _provNullVotesController.text = '7';
+        _provTotalVotesController.text = '0';
+        _provBlankVotesController.text = '0';
+        _provNullVotesController.text = '0';
         _provChallengedVotesController.text = '0';
 
-        _distTotalVotesController.text = '280';
-        _distBlankVotesController.text = '8';
-        _distNullVotesController.text = '7';
+        _distTotalVotesController.text = '0';
+        _distBlankVotesController.text = '0';
+        _distNullVotesController.text = '0';
         _distChallengedVotesController.text = '0';
       }
 
@@ -360,9 +359,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
           'name': 'ACCIÓN POPULAR',
           'shortName': 'AP',
           'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/4.png',
-          'votes': '85',
-          'provVotes': '85',
-          'distVotes': '80',
+          'votes': '0',
+          'provVotes': '0',
+          'distVotes': '0',
           'provAdmitted': true,
           'distAdmitted': true,
         },
@@ -371,9 +370,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
           'name': 'PARTIDO DEMOCRÁTICO SOMOS PERÚ',
           'shortName': 'SOMOS PERU',
           'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/14.png',
-          'votes': '70',
-          'provVotes': '70',
-          'distVotes': '75',
+          'votes': '0',
+          'provVotes': '0',
+          'distVotes': '0',
           'provAdmitted': true,
           'distAdmitted': true,
         },
@@ -382,9 +381,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
           'name': 'ALIANZA PARA EL PROGRESO',
           'shortName': 'APP',
           'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/1257.png',
-          'votes': '55',
-          'provVotes': '55',
-          'distVotes': '50',
+          'votes': '0',
+          'provVotes': '0',
+          'distVotes': '0',
           'provAdmitted': true,
           'distAdmitted': true,
         },
@@ -393,9 +392,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
           'name': 'JUNTOS POR EL PERÚ',
           'shortName': 'JP',
           'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/1264.png',
-          'votes': '30',
-          'provVotes': '30',
-          'distVotes': '32',
+          'votes': '0',
+          'provVotes': '0',
+          'distVotes': '0',
           'provAdmitted': true,
           'distAdmitted': true,
         },
@@ -404,9 +403,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
           'name': 'FUERZA POPULAR',
           'shortName': 'FP',
           'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/1366.png',
-          'votes': '25',
-          'provVotes': '25',
-          'distVotes': '28',
+          'votes': '0',
+          'provVotes': '0',
+          'distVotes': '0',
           'provAdmitted': true,
           'distAdmitted': true,
         },
@@ -415,9 +414,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
           'name': 'AVANZA PAIS - PARTIDO DE INTEGRACION SOCIAL',
           'shortName': 'AVANZA PAIS',
           'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2173.png',
-          'votes': '15',
-          'provVotes': '15',
-          'distVotes': '15',
+          'votes': '0',
+          'provVotes': '0',
+          'distVotes': '0',
           'provAdmitted': true,
           'distAdmitted': true,
         },
