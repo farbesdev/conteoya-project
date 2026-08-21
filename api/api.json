@@ -779,8 +779,14 @@
                                                     "photo_url": {
                                                         "type": "string"
                                                     },
-                                                    "local_photo_url": {
+                                                    "remote_photo_url": {
                                                         "type": "string"
+                                                    },
+                                                    "local_photo_url": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
                                                     },
                                                     "id_hoja_vida": {
                                                         "type": "string"
@@ -880,6 +886,7 @@
                                                     "full_name",
                                                     "name",
                                                     "photo_url",
+                                                    "remote_photo_url",
                                                     "local_photo_url",
                                                     "id_hoja_vida",
                                                     "cv_url",
@@ -949,7 +956,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "type": "object",
                                 "properties": {
@@ -967,6 +974,15 @@
                                             "null"
                                         ],
                                         "maxLength": 500
+                                    },
+                                    "photo_file": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "format": "binary",
+                                        "contentMediaType": "application/octet-stream",
+                                        "description": "Maximum file size: 5120 kilobytes."
                                     },
                                     "position": {
                                         "type": [
@@ -1075,8 +1091,14 @@
                                                 "photo_url": {
                                                     "type": "string"
                                                 },
-                                                "local_photo_url": {
+                                                "remote_photo_url": {
                                                     "type": "string"
+                                                },
+                                                "local_photo_url": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
                                                 },
                                                 "id_hoja_vida": {
                                                     "type": "string"
@@ -1193,6 +1215,7 @@
                                                 "full_name",
                                                 "name",
                                                 "photo_url",
+                                                "remote_photo_url",
                                                 "local_photo_url",
                                                 "id_hoja_vida",
                                                 "cv_url",
@@ -1246,7 +1269,7 @@
                 ],
                 "requestBody": {
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "type": "object",
                                 "properties": {
@@ -1263,6 +1286,15 @@
                                             "null"
                                         ],
                                         "maxLength": 500
+                                    },
+                                    "photo_file": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "format": "binary",
+                                        "contentMediaType": "application/octet-stream",
+                                        "description": "Maximum file size: 5120 kilobytes."
                                     },
                                     "id_hoja_vida": {
                                         "type": [
@@ -1550,6 +1582,167 @@
                                 }
                             }
                         }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/candidates/{candidateId}/cv": {
+            "get": {
+                "operationId": "candidateCvSync.getCv",
+                "summary": "Obtener Hoja de Vida de un Candidato",
+                "tags": [
+                    "Candidatos - Sincronizaci\u00f3n de Hojas de Vida",
+                    "CandidateCvSync"
+                ],
+                "parameters": [
+                    {
+                        "name": "candidateId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Hoja de vida obtenida."
+                                        },
+                                        "candidate": {
+                                            "$ref": "#/components/schemas/Candidate"
+                                        },
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "candidate",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "candidateCvSync.updateCv",
+                "summary": "Crear o Actualizar Hoja de Vida de un Candidato con Editor de Texto/JSON",
+                "tags": [
+                    "Candidatos - Sincronizaci\u00f3n de Hojas de Vida",
+                    "CandidateCvSync"
+                ],
+                "parameters": [
+                    {
+                        "name": "candidateId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id_hoja_vida": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 100
+                                    },
+                                    "general_data": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "academic_data": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "work_experience": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "political_trajectory": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "sworn_declaration": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "penal_sentences": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    },
+                                    "additional_info": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Hoja de vida guardada exitosamente."
+                                        },
+                                        "data": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -1979,9 +2172,14 @@
                                                                         ]
                                                                     },
                                                                     "logo_url": {
-                                                                        "type": [
-                                                                            "string",
-                                                                            "null"
+                                                                        "anyOf": [
+                                                                            {
+                                                                                "type": "string"
+                                                                            },
+                                                                            {
+                                                                                "type": "array",
+                                                                                "items": {}
+                                                                            }
                                                                         ]
                                                                     },
                                                                     "local_logo_url": {
@@ -2011,10 +2209,21 @@
                                                                                     "type": "string"
                                                                                 },
                                                                                 "photo_url": {
-                                                                                    "type": "string"
+                                                                                    "anyOf": [
+                                                                                        {
+                                                                                            "type": "string"
+                                                                                        },
+                                                                                        {
+                                                                                            "type": "array",
+                                                                                            "items": {}
+                                                                                        }
+                                                                                    ]
                                                                                 },
                                                                                 "local_photo_url": {
-                                                                                    "type": "string"
+                                                                                    "type": [
+                                                                                        "string",
+                                                                                        "null"
+                                                                                    ]
                                                                                 },
                                                                                 "position": {
                                                                                     "type": "string"
@@ -4332,9 +4541,14 @@
                                                         ]
                                                     },
                                                     "political_org_logo": {
-                                                        "type": [
-                                                            "string",
-                                                            "null"
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "type": "array",
+                                                                "items": {}
+                                                            }
                                                         ]
                                                     },
                                                     "jee_name": {
@@ -5785,7 +5999,15 @@
                                                                 "type": "string"
                                                             },
                                                             "logo_url": {
-                                                                "type": "string"
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "array",
+                                                                        "items": {}
+                                                                    }
+                                                                ]
                                                             },
                                                             "votes": {
                                                                 "type": "integer"

@@ -36,7 +36,13 @@ La documentación está organizada en **7 módulos temáticos** estructurados en
 3. [`01-modulos/motor-sincronizacion.md`](01-modulos/motor-sincronizacion.md) — Máquina de estados del `SyncEngine` y backoff exponencial.
 4. [`02-integraciones/cloudflare-r2.md`](02-integraciones/cloudflare-r2.md) — Cálculo de SHA-256 local y upload directo a R2.
 
+### 💻 Para Desarrolladores Frontend Web (Vue 3.5 / TypeScript)
+1. [`03-guias/instalacion-local.md`](03-guias/instalacion-local.md) — Setup del entorno web con Vite.
+2. [`01-modulos/frontend-web.md`](01-modulos/frontend-web.md) — Arquitectura Vue 3, Pinia stores, control de tiempo real y build para producción.
+3. [`05-seguridad/control-acceso-auditoria.md`](05-seguridad/control-acceso-auditoria.md) — Gestión de autenticación por tokens Sanctum.
+
 ### 🏛️ Para Arquitectos de Software y Líderes Técnicos
 1. [`00-arquitectura/vision-general.md`](00-arquitectura/vision-general.md) — Objetivos de calidad, diagramas de contexto y alcance.
 2. [`00-arquitectura/decisiones-diseno-adrs.md`](00-arquitectura/decisiones-diseno-adrs.md) — Registro histórico de decisiones técnicas.
 3. [`00-arquitectura/despliegue-infraestructura.md`](00-arquitectura/despliegue-infraestructura.md) — Topología y resiliencia en la nube.
+
