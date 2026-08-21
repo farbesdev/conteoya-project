@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import FlatPickr from 'vue-flatpickr-component'
 import { useTheme } from 'vuetify'
+import 'flatpickr/dist/flatpickr.css'
 
 // @ts-expect-error There won't be declaration file for it
 import { VField, makeVFieldProps } from 'vuetify/lib/components/VField/VField'
@@ -202,7 +203,6 @@ watch(() => props, () => {
 
 <style lang="scss">
 /* stylelint-disable no-descending-specificity */
-@use "flatpickr/dist/flatpickr.css";
 @use "@core/scss/base/mixins";
 
 .flat-picker-custom-style {

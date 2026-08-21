@@ -35,6 +35,7 @@
     "cookie-es": "1.2.2",
     "destr": "2.0.5",
     "eslint-plugin-regexp": "2.10.0",
+    "flatpickr": "4.6.13",
     "jwt-decode": "4.0.0",
     "mapbox-gl": "3.5.2",
     "ofetch": "1.5.1",
