@@ -63,3 +63,7 @@ Para garantizar compatibilidad universal con **PostgreSQL 16**, **SQLite** (prue
 | `EvidenceController` | Generación de URLs presignadas para subida directa a Cloudflare R2 y confirmación de evidencias con SHA-256 | `PERSONERO`, `ADMIN`, `DIRECTOR` |
 | `RecognitionController` | OCR/IA multimodal de actas (Human-in-the-Loop) | `PERSONERO`, `ADMIN`, `DIRECTOR` |
 | `SyncController` | Motor de sincronización bidireccional push/pull con caché Redis | `PERSONERO`, `ADMIN`, `DIRECTOR` |
+| `CandidateController` | CRUD de candidatos, carga de fotos locales WebP, edición de hojas de vida (CV) y sincronización con JNE | `ADMIN`, `DIRECTOR` |
+| `PoliticalOrganizationController` | CRUD de partidos políticos y optimización automática de logos en WebP | `ADMIN`, `DIRECTOR` |
+| `ResultsController` | Consolidación y agregación de cómputo en vivo, ranking por partidos y desglose de mesas | Público / Autenticado |
+

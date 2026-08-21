@@ -932,10 +932,26 @@ Consulta paginada y filtrada del repositorio de actas electorales (ADMIN, DIRECT
 ## 🏛️ Gestión de Candidatos y Hojas de Vida (JNE Declara)
 
 ### `GET /api/v1/candidates`
-Lista y busca candidatos paginados con su cargo de postulación (`candidacies.position`), estado oficial de lista (`electoral_lists.status`), ubigeo territorial y URLs de hoja de vida JNE.
+Lista y busca candidatos paginados con su cargo de postulación (`candidacies.position`), estado oficial de candidatura (`candidates.status`), ordenamiento jerárquico (`INSCRITO`, `ADMITIDO`, `IMPROCEDENTE`, `EXCLUSION`, etc.), ubigeo territorial y resolución de fotografías locales prioritarias (`/storage/candidates/{id}/foto.webp`).
+
+**Query Parameters:**
+- `search` *(opcional)*: Búsqueda por DNI o nombre completo.
+- `status` *(opcional)*: Estado de la candidatura (`INSCRITO`, `ADMITIDO`, `IMPROCEDENTE`, `TACHA DECLARADA FUNDADA`, `EXCLUSION`, `RENUNCIA`, `FALLECIDO`, etc.).
+- `electoral_level_id` *(opcional)*: ID del nivel electoral (Regional, Provincial, Distrital).
+- `department_code`, `province_code`, `district_code` *(opcional)*: Filtros territoriales de ubigeo.
+- `page`, `per_page` *(opcional)*: Paginación.
+
+### `GET /api/v1/candidates/{id}`
+Obtiene el detalle completo del candidato, cargo, lista electoral, datos personales, URL remota y local de la fotografía y contenido de la hoja de vida (`cv_data` en JSON y texto).
+
+### `POST /api/v1/candidates` y `POST /api/v1/candidates/{id}` (con `_method=PUT`)
+Crea o actualiza los datos del candidato. Soporta subida y reemplazo de foto local mediante `multipart/form-data` (`photo_file`), optimizándola a formato `.webp` y almacenándola en `/storage/candidates/{id}/foto.webp`.
+
+### `PUT /api/v1/candidates/{id}/cv`
+Actualiza el contenido editable de la hoja de vida del candidato (`cv_data`), permitiendo enriquecer o corregir información declarada.
 
 ### `POST /api/v1/candidates/sync-cvs`
-Inicia la sincronización asíncrona por lotes en segundo plano usando **Redis Queues**, con retardos configurables contra Rate Limiting (WAF JNE).
+Inicia la sincronización asíncrona por lotes en segundo plano usando **Redis Queues**, con retardos configurables contra Rate Limiting (WAF JNE) y persistencia en disco CSV para optimizar resets de base de datos.
 ```json
 {
   "chunk": 50,
@@ -966,10 +982,11 @@ Cancela o pausa la tarea en ejecución.
 ## 🚩 Organizaciones Políticas
 
 ### `GET /api/v1/political-organizations`
-Listado paginado de organizaciones políticas con logos optimizados en WebP y búsqueda por nombre o sigla (`?search=`).
+Listado paginado de organizaciones políticas con resolución de logos locales WebP (`/storage/political-organizationals/{id}.webp`) y búsqueda por nombre o sigla (`?search=`).
 
 ### `POST /api/v1/political-organizations`
 Crea una organización política convirtiendo automáticamente cualquier formato de imagen (`PNG`, `JPG`, `SVG`) a `.webp` (Imagick / GD al 85% de calidad).
+
 
 ---
 
