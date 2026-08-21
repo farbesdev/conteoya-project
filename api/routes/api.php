@@ -18,6 +18,12 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::post('/login', [AuthController::class, 'login']);
     });
 
+    // Catálogos Electorales y Ubigeos Públicos (Alto Rendimiento & Caching)
+    Route::get('/departments', [CatalogController::class, 'departments']);
+    Route::get('/provinces', [CatalogController::class, 'provinces']);
+    Route::get('/districts', [CatalogController::class, 'districts']);
+    Route::get('/elections', [CatalogController::class, 'elections']);
+
     // Rutas protegidas Sanctum con RateLimit por IP y verificación de usuario activo
     Route::middleware(['auth:sanctum', 'active_user'])->group(function () {
         Route::get('/me', [AuthController::class, 'me']);
@@ -44,11 +50,7 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::post('/political-organizations/{id}', [\App\Http\Controllers\Api\V1\PoliticalOrganizationController::class, 'update']);
         Route::apiResource('political-organizations', \App\Http\Controllers\Api\V1\PoliticalOrganizationController::class);
 
-        // Catálogos Electorales y Ubigeos (Alto Rendimiento & Caching)
-        Route::get('/departments', [CatalogController::class, 'departments']);
-        Route::get('/provinces', [CatalogController::class, 'provinces']);
-        Route::get('/districts', [CatalogController::class, 'districts']);
-        Route::get('/elections', [CatalogController::class, 'elections']);
+        // Plantilla y Listas Electorales
         Route::get('/electoral-lists', [CatalogController::class, 'electoralLists']);
         Route::get('/ballot-template', [CatalogController::class, 'ballotTemplate']);
 
