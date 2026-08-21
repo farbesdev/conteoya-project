@@ -7,7 +7,7 @@
     },
     "servers": [
         {
-            "url": "http://localhost/api"
+            "url": "http://127.0.0.1:8000/api"
         }
     ],
     "paths": {
@@ -491,6 +491,128 @@
                         "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
+            },
+            "put": {
+                "operationId": "act.update",
+                "summary": "Actualizar Acta Electoral (Admin / Director)",
+                "tags": [
+                    "Actas Electorales",
+                    "Act"
+                ],
+                "parameters": [
+                    {
+                        "name": "act",
+                        "in": "path",
+                        "required": true,
+                        "description": "The act ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "status": {
+                                        "type": "string"
+                                    },
+                                    "act_code": {
+                                        "type": "string"
+                                    },
+                                    "totals": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Acta electoral actualizada exitosamente."
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/ActResource"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "act.destroy",
+                "summary": "Eliminar Acta Electoral (Admin)",
+                "tags": [
+                    "Actas Electorales",
+                    "Act"
+                ],
+                "parameters": [
+                    {
+                        "name": "act",
+                        "in": "path",
+                        "required": true,
+                        "description": "The act ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Acta electoral eliminada exitosamente del sistema."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
             }
         },
         "/v1/login": {
@@ -604,6 +726,827 @@
                                 "schema": {
                                     "type": "integer",
                                     "const": 200
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/candidates": {
+            "get": {
+                "operationId": "candidates.index",
+                "summary": "Listar y Buscar Candidatos Electorales",
+                "tags": [
+                    "Candidatos",
+                    "Candidate"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Lista de candidatos obtenida exitosamente."
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "string"
+                                                    },
+                                                    "document_number": {
+                                                        "type": "string"
+                                                    },
+                                                    "dni": {
+                                                        "type": "string"
+                                                    },
+                                                    "full_name": {
+                                                        "type": "string"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "photo_url": {
+                                                        "type": "string"
+                                                    },
+                                                    "local_photo_url": {
+                                                        "type": "string"
+                                                    },
+                                                    "id_hoja_vida": {
+                                                        "type": "string"
+                                                    },
+                                                    "cv_url": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "voto_informado_url": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "position": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "type": "null"
+                                                            },
+                                                            {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "CANDIDATO"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    "status": {
+                                                        "type": "string"
+                                                    },
+                                                    "list_number": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "political_org_name": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "Organizaci\u00f3n Pol\u00edtica"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    "political_org_short_name": {
+                                                        "type": "string"
+                                                    },
+                                                    "political_org_logo": {
+                                                        "type": "string"
+                                                    },
+                                                    "electoral_level_name": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "Regional / Municipal"
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    "department_name": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "province_name": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "district_name": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "id",
+                                                    "document_number",
+                                                    "dni",
+                                                    "full_name",
+                                                    "name",
+                                                    "photo_url",
+                                                    "local_photo_url",
+                                                    "id_hoja_vida",
+                                                    "cv_url",
+                                                    "voto_informado_url",
+                                                    "position",
+                                                    "status",
+                                                    "list_number",
+                                                    "political_org_name",
+                                                    "political_org_short_name",
+                                                    "political_org_logo",
+                                                    "electoral_level_name",
+                                                    "department_name",
+                                                    "province_name",
+                                                    "district_name"
+                                                ]
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer"
+                                                },
+                                                "last_page": {
+                                                    "type": "integer"
+                                                },
+                                                "per_page": {
+                                                    "type": "integer"
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                },
+                                                "has_more": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "required": [
+                                                "current_page",
+                                                "last_page",
+                                                "per_page",
+                                                "total",
+                                                "has_more"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "candidates.store",
+                "summary": "Crear Candidato",
+                "tags": [
+                    "Candidatos",
+                    "Candidate"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "document_number": {
+                                        "type": "string",
+                                        "maxLength": 12
+                                    },
+                                    "full_name": {
+                                        "type": "string",
+                                        "maxLength": 200
+                                    },
+                                    "photo_url": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 500
+                                    },
+                                    "position": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 150
+                                    },
+                                    "id_hoja_vida": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 50
+                                    }
+                                },
+                                "required": [
+                                    "document_number",
+                                    "full_name"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Candidato registrado exitosamente."
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Candidate"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/candidates/{id}": {
+            "get": {
+                "operationId": "candidates.show",
+                "summary": "Ver Detalle de Candidato",
+                "tags": [
+                    "Candidatos",
+                    "Candidate"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Ficha de candidato obtenida exitosamente."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "document_number": {
+                                                    "type": "string"
+                                                },
+                                                "dni": {
+                                                    "type": "string"
+                                                },
+                                                "full_name": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "photo_url": {
+                                                    "type": "string"
+                                                },
+                                                "local_photo_url": {
+                                                    "type": "string"
+                                                },
+                                                "id_hoja_vida": {
+                                                    "type": "string"
+                                                },
+                                                "cv_url": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "voto_informado_url": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "cv_data": {
+                                                    "$ref": "#/components/schemas/CandidateCv"
+                                                },
+                                                "position": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "null"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "CANDIDATO"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "status": {
+                                                    "type": "string"
+                                                },
+                                                "list_number": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "political_org_name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "Organizaci\u00f3n Pol\u00edtica"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "political_org_short_name": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "political_org_logo": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "array",
+                                                            "items": {}
+                                                        },
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "null"
+                                                        }
+                                                    ]
+                                                },
+                                                "electoral_level_name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "Regional / Municipal"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "department_name": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "province_name": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "district_name": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "document_number",
+                                                "dni",
+                                                "full_name",
+                                                "name",
+                                                "photo_url",
+                                                "local_photo_url",
+                                                "id_hoja_vida",
+                                                "cv_url",
+                                                "voto_informado_url",
+                                                "cv_data",
+                                                "position",
+                                                "status",
+                                                "list_number",
+                                                "political_org_name",
+                                                "political_org_short_name",
+                                                "political_org_logo",
+                                                "electoral_level_name",
+                                                "department_name",
+                                                "province_name",
+                                                "district_name"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "candidates.update",
+                "summary": "Actualizar Candidato",
+                "tags": [
+                    "Candidatos",
+                    "Candidate"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "full_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 200
+                                    },
+                                    "photo_url": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 500
+                                    },
+                                    "id_hoja_vida": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 50
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Candidato actualizado exitosamente."
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Candidate"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "candidates.destroy",
+                "summary": "Eliminar Candidato",
+                "tags": [
+                    "Candidatos",
+                    "Candidate"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Candidato eliminado exitosamente del sistema."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/candidates/sync-cvs": {
+            "post": {
+                "operationId": "candidateCvSync.startSync",
+                "summary": "Iniciar Sincronizaci\u00f3n As\u00edncrona de Hojas de Vida (Redis Queue)",
+                "tags": [
+                    "Candidatos - Sincronizaci\u00f3n de Hojas de Vida",
+                    "CandidateCvSync"
+                ],
+                "responses": {
+                    "202": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Sincronizaci\u00f3n de hojas de vida iniciada en segundo plano."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "const": "running"
+                                                },
+                                                "total": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "null"
+                                                        },
+                                                        {
+                                                            "type": "object"
+                                                        },
+                                                        {
+                                                            "type": "integer",
+                                                            "minimum": 0
+                                                        }
+                                                    ]
+                                                },
+                                                "processed": {
+                                                    "type": "integer"
+                                                },
+                                                "success_count": {
+                                                    "type": "integer"
+                                                },
+                                                "error_count": {
+                                                    "type": "integer"
+                                                },
+                                                "percentage": {
+                                                    "type": "number"
+                                                },
+                                                "last_candidate_name": {
+                                                    "type": "string",
+                                                    "const": "Iniciando conexi\u00f3n con JNE Declara..."
+                                                },
+                                                "started_at": {
+                                                    "type": "string"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "total",
+                                                "processed",
+                                                "success_count",
+                                                "error_count",
+                                                "percentage",
+                                                "last_candidate_name",
+                                                "started_at",
+                                                "updated_at"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "La sincronizaci\u00f3n de hojas de vida ya se encuentra en ejecuci\u00f3n."
+                                        },
+                                        "data": {}
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/candidates/sync-cvs/status": {
+            "get": {
+                "operationId": "candidateCvSync.getStatus",
+                "summary": "Consultar Progreso y Estado de Sincronizaci\u00f3n en Tiempo Real",
+                "tags": [
+                    "Candidatos - Sincronizaci\u00f3n de Hojas de Vida",
+                    "CandidateCvSync"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Estado de sincronizaci\u00f3n de hojas de vida."
+                                        },
+                                        "data": {}
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/candidates/sync-cvs/cancel": {
+            "post": {
+                "operationId": "candidateCvSync.cancelSync",
+                "summary": "Cancelar o Detener Sincronizaci\u00f3n Activa",
+                "tags": [
+                    "Candidatos - Sincronizaci\u00f3n de Hojas de Vida",
+                    "CandidateCvSync"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "No hay ninguna sincronizaci\u00f3n en ejecuci\u00f3n."
+                                                },
+                                                "data": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "message",
+                                                "data"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Sincronizaci\u00f3n cancelada exitosamente."
+                                                },
+                                                "data": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "message",
+                                                "data"
+                                            ]
+                                        }
+                                    ]
                                 }
                             }
                         }
@@ -731,33 +1674,6 @@
                                     "type": "array",
                                     "items": {
                                         "$ref": "#/components/schemas/Election"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    }
-                }
-            }
-        },
-        "/v1/political-organizations": {
-            "get": {
-                "operationId": "catalog.politicalOrganizations",
-                "summary": "Retorna organizaciones pol\u00edticas con cach\u00e9 en Redis de 12 horas",
-                "tags": [
-                    "Catalog"
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/PoliticalOrganization"
                                     }
                                 }
                             }
@@ -2610,6 +3526,648 @@
                 }
             }
         },
+        "/v1/political-organizations/{id}": {
+            "post": {
+                "operationId": "v1.politicalOrganization.update_0",
+                "summary": "Actualizar Organizaci\u00f3n Pol\u00edtica y reemplazar Logo a .webp",
+                "tags": [
+                    "Organizaciones Pol\u00edticas",
+                    "PoliticalOrganization"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 255
+                                    },
+                                    "short_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 50
+                                    },
+                                    "org_type": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 50
+                                    },
+                                    "logo": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "format": "binary",
+                                        "contentMediaType": "application/octet-stream",
+                                        "description": "Maximum file size: 5120 kilobytes."
+                                    },
+                                    "logo_url": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "format": "uri",
+                                        "maxLength": 500
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Organizaci\u00f3n pol\u00edtica actualizada exitosamente."
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/PoliticalOrganization"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "get": {
+                "operationId": "political-organizations.show",
+                "summary": "Ver Detalle de Organizaci\u00f3n Pol\u00edtica",
+                "tags": [
+                    "Organizaciones Pol\u00edticas",
+                    "PoliticalOrganization"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Detalle de la organizaci\u00f3n pol\u00edtica."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "jee_id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "short_name": {
+                                                    "type": "string"
+                                                },
+                                                "org_type": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "PARTIDO POL\u00cdTICO"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "logo_url": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "raw_logo_url": {
+                                                    "type": "string"
+                                                },
+                                                "local_logo_url": {
+                                                    "type": "string"
+                                                },
+                                                "created_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                },
+                                                "updated_at": {
+                                                    "type": [
+                                                        "string",
+                                                        "null"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "jee_id",
+                                                "name",
+                                                "short_name",
+                                                "org_type",
+                                                "logo_url",
+                                                "raw_logo_url",
+                                                "local_logo_url",
+                                                "created_at",
+                                                "updated_at"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "political-organizations.update",
+                "summary": "Actualizar Organizaci\u00f3n Pol\u00edtica y reemplazar Logo a .webp",
+                "tags": [
+                    "Organizaciones Pol\u00edticas",
+                    "PoliticalOrganization"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 255
+                                    },
+                                    "short_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 50
+                                    },
+                                    "org_type": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 50
+                                    },
+                                    "logo": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "format": "binary",
+                                        "contentMediaType": "application/octet-stream",
+                                        "description": "Maximum file size: 5120 kilobytes."
+                                    },
+                                    "logo_url": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "format": "uri",
+                                        "maxLength": 500
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Organizaci\u00f3n pol\u00edtica actualizada exitosamente."
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/PoliticalOrganization"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "delete": {
+                "operationId": "political-organizations.destroy",
+                "summary": "Eliminar Organizaci\u00f3n Pol\u00edtica",
+                "tags": [
+                    "Organizaciones Pol\u00edticas",
+                    "PoliticalOrganization"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Organizaci\u00f3n pol\u00edtica eliminada exitosamente."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/political-organizations": {
+            "get": {
+                "operationId": "political-organizations.index",
+                "summary": "Listar y Buscar Organizaciones Pol\u00edticas",
+                "tags": [
+                    "Organizaciones Pol\u00edticas",
+                    "PoliticalOrganization"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Lista de organizaciones pol\u00edticas obtenida exitosamente."
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "jee_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "short_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "org_type": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "PARTIDO POL\u00cdTICO"
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            },
+                                                            "logo_url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "raw_logo_url": {
+                                                                "type": "string"
+                                                            },
+                                                            "local_logo_url": {
+                                                                "type": "string"
+                                                            },
+                                                            "created_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "updated_at": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "jee_id",
+                                                            "name",
+                                                            "short_name",
+                                                            "org_type",
+                                                            "logo_url",
+                                                            "raw_logo_url",
+                                                            "local_logo_url",
+                                                            "created_at",
+                                                            "updated_at"
+                                                        ]
+                                                    }
+                                                },
+                                                "meta": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "current_page": {
+                                                            "type": "integer"
+                                                        },
+                                                        "last_page": {
+                                                            "type": "integer"
+                                                        },
+                                                        "per_page": {
+                                                            "type": "integer"
+                                                        },
+                                                        "total": {
+                                                            "type": "integer"
+                                                        },
+                                                        "has_more": {
+                                                            "type": "boolean"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "current_page",
+                                                        "last_page",
+                                                        "per_page",
+                                                        "total",
+                                                        "has_more"
+                                                    ]
+                                                }
+                                            },
+                                            "required": [
+                                                "message",
+                                                "data",
+                                                "meta"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Lista de organizaciones pol\u00edticas obtenida exitosamente."
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "string"
+                                                            },
+                                                            "jee_id": {
+                                                                "type": "string"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "short_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "org_type": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "string",
+                                                                        "enum": [
+                                                                            "PARTIDO POL\u00cdTICO"
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            },
+                                                            "logo_url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "raw_logo_url": {
+                                                                "type": "string"
+                                                            },
+                                                            "local_logo_url": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "id",
+                                                            "jee_id",
+                                                            "name",
+                                                            "short_name",
+                                                            "org_type",
+                                                            "logo_url",
+                                                            "raw_logo_url",
+                                                            "local_logo_url"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "message",
+                                                "data"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "political-organizations.store",
+                "summary": "Crear Organizaci\u00f3n Pol\u00edtica con subida de Logo convertida a .webp",
+                "tags": [
+                    "Organizaciones Pol\u00edticas",
+                    "PoliticalOrganization"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "short_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 50
+                                    },
+                                    "org_type": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 50
+                                    },
+                                    "logo": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "format": "binary",
+                                        "contentMediaType": "application/octet-stream",
+                                        "description": "Maximum file size: 5120 kilobytes."
+                                    },
+                                    "logo_url": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "format": "uri",
+                                        "maxLength": 500
+                                    }
+                                },
+                                "required": [
+                                    "name"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Organizaci\u00f3n pol\u00edtica creada exitosamente."
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/PoliticalOrganization"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/personeros/{personero}/toggle-access": {
             "patch": {
                 "operationId": "personeroAccess.toggleAccess",
@@ -2682,6 +4240,9 @@
                                                     "user_id": {
                                                         "type": "string"
                                                     },
+                                                    "document_number": {
+                                                        "type": "string"
+                                                    },
                                                     "dni": {
                                                         "type": "string"
                                                     },
@@ -2720,6 +4281,12 @@
                                                         "type": "array",
                                                         "items": {}
                                                     },
+                                                    "assigned_polling_stations": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "$ref": "#/components/schemas/PollingStation"
+                                                        }
+                                                    },
                                                     "phone_number": {
                                                         "type": "string"
                                                     },
@@ -2755,6 +4322,21 @@
                                                     "political_organization_name": {
                                                         "type": "string"
                                                     },
+                                                    "political_org_name": {
+                                                        "type": "string"
+                                                    },
+                                                    "political_org_short_name": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
+                                                    "political_org_logo": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ]
+                                                    },
                                                     "jee_name": {
                                                         "type": "string"
                                                     },
@@ -2771,6 +4353,7 @@
                                                 "required": [
                                                     "id",
                                                     "user_id",
+                                                    "document_number",
                                                     "dni",
                                                     "first_name",
                                                     "last_name",
@@ -2778,12 +4361,16 @@
                                                     "full_name",
                                                     "polling_station_code",
                                                     "polling_station_codes",
+                                                    "assigned_polling_stations",
                                                     "phone_number",
                                                     "email",
                                                     "is_active",
                                                     "status",
                                                     "personero_type",
                                                     "political_organization_name",
+                                                    "political_org_name",
+                                                    "political_org_short_name",
+                                                    "political_org_logo",
                                                     "jee_name",
                                                     "department_name",
                                                     "province_name",
@@ -2832,9 +4419,525 @@
                         "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
+            },
+            "post": {
+                "operationId": "personero.store",
+                "summary": "Crear nuevo personero",
+                "tags": [
+                    "Personeros",
+                    "Personero"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "document_number": {
+                                        "type": "string",
+                                        "minLength": 8,
+                                        "maxLength": 12
+                                    },
+                                    "first_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 100
+                                    },
+                                    "last_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 100
+                                    },
+                                    "name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 200
+                                    },
+                                    "email": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "format": "email",
+                                        "maxLength": 150
+                                    },
+                                    "phone_number": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 30
+                                    },
+                                    "political_organization_id": {
+                                        "type": [
+                                            "integer",
+                                            "null"
+                                        ]
+                                    },
+                                    "political_org_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 200
+                                    },
+                                    "political_organization_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 200
+                                    },
+                                    "abogado_responsable": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 200
+                                    },
+                                    "polling_station_codes": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "polling_station_ids": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "required": [
+                                    "document_number"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Personero registrado exitosamente."
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Personero"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
             }
         },
         "/v1/personeros/{id}": {
+            "get": {
+                "operationId": "personero.show",
+                "summary": "Ver Ficha Detallada de Personero",
+                "tags": [
+                    "Personeros",
+                    "Personero"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Ficha de personero obtenida exitosamente."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "user_id": {
+                                                    "type": "string"
+                                                },
+                                                "document_number": {
+                                                    "type": "string"
+                                                },
+                                                "dni": {
+                                                    "type": "string"
+                                                },
+                                                "first_name": {},
+                                                "last_name": {
+                                                    "type": "string"
+                                                },
+                                                "full_name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "Personero Registrado"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "name": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "Personero Registrado"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "phone_number": {
+                                                    "type": "string"
+                                                },
+                                                "email": {
+                                                    "type": "string"
+                                                },
+                                                "political_organization_name": {
+                                                    "type": "string"
+                                                },
+                                                "political_org_name": {
+                                                    "type": "string"
+                                                },
+                                                "personero_type": {
+                                                    "type": "string"
+                                                },
+                                                "abogado_responsable": {
+                                                    "type": "string"
+                                                },
+                                                "jee_name": {
+                                                    "type": "string"
+                                                },
+                                                "department_name": {
+                                                    "type": "string"
+                                                },
+                                                "province_name": {
+                                                    "type": "string"
+                                                },
+                                                "district_name": {
+                                                    "type": "string"
+                                                },
+                                                "is_active": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "boolean"
+                                                        }
+                                                    ]
+                                                },
+                                                "status": {
+                                                    "anyOf": [
+                                                        {
+                                                            "type": "string"
+                                                        },
+                                                        {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "RECONOCIDO"
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                "assigned_polling_stations": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/PollingStation"
+                                                    }
+                                                },
+                                                "polling_station_codes": {
+                                                    "type": "array",
+                                                    "items": {}
+                                                }
+                                            },
+                                            "required": [
+                                                "id",
+                                                "user_id",
+                                                "document_number",
+                                                "dni",
+                                                "first_name",
+                                                "last_name",
+                                                "full_name",
+                                                "name",
+                                                "phone_number",
+                                                "email",
+                                                "political_organization_name",
+                                                "political_org_name",
+                                                "personero_type",
+                                                "abogado_responsable",
+                                                "jee_name",
+                                                "department_name",
+                                                "province_name",
+                                                "district_name",
+                                                "is_active",
+                                                "status",
+                                                "assigned_polling_stations",
+                                                "polling_station_codes"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Personero no encontrado."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "put": {
+                "operationId": "personero.update",
+                "summary": "Actualizar datos del personero",
+                "tags": [
+                    "Personeros",
+                    "Personero"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "integer"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "first_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 100
+                                    },
+                                    "last_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 100
+                                    },
+                                    "name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 200
+                                    },
+                                    "phone_number": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 30
+                                    },
+                                    "email": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "format": "email",
+                                        "maxLength": 150
+                                    },
+                                    "political_organization_id": {
+                                        "type": [
+                                            "integer",
+                                            "null"
+                                        ]
+                                    },
+                                    "political_org_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 200
+                                    },
+                                    "political_organization_name": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 200
+                                    },
+                                    "abogado_responsable": {
+                                        "type": [
+                                            "string",
+                                            "null"
+                                        ],
+                                        "maxLength": 200
+                                    },
+                                    "polling_station_ids": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "polling_station_codes": {
+                                        "type": [
+                                            "array",
+                                            "null"
+                                        ],
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "is_active": {
+                                        "type": [
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Personero actualizado exitosamente."
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Personero"
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Personero no encontrado."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
             "delete": {
                 "operationId": "personero.destroy",
                 "description": "Elimina el perfil de personero, sus asignaciones de mesas y su cuenta de usuario asociada.",
@@ -4981,6 +7084,26 @@
                 ],
                 "title": "ActTotalsResource"
             },
+            "Candidate": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "minItems": 0,
+                "maxItems": 0,
+                "additionalItems": false,
+                "title": "Candidate"
+            },
+            "CandidateCv": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "minItems": 0,
+                "maxItems": 0,
+                "additionalItems": false,
+                "title": "CandidateCv"
+            },
             "ConfirmActRequest": {
                 "type": "object",
                 "properties": {
@@ -5247,6 +7370,16 @@
                 "additionalItems": false,
                 "title": "ElectoralList"
             },
+            "Personero": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "minItems": 0,
+                "maxItems": 0,
+                "additionalItems": false,
+                "title": "Personero"
+            },
             "PoliticalOrganization": {
                 "type": "array",
                 "items": {
@@ -5256,6 +7389,16 @@
                 "maxItems": 0,
                 "additionalItems": false,
                 "title": "PoliticalOrganization"
+            },
+            "PollingStation": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "minItems": 0,
+                "maxItems": 0,
+                "additionalItems": false,
+                "title": "PollingStation"
             },
             "Province": {
                 "type": "array",

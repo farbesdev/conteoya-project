@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { usersService, type UserItem } from '@/api/users.service'
+import { useDebounceFn } from '@vueuse/core'
+import DesktopDatatable from '@/components/DesktopDatatable.vue'
+import MovilCardList from '@/components/MovilCardList.vue'
 import ResetPasswordDialog from './ResetPasswordDialog.vue'
+import UserDetailDialog from './UserDetailDialog.vue'
+import UserFormDialog from './UserFormDialog.vue'
 
 const search = ref('')
 const selectedRole = ref<string | null>(null)
@@ -10,21 +15,25 @@ const totalItems = ref(0)
 const page = ref(1)
 const itemsPerPage = ref(15)
 
+// Modal Reset Clave
 const isResetOpen = ref(false)
 const selectedUser = ref<UserItem | null>(null)
 
-const isCreateOpen = ref(false)
-const newUser = ref({
-  name: '',
-  email: '',
-  password: '',
-  role: 'DIRECTOR',
-})
-const savingUser = ref(false)
-const createError = ref<string | null>(null)
+// Modal Mostrar Detalle
+const isDetailOpen = ref(false)
+const userToDetail = ref<UserItem | null>(null)
+
+// Modal Crear / Editar Formulario
+const isFormOpen = ref(false)
+const userToEdit = ref<UserItem | null>(null)
+
+// Modal Eliminar Usuario
+const isDeleteDialogOpen = ref(false)
+const userToDelete = ref<UserItem | null>(null)
+const deleting = ref(false)
 
 const headers = [
-  { title: 'ID', key: 'id', sortable: false },
+  { title: '#', key: 'index', sortable: false, align: 'center' as const },
   { title: 'Nombre Completo', key: 'name', sortable: false },
   { title: 'Email', key: 'email', sortable: false },
   { title: 'Rol', key: 'role', sortable: false },
@@ -59,23 +68,43 @@ const onSearchInput = useDebounceFn(() => {
   loadUsers()
 }, 400)
 
+const openCreateDialog = () => {
+  userToEdit.value = null
+  isFormOpen.value = true
+}
+
+const openEditDialog = (user: UserItem) => {
+  userToEdit.value = user
+  isFormOpen.value = true
+}
+
+const openDetailDialog = (user: UserItem) => {
+  userToDetail.value = user
+  isDetailOpen.value = true
+}
+
 const openResetDialog = (user: UserItem) => {
   selectedUser.value = user
   isResetOpen.value = true
 }
 
-const handleCreateUser = async () => {
-  savingUser.value = true
-  createError.value = null
+const confirmDelete = (user: UserItem) => {
+  userToDelete.value = user
+  isDeleteDialogOpen.value = true
+}
+
+const handleDelete = async () => {
+  if (!userToDelete.value) return
+  deleting.value = true
   try {
-    await usersService.create(newUser.value)
-    isCreateOpen.value = false
-    newUser.value = { name: '', email: '', password: '', role: 'DIRECTOR' }
+    await usersService.delete(userToDelete.value.id)
+    isDeleteDialogOpen.value = false
+    userToDelete.value = null
     await loadUsers()
-  } catch (err: any) {
-    createError.value = err?._data?.message || 'Error al crear usuario.'
+  } catch (error) {
+    console.error('Error al eliminar usuario:', error)
   } finally {
-    savingUser.value = false
+    deleting.value = false
   }
 }
 
@@ -85,108 +114,267 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
+  <div class="d-flex flex-column gap-y-4">
+    <!-- Barra Superior -->
     <VCard class="border" elevation="0">
-      <VCardItem class="pb-2">
-        <template #title>
-          <div class="d-flex align-center justify-space-between flex-wrap gap-2">
-            <div class="d-flex align-center gap-x-2">
-              <VIcon icon="ri-shield-user-line" color="primary" />
-              <span class="text-h6 font-weight-bold">Administración de Usuarios y Roles</span>
-            </div>
-            <div class="d-flex align-center gap-x-2 flex-wrap">
-              <VSelect
-                v-model="selectedRole"
-                :items="[
-                  { title: 'Todos los roles', value: null },
-                  { title: 'ADMIN', value: 'ADMIN' },
-                  { title: 'DIRECTOR', value: 'DIRECTOR' },
-                  { title: 'PERSONERO', value: 'PERSONERO' },
-                ]"
-                density="compact"
-                variant="outlined"
-                style="min-width: 160px;"
-              />
-              <VTextField
-                v-model="search"
-                density="compact"
-                variant="outlined"
-                placeholder="Buscar por nombre o email..."
-                prepend-inner-icon="ri-search-line"
-                style="min-width: 250px;"
-                clearable
-                @update:model-value="onSearchInput"
-                @click:clear="loadUsers"
-              />
-              <VBtn
-                variant="flat"
-                color="primary"
-                prepend-icon="ri-user-add-line"
-                density="comfortable"
-                @click="isCreateOpen = true"
-              >
-                Nuevo Usuario
-              </VBtn>
-            </div>
-          </div>
-        </template>
-      </VCardItem>
-
-      <VDivider />
-
-      <VDataTableServer
-        v-model:items-per-page="itemsPerPage"
-        v-model:page="page"
-        :headers="headers"
-        :items="users"
-        :items-length="totalItems"
-        :loading="loading"
-        density="comfortable"
-        class="text-no-wrap"
-      >
-        <!-- Nombre -->
-        <template #item.name="{ item }">
+      <VCardItem class="py-3">
+        <div class="d-flex align-center justify-space-between flex-wrap gap-3">
           <div class="d-flex align-center gap-x-2">
-            <VAvatar size="32" color="primary" variant="tonal">
-              <span class="text-caption font-weight-bold">{{ item.name[0] }}</span>
+            <VAvatar color="primary" variant="tonal" size="40">
+              <VIcon icon="ri-shield-user-line" color="primary" size="22" />
             </VAvatar>
-            <span class="font-weight-medium">{{ item.name }}</span>
+            <div>
+              <span class="text-h6 font-weight-bold d-block">Administración de Cuentas y Accesos</span>
+              <span class="text-caption text-medium-emphasis">Gestión de roles y restablecimiento de credenciales</span>
+            </div>
           </div>
-        </template>
+          <div class="d-flex align-center gap-2 flex-wrap flex-grow-1 flex-sm-grow-0">
+            <VSelect
+              v-model="selectedRole"
+              :items="[
+                { title: 'Todos los roles', value: null },
+                { title: 'ADMIN', value: 'ADMIN' },
+                { title: 'DIRECTOR', value: 'DIRECTOR' },
+                { title: 'PERSONERO', value: 'PERSONERO' },
+              ]"
+              density="compact"
+              variant="outlined"
+              style="min-width: 150px;"
+              hide-details
+            />
+            <VTextField
+              v-model="search"
+              density="compact"
+              variant="outlined"
+              placeholder="Buscar por nombre o email..."
+              prepend-inner-icon="ri-search-line"
+              style="min-width: 200px;"
+              clearable
+              hide-details
+              @update:model-value="onSearchInput"
+              @click:clear="loadUsers"
+            />
+            <VBtn
+              icon="ri-refresh-line"
+              variant="tonal"
+              color="secondary"
+              density="comfortable"
+              :loading="loading"
+              @click="loadUsers"
+            />
+            <VBtn
+              variant="flat"
+              color="primary"
+              prepend-icon="ri-user-add-line"
+              density="comfortable"
+              @click="openCreateDialog"
+            >
+              Nuevo Usuario
+            </VBtn>
+          </div>
+        </div>
+      </VCardItem>
+    </VCard>
 
-        <!-- Rol -->
-        <template #item.role="{ item }">
+    <!-- Vista Desktop: Tabla -->
+    <DesktopDatatable
+      v-model:page="page"
+      v-model:items-per-page="itemsPerPage"
+      :headers="headers"
+      :items="users"
+      :items-length="totalItems"
+      :loading="loading"
+      loading-text="Cargando usuarios..."
+      no-data-text="No se encontraron usuarios registrados."
+    >
+      <!-- Numeración (#) -->
+      <template #item.index="{ index }">
+        <span class="font-weight-bold text-medium-emphasis">
+          #{{ (page - 1) * itemsPerPage + index + 1 }}
+        </span>
+      </template>
+
+      <!-- Nombre Completo con DNI debajo -->
+      <template #item.name="{ item }">
+        <div class="d-flex align-center gap-x-3 cursor-pointer py-1" @click="openDetailDialog(item)">
+          <VAvatar size="34" color="primary" variant="tonal">
+            <span class="text-caption font-weight-bold">{{ item.name ? item.name[0] : 'U' }}</span>
+          </VAvatar>
+          <div>
+            <div class="font-weight-medium text-high-emphasis">{{ item.name }}</div>
+            <small class="text-caption text-medium-emphasis">
+              DNI: <span class="font-weight-bold text-primary">{{ item.personero?.document_number || '—' }}</span>
+            </small>
+          </div>
+        </div>
+      </template>
+
+      <!-- Rol -->
+      <template #item.role="{ item }">
+        <VChip
+          size="small"
+          :color="item.role === 'ADMIN' ? 'error' : (item.role === 'DIRECTOR' ? 'primary' : 'secondary')"
+          variant="tonal"
+          class="font-weight-bold"
+        >
+          {{ item.role }}
+        </VChip>
+      </template>
+
+      <!-- Estado -->
+      <template #item.is_active="{ item }">
+        <VChip size="x-small" :color="item.is_active ? 'success' : 'secondary'" variant="flat">
+          {{ item.is_active ? 'Activo' : 'Inactivo' }}
+        </VChip>
+      </template>
+
+      <!-- Acciones Completas CRUD -->
+      <template #item.actions="{ item }">
+        <div class="d-flex align-center justify-end gap-1">
+          <VTooltip text="Ver Detalle de Usuario" location="top">
+            <template #activator="{ props: tipProps }">
+              <VBtn
+                v-bind="tipProps"
+                size="small"
+                variant="text"
+                color="info"
+                icon="ri-eye-line"
+                @click="openDetailDialog(item)"
+              />
+            </template>
+          </VTooltip>
+
+          <VTooltip text="Editar Usuario" location="top">
+            <template #activator="{ props: tipProps }">
+              <VBtn
+                v-bind="tipProps"
+                size="small"
+                variant="text"
+                color="primary"
+                icon="ri-edit-line"
+                @click="openEditDialog(item)"
+              />
+            </template>
+          </VTooltip>
+
+          <VTooltip text="Restablecer Contraseña" location="top">
+            <template #activator="{ props: tipProps }">
+              <VBtn
+                v-bind="tipProps"
+                size="small"
+                variant="text"
+                color="secondary"
+                icon="ri-key-2-line"
+                @click="openResetDialog(item)"
+              />
+            </template>
+          </VTooltip>
+
+          <VTooltip text="Eliminar Usuario" location="top">
+            <template #activator="{ props: tipProps }">
+              <VBtn
+                v-bind="tipProps"
+                size="small"
+                variant="text"
+                color="error"
+                icon="ri-delete-bin-line"
+                @click="confirmDelete(item)"
+              />
+            </template>
+          </VTooltip>
+        </div>
+      </template>
+    </DesktopDatatable>
+
+    <!-- Vista Móvil: Tarjetas -->
+    <MovilCardList
+      v-model:page="page"
+      :items="users"
+      :items-length="totalItems"
+      :items-per-page="itemsPerPage"
+      :loading="loading"
+      loading-text="Cargando usuarios..."
+      no-data-text="No se encontraron usuarios."
+    >
+      <template #card="{ item }">
+        <div class="d-flex justify-space-between align-start mb-2">
+          <div class="d-flex align-center gap-x-2">
+            <VAvatar size="34" color="primary" variant="tonal">
+              <span class="font-weight-bold">{{ item.name ? item.name[0] : 'U' }}</span>
+            </VAvatar>
+            <div>
+              <div class="font-weight-bold text-subtitle-2 line-clamp-1 cursor-pointer" @click="openDetailDialog(item)">
+                {{ item.name }}
+              </div>
+              <div class="text-caption text-medium-emphasis">
+                {{ item.email }} • DNI: {{ item.personero?.document_number || '—' }}
+              </div>
+            </div>
+          </div>
           <VChip
-            size="small"
+            size="x-small"
             :color="item.role === 'ADMIN' ? 'error' : (item.role === 'DIRECTOR' ? 'primary' : 'secondary')"
             variant="tonal"
             class="font-weight-bold"
           >
             {{ item.role }}
           </VChip>
-        </template>
+        </div>
 
-        <!-- Estado -->
-        <template #item.is_active="{ item }">
-          <VChip size="x-small" :color="item.is_active ? 'success' : 'secondary'" variant="flat">
-            {{ item.is_active ? 'Activo' : 'Inactivo' }}
-          </VChip>
-        </template>
+        <div class="d-flex justify-space-between align-center bg-background pa-2 rounded mb-3 text-caption">
+          <div>
+            <span class="text-medium-emphasis">Estado:</span>
+            <span :class="item.is_active ? 'text-success font-weight-bold ms-1' : 'text-disabled ms-1'">
+              {{ item.is_active ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+        </div>
 
-        <!-- Acciones -->
-        <template #item.actions="{ item }">
+        <div class="d-flex justify-end align-center flex-wrap gap-2 pt-2 border-t">
           <VBtn
             size="small"
-            variant="tonal"
+            variant="text"
+            color="info"
+            icon="ri-eye-line"
+            @click="openDetailDialog(item)"
+          />
+          <VBtn
+            size="small"
+            variant="text"
+            color="primary"
+            icon="ri-edit-line"
+            @click="openEditDialog(item)"
+          />
+          <VBtn
+            size="small"
+            variant="text"
             color="secondary"
-            prepend-icon="ri-key-2-line"
+            icon="ri-key-2-line"
             @click="openResetDialog(item)"
-          >
-            Resetear Clave
-          </VBtn>
-        </template>
-      </VDataTableServer>
-    </VCard>
+          />
+          <VBtn
+            size="small"
+            variant="text"
+            color="error"
+            icon="ri-delete-bin-line"
+            @click="confirmDelete(item)"
+          />
+        </div>
+      </template>
+    </MovilCardList>
+
+    <!-- Dialog Ficha Detalle Usuario -->
+    <UserDetailDialog
+      v-model="isDetailOpen"
+      :user="userToDetail"
+    />
+
+    <!-- Dialog Crear / Editar Usuario -->
+    <UserFormDialog
+      v-model="isFormOpen"
+      :user="userToEdit"
+      @saved="loadUsers"
+    />
 
     <!-- Dialog Reset Clave -->
     <ResetPasswordDialog
@@ -195,66 +383,23 @@ onMounted(() => {
       @saved="loadUsers"
     />
 
-    <!-- Dialog Crear Usuario -->
-    <VDialog v-model="isCreateOpen" max-width="500">
-      <VCard>
-        <VCardTitle class="d-flex justify-space-between align-center pa-4 border-b">
-          <span class="text-h6 font-weight-bold">Crear Usuario del Sistema</span>
-          <VBtn icon="ri-close-line" variant="text" density="compact" @click="isCreateOpen = false" />
+    <!-- Dialog Eliminar Usuario -->
+    <VDialog v-model="isDeleteDialogOpen" max-width="450">
+      <VCard class="pa-2">
+        <VCardTitle class="d-flex align-center gap-x-2 text-error">
+          <VIcon icon="ri-error-warning-line" />
+          <span>Eliminar Usuario</span>
         </VCardTitle>
-
-        <VCardText class="pa-4">
-          <VAlert v-if="createError" color="error" variant="tonal" class="mb-4">
-            {{ createError }}
-          </VAlert>
-
-          <VTextField
-            v-model="newUser.name"
-            label="Nombre Completo"
-            placeholder="Juan Pérez"
-            variant="outlined"
-            density="comfortable"
-            class="mb-3"
-          />
-
-          <VTextField
-            v-model="newUser.email"
-            label="Correo Electrónico"
-            placeholder="usuario@conteoya.pe"
-            type="email"
-            variant="outlined"
-            density="comfortable"
-            class="mb-3"
-          />
-
-          <VTextField
-            v-model="newUser.password"
-            label="Contraseña"
-            placeholder="Min. 8 caracteres"
-            type="password"
-            variant="outlined"
-            density="comfortable"
-            class="mb-3"
-          />
-
-          <VSelect
-            v-model="newUser.role"
-            :items="[
-              { title: 'DIRECTOR (Supervisión y control)', value: 'DIRECTOR' },
-              { title: 'ADMIN (Acceso total al sistema)', value: 'ADMIN' },
-            ]"
-            label="Rol de Usuario"
-            variant="outlined"
-            density="comfortable"
-          />
+        <VCardText>
+          ¿Está seguro de que desea eliminar al usuario <strong>{{ userToDelete?.name }}</strong> ({{ userToDelete?.email }})?
+          Esta acción revocará todas sus sesiones activas permanentemente.
         </VCardText>
-
-        <VCardActions class="pa-4 border-t d-flex justify-end gap-x-2">
-          <VBtn variant="outlined" color="secondary" @click="isCreateOpen = false">
+        <VCardActions class="d-flex justify-end gap-2">
+          <VBtn variant="outlined" color="secondary" :disabled="deleting" @click="isDeleteDialogOpen = false">
             Cancelar
           </VBtn>
-          <VBtn variant="flat" color="primary" :loading="savingUser" @click="handleCreateUser">
-            Guardar Usuario
+          <VBtn variant="flat" color="error" :loading="deleting" @click="handleDelete">
+            Eliminar Usuario
           </VBtn>
         </VCardActions>
       </VCard>

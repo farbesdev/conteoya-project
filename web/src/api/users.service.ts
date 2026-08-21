@@ -9,6 +9,7 @@ export interface UserItem {
   role_id: number
   is_active: boolean
   created_at?: string
+  personero?: any
 }
 
 export const usersService = {
@@ -16,6 +17,10 @@ export const usersService = {
     return apiClient<PaginatedResponse<UserItem>>('/users', {
       params,
     })
+  },
+
+  async getById(id: number): Promise<{ message: string; data: UserItem }> {
+    return apiClient<{ message: string; data: UserItem }>(`/users/${id}`)
   },
 
   async create(data: { name: string; email: string; password?: string; role: string; is_active?: boolean }): Promise<any> {
@@ -32,8 +37,8 @@ export const usersService = {
     })
   },
 
-  async delete(id: number): Promise<any> {
-    return apiClient(`/users/${id}`, {
+  async delete(id: number): Promise<{ message: string }> {
+    return apiClient<{ message: string }>(`/users/${id}`, {
       method: 'DELETE',
     })
   },

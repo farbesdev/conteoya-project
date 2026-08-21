@@ -89,4 +89,32 @@ class ActPolicy
 
         return false;
     }
+
+    /**
+     * Determina si el usuario puede actualizar el acta.
+     */
+    public function update(User $user, Act $act): bool
+    {
+        if ($user->role === Role::ADMIN || $user->role === Role::DIRECTOR) {
+            return true;
+        }
+
+        if ($user->role === Role::PERSONERO && $act->status === 'DRAFT') {
+            $personeroId = $user->personero?->id;
+            return $personeroId && (
+                $act->captured_by_personero_id === $personeroId
+                || $user->personero->pollingStations()->where('polling_stations.id', $act->polling_station_id)->exists()
+            );
+        }
+
+        return false;
+    }
+
+    /**
+     * Determina si el usuario puede eliminar el acta.
+     */
+    public function delete(User $user, Act $act): bool
+    {
+        return $user->role === Role::ADMIN;
+    }
 }

@@ -16,9 +16,19 @@ export default [
     heading: 'Gestión Electoral',
   },
   {
+    title: 'Organizaciones',
+    to: { path: '/admin/organizaciones' },
+    icon: { icon: 'ri-flag-2-line' },
+  },
+  {
     title: 'Personeros',
     to: { path: '/admin/personeros' },
     icon: { icon: 'ri-user-shared-line' },
+  },
+  {
+    title: 'Candidatos',
+    to: { path: '/admin/candidatos' },
+    icon: { icon: 'ri-user-star-line' },
   },
   {
     title: 'Mesas Electorales',

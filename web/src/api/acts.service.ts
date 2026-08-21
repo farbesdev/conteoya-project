@@ -75,9 +75,52 @@ export const actsService = {
     return apiClient<{ data: ActItem }>(`/acts/${id}`)
   },
 
+  async create(data: {
+    election_id: number
+    electoral_level_id: number
+    polling_station_code?: string
+    polling_station_id?: number
+    act_code?: string
+    totals: {
+      total_votes: number
+      voters_who_voted: number
+      blank_votes: number
+      null_votes: number
+      challenged_votes: number
+    }
+    results: Array<{
+      political_organization_id: number
+      votes: number
+      source?: string
+    }>
+    status?: string
+  }): Promise<{ message: string; data: ActItem }> {
+    return apiClient<{ message: string; data: ActItem }>('/acts', {
+      method: 'POST',
+      body: data,
+    })
+  },
+
+  async update(id: number, data: {
+    act_code?: string
+    status?: string
+    totals?: Partial<ActItem['totals']>
+  }): Promise<{ message: string; data: ActItem }> {
+    return apiClient<{ message: string; data: ActItem }>(`/acts/${id}`, {
+      method: 'PUT',
+      body: data,
+    })
+  },
+
   async confirm(id: number): Promise<{ message: string; data: ActItem }> {
     return apiClient<{ message: string; data: ActItem }>(`/acts/${id}/confirm`, {
       method: 'POST',
+    })
+  },
+
+  async delete(id: number): Promise<{ message: string }> {
+    return apiClient<{ message: string }>(`/acts/${id}`, {
+      method: 'DELETE',
     })
   },
 

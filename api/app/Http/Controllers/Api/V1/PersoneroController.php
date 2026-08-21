@@ -76,9 +76,36 @@ class PersoneroController extends Controller
             });
         }
 
+        // Mapa de logos de Organizaciones Políticas en memoria / caché para resolución O(1) de alto rendimiento
+        $orgLogoMap = \Illuminate\Support\Facades\Cache::remember('political_org_logos_map', 3600, function () {
+            $base = request()->getSchemeAndHttpHost();
+            return \App\Models\PoliticalOrganization::all()->mapWithKeys(function ($org) use ($base) {
+                $logo = null;
+                if ($org->local_logo_url) {
+                    $logo = $base . '/storage/political-organizationals/' . $org->local_logo_url;
+                } elseif ($org->logo_url) {
+                    if (str_starts_with($org->logo_url, 'http://localhost/storage/')) {
+                        $logo = str_replace('http://localhost/storage/', $base . '/storage/', $org->logo_url);
+                    } else {
+                        $logo = $org->logo_url;
+                    }
+                }
+
+                $key = mb_strtoupper(trim($org->name), 'UTF-8');
+                return [
+                    $key => [
+                        'id'         => $org->id,
+                        'name'       => $org->name,
+                        'short_name' => $org->short_name,
+                        'logo_url'   => $logo,
+                    ],
+                ];
+            })->all();
+        });
+
         $paginated = $query->orderBy('id')->paginate($perPage);
 
-        $items = collect($paginated->items())->map(function ($p) {
+        $items = collect($paginated->items())->map(function ($p) use ($orgLogoMap) {
             $stationCodes = $p->pollingStations->pluck('code')->filter()->values()->all();
             $stationCode = $stationCodes[0] ?? '030390';
             $fullName = $p->full_name ?: ($p->user?->name ?? 'Personero Registrado');
@@ -86,9 +113,18 @@ class PersoneroController extends Controller
             $firstName = $p->first_name ?: ($parts[0] ?? 'Personero');
             $lastName = count($parts) > 1 ? implode(' ', array_slice($parts, 1)) : ' ';
 
+            $orgNameKey = mb_strtoupper(trim($p->political_organization_name ?? ''), 'UTF-8');
+            $resolvedOrg = $orgLogoMap[$orgNameKey] ?? null;
+            $logoUrl = $p->politicalOrganization?->logo_url 
+                ?: $p->politicalOrganization?->local_logo_url 
+                ?: ($resolvedOrg['logo_url'] ?? null);
+            $shortName = $p->politicalOrganization?->short_name 
+                ?: ($resolvedOrg['short_name'] ?? null);
+
             return [
                 'id'                          => $p->id,
                 'user_id'                     => $p->user_id,
+                'document_number'             => $p->document_number,
                 'dni'                         => $p->document_number,
                 'first_name'                  => $firstName,
                 'last_name'                   => $lastName,
@@ -96,12 +132,16 @@ class PersoneroController extends Controller
                 'full_name'                   => $fullName,
                 'polling_station_code'        => $stationCode,
                 'polling_station_codes'       => $stationCodes,
+                'assigned_polling_stations'   => $p->pollingStations,
                 'phone_number'                => $p->phone_number,
                 'email'                       => $p->email ?: $p->user?->email,
                 'is_active'                   => $p->user?->is_active ?? false,
                 'status'                      => $p->status ?? 'RECONOCIDO',
                 'personero_type'              => $p->personero_type,
                 'political_organization_name' => $p->political_organization_name,
+                'political_org_name'          => $p->political_organization_name,
+                'political_org_short_name'    => $shortName,
+                'political_org_logo'          => $logoUrl,
                 'jee_name'                    => $p->jee_name,
                 'department_name'             => $p->department_name,
                 'province_name'               => $p->province_name,
@@ -162,6 +202,211 @@ class PersoneroController extends Controller
             'personero_id'          => $personero->id,
             'polling_station_codes' => $stationCodes,
             'assigned_count'        => count($stationIds),
+        ]);
+    }
+
+    /**
+     * Ver Ficha Detallada de Personero
+     */
+    public function show(int|string $id): JsonResponse
+    {
+        $personero = is_numeric($id)
+            ? Personero::with(['user', 'pollingStations.electoralLocation.district.province.department', 'politicalOrganization'])->find($id)
+            : Personero::with(['user', 'pollingStations.electoralLocation.district.province.department', 'politicalOrganization'])->where('document_number', $id)->first();
+
+        if (!$personero) {
+            return response()->json(['message' => 'Personero no encontrado.'], 404);
+        }
+
+        $stationCodes = $personero->pollingStations->pluck('code')->filter()->values()->all();
+        $fullName = $personero->full_name ?: ($personero->user?->name ?? 'Personero Registrado');
+        $parts = explode(' ', trim($fullName));
+        $firstName = $personero->first_name ?: ($parts[0] ?? 'Personero');
+        $lastName = count($parts) > 1 ? implode(' ', array_slice($parts, 1)) : ' ';
+
+        return response()->json([
+            'message' => 'Ficha de personero obtenida exitosamente.',
+            'data'    => [
+                'id'                          => $personero->id,
+                'user_id'                     => $personero->user_id,
+                'document_number'             => $personero->document_number,
+                'dni'                         => $personero->document_number,
+                'first_name'                  => $firstName,
+                'last_name'                   => $lastName,
+                'full_name'                   => $fullName,
+                'name'                        => $fullName,
+                'phone_number'                => $personero->phone_number,
+                'email'                       => $personero->email ?: $personero->user?->email,
+                'political_organization_name' => $personero->political_organization_name,
+                'political_org_name'          => $personero->political_organization_name,
+                'personero_type'              => $personero->personero_type,
+                'abogado_responsable'         => $personero->abogado_responsable,
+                'jee_name'                    => $personero->jee_name,
+                'department_name'             => $personero->department_name,
+                'province_name'               => $personero->province_name,
+                'district_name'               => $personero->district_name,
+                'is_active'                   => $personero->user?->is_active ?? true,
+                'status'                      => $personero->status ?? 'RECONOCIDO',
+                'assigned_polling_stations'   => $personero->pollingStations,
+                'polling_station_codes'       => $stationCodes,
+            ],
+        ]);
+    }
+
+    /**
+     * Crear nuevo personero
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $request->validate([
+            'document_number'          => 'required|string|min:8|max:12',
+            'first_name'               => 'nullable|string|max:100',
+            'last_name'                => 'nullable|string|max:100',
+            'name'                     => 'nullable|string|max:200',
+            'email'                    => 'nullable|email|max:150',
+            'phone_number'             => 'nullable|string|max:30',
+            'political_organization_id' => 'nullable|integer',
+            'political_org_name'       => 'nullable|string|max:200',
+            'political_organization_name' => 'nullable|string|max:200',
+            'abogado_responsable'      => 'nullable|string|max:200',
+            'polling_station_codes'    => 'nullable|array',
+            'polling_station_ids'      => 'nullable|array',
+        ]);
+
+        $doc = trim($request->input('document_number'));
+        $name = trim($request->input('name') ?: trim($request->input('first_name', '') . ' ' . $request->input('last_name', '')));
+        if (empty($name)) {
+            $name = "Personero {$doc}";
+        }
+        $email = trim($request->input('email') ?: "personero_{$doc}@conteoya.pe");
+
+        $personero = \Illuminate\Support\Facades\DB::transaction(function () use ($request, $doc, $name, $email) {
+            $role = \App\Models\Role::where('name', 'PERSONERO')->first();
+
+            $user = \App\Models\User::firstOrCreate(
+                ['email' => $email],
+                [
+                    'name'      => $name,
+                    'password'  => \Illuminate\Support\Facades\Hash::make('Personero123!'),
+                    'role'      => 'PERSONERO',
+                    'role_id'   => $role ? $role->id : 3,
+                    'is_active' => true,
+                ]
+            );
+
+            $politicalOrgId = $request->input('political_organization_id');
+            $politicalOrgName = $request->input('political_org_name') ?: $request->input('political_organization_name');
+            if ($politicalOrgId && empty($politicalOrgName)) {
+                $org = \App\Models\PoliticalOrganization::find($politicalOrgId);
+                $politicalOrgName = $org?->name;
+            }
+
+            $personero = Personero::updateOrCreate(
+                ['document_number' => $doc],
+                [
+                    'user_id'                     => $user->id,
+                    'first_name'                  => $request->input('first_name', $name),
+                    'last_name_paternal'          => $request->input('last_name', ''),
+                    'full_name'                   => $name,
+                    'phone_number'                => $request->input('phone_number'),
+                    'email'                       => $email,
+                    'political_organization_id'   => $politicalOrgId,
+                    'political_organization_name' => $politicalOrgName,
+                    'abogado_responsable'         => $request->input('abogado_responsable'),
+                    'status'                      => 'RECONOCIDO',
+                ]
+            );
+
+            // Asignar mesas
+            $stationIds = [];
+            if ($request->filled('polling_station_ids')) {
+                $stationIds = $request->input('polling_station_ids');
+            } elseif ($request->filled('polling_station_codes')) {
+                $stationIds = \App\Models\PollingStation::whereIn('code', $request->input('polling_station_codes'))->pluck('id')->all();
+            }
+            if (!empty($stationIds)) {
+                $personero->pollingStations()->sync($stationIds);
+            }
+
+            return $personero;
+        });
+
+        return response()->json([
+            'message' => 'Personero registrado exitosamente.',
+            'data'    => $personero->load(['user', 'pollingStations', 'politicalOrganization']),
+        ], 201);
+    }
+
+    /**
+     * Actualizar datos del personero
+     */
+    public function update(Request $request, int|string $id): JsonResponse
+    {
+        $personero = is_numeric($id)
+            ? Personero::find($id)
+            : Personero::where('document_number', $id)->first();
+
+        if (!$personero) {
+            return response()->json(['message' => 'Personero no encontrado.'], 404);
+        }
+
+        $request->validate([
+            'first_name'               => 'nullable|string|max:100',
+            'last_name'                => 'nullable|string|max:100',
+            'name'                     => 'nullable|string|max:200',
+            'phone_number'             => 'nullable|string|max:30',
+            'email'                    => 'nullable|email|max:150',
+            'political_organization_id' => 'nullable|integer',
+            'political_org_name'       => 'nullable|string|max:200',
+            'political_organization_name' => 'nullable|string|max:200',
+            'abogado_responsable'      => 'nullable|string|max:200',
+            'polling_station_ids'      => 'nullable|array',
+            'polling_station_codes'    => 'nullable|array',
+            'is_active'                => 'nullable|boolean',
+        ]);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $personero) {
+            $name = trim($request->input('name') ?: trim($request->input('first_name', '') . ' ' . $request->input('last_name', '')));
+
+            $politicalOrgId = $request->input('political_organization_id', $personero->political_organization_id);
+            $politicalOrgName = $request->input('political_org_name') ?: $request->input('political_organization_name', $personero->political_organization_name);
+            if ($request->filled('political_organization_id') && !$request->filled('political_org_name') && !$request->filled('political_organization_name')) {
+                $org = \App\Models\PoliticalOrganization::find($politicalOrgId);
+                if ($org) {
+                    $politicalOrgName = $org->name;
+                }
+            }
+
+            $personero->update(array_filter([
+                'first_name'                  => $request->input('first_name'),
+                'last_name_paternal'          => $request->input('last_name'),
+                'full_name'                   => $name ?: $personero->full_name,
+                'phone_number'                => $request->input('phone_number', $personero->phone_number),
+                'email'                       => $request->input('email', $personero->email),
+                'political_organization_id'   => $politicalOrgId,
+                'political_organization_name' => $politicalOrgName,
+                'abogado_responsable'         => $request->input('abogado_responsable', $personero->abogado_responsable),
+            ], fn ($v) => !is_null($v)));
+
+            if ($request->filled('polling_station_ids')) {
+                $personero->pollingStations()->sync($request->input('polling_station_ids'));
+            } elseif ($request->filled('polling_station_codes')) {
+                $stationIds = \App\Models\PollingStation::whereIn('code', $request->input('polling_station_codes'))->pluck('id')->all();
+                $personero->pollingStations()->sync($stationIds);
+            }
+
+            if ($personero->user) {
+                $personero->user->update(array_filter([
+                    'name'      => $name ?: $personero->user->name,
+                    'email'     => $request->input('email', $personero->user->email),
+                    'is_active' => $request->has('is_active') ? $request->boolean('is_active') : $personero->user->is_active,
+                ], fn ($v) => !is_null($v)));
+            }
+        });
+
+        return response()->json([
+            'message' => 'Personero actualizado exitosamente.',
+            'data'    => $personero->fresh()->load(['user', 'pollingStations']),
         ]);
     }
 

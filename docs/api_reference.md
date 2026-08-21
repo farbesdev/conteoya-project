@@ -929,6 +929,50 @@ Consulta paginada y filtrada del repositorio de actas electorales (ADMIN, DIRECT
 
 ---
 
+## 🏛️ Gestión de Candidatos y Hojas de Vida (JNE Declara)
+
+### `GET /api/v1/candidates`
+Lista y busca candidatos paginados con su cargo de postulación (`candidacies.position`), estado oficial de lista (`electoral_lists.status`), ubigeo territorial y URLs de hoja de vida JNE.
+
+### `POST /api/v1/candidates/sync-cvs`
+Inicia la sincronización asíncrona por lotes en segundo plano usando **Redis Queues**, con retardos configurables contra Rate Limiting (WAF JNE).
+```json
+{
+  "chunk": 50,
+  "delay_ms": 250,
+  "limit": 1000
+}
+```
+
+### `GET /api/v1/candidates/sync-cvs/status`
+Retorna en tiempo real el progreso de la sincronización:
+```json
+{
+  "status": "running",
+  "total": 101446,
+  "processed": 1250,
+  "percentage": 1.23,
+  "success_count": 1248,
+  "error_count": 2,
+  "last_candidate_name": "PANIURA PANCORBO DAVID"
+}
+```
+
+### `POST /api/v1/candidates/sync-cvs/cancel`
+Cancela o pausa la tarea en ejecución.
+
+---
+
+## 🚩 Organizaciones Políticas
+
+### `GET /api/v1/political-organizations`
+Listado paginado de organizaciones políticas con logos optimizados en WebP y búsqueda por nombre o sigla (`?search=`).
+
+### `POST /api/v1/political-organizations`
+Crea una organización política convirtiendo automáticamente cualquier formato de imagen (`PNG`, `JPG`, `SVG`) a `.webp` (Imagick / GD al 85% de calidad).
+
+---
+
 ## 👥 Usuarios de Prueba (Desarrollo)
 
 > ⚠️ Cambiar credenciales antes de pasar a producción o staging.
