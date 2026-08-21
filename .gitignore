@@ -4,6 +4,7 @@ vendor/
 .venv/
 build/
 dist/
+!web/dist/
 
 # Environment & Credentials
 .env
