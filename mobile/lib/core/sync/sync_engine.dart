@@ -104,8 +104,13 @@ class SyncEngine {
       // Evita saturar el VPS con N queries pesadas por cada ciclo de 30s.
       Map<String, int> pullMetrics = {'polling_stations': 0, 'personeros': 0, 'political_organizations': 0};
       if (await _shouldPull()) {
-        pullMetrics = await pullLatestDataFromBackend(isPersonero: isPersonero);
-        await _savePullTimestamp();
+        try {
+          pullMetrics = await pullLatestDataFromBackend(isPersonero: isPersonero);
+          await _savePullTimestamp();
+        } catch (e) {
+          // Capturar errores del pull para no interrumpir el flujo de push de actas
+          print("Error al descargar datos del VPS (pull): $e");
+        }
       }
 
       // 2. SINCRONIZACIÓN ASCENDENTE (PUSH): Enviar operaciones pendientes al VPS (POST /api/v1/sync)

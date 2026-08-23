@@ -451,11 +451,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
 
   void _recalculateValidation() {
     final registered = int.tryParse(_registeredVotersController.text) ?? 0;
-    final voters = int.tryParse(_votersWhoVotedController.text) ?? 0;
 
     if (_selectedLevelId == 2) {
-      // Validación Municipal Provincial y Distrital
-      final provTotal = int.tryParse(_provTotalVotesController.text) ?? 0;
+      // Autosuma y Validación Municipal Provincial y Distrital
       final provBlank = int.tryParse(_provBlankVotesController.text) ?? 0;
       final provNull = int.tryParse(_provNullVotesController.text) ?? 0;
       final provChallenged = int.tryParse(_provChallengedVotesController.text) ?? 0;
@@ -463,8 +461,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
           .where((p) => p.isProvincialAdmitted)
           .map((p) => int.tryParse(p.votesProvincialController.text) ?? 0)
           .toList();
+      final sumProvCandidates = provCandidates.fold<int>(0, (prev, elem) => prev + elem);
+      final provTotal = sumProvCandidates + provBlank + provNull + provChallenged;
 
-      final distTotal = int.tryParse(_distTotalVotesController.text) ?? 0;
       final distBlank = int.tryParse(_distBlankVotesController.text) ?? 0;
       final distNull = int.tryParse(_distNullVotesController.text) ?? 0;
       final distChallenged = int.tryParse(_distChallengedVotesController.text) ?? 0;
@@ -472,6 +471,14 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
           .where((p) => p.isDistritalAdmitted)
           .map((p) => int.tryParse(p.votesDistritalController.text) ?? 0)
           .toList();
+      final sumDistCandidates = distCandidates.fold<int>(0, (prev, elem) => prev + elem);
+      final distTotal = sumDistCandidates + distBlank + distNull + distChallenged;
+
+      // Actualizar automáticamente los controladores
+      _provTotalVotesController.text = provTotal.toString();
+      _distTotalVotesController.text = distTotal.toString();
+      _votersWhoVotedController.text = provTotal.toString();
+      final voters = provTotal;
 
       setState(() {
         _validationResult = ActValidator.validateMunicipal(
@@ -490,14 +497,20 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
         );
       });
     } else {
-      // Validación Regional
-      final total = int.tryParse(_totalVotesController.text) ?? 0;
+      // Autosuma y Validación Regional
       final blank = int.tryParse(_blankVotesController.text) ?? 0;
       final nullVotes = int.tryParse(_nullVotesController.text) ?? 0;
       final challenged = int.tryParse(_challengedVotesController.text) ?? 0;
       final candidateVotes = _partyEntries
           .map((p) => int.tryParse(p.votesController.text) ?? 0)
           .toList();
+      final sumCandidates = candidateVotes.fold<int>(0, (prev, elem) => prev + elem);
+      final total = sumCandidates + blank + nullVotes + challenged;
+
+      // Actualizar automáticamente los controladores
+      _totalVotesController.text = total.toString();
+      _votersWhoVotedController.text = total.toString();
+      final voters = total;
 
       setState(() {
         _validationResult = ActValidator.validate(

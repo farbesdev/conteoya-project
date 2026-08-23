@@ -57,7 +57,7 @@ class SyncController extends Controller
             $filteredOperations = $operations;
         }
 
-        $personero = $user->personero;
+        $personero = $user->isPersonero() ? $user->personero : null;
 
         $device = null;
         if ($request->has('device_uuid')) {
