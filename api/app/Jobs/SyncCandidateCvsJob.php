@@ -132,6 +132,35 @@ class SyncCandidateCvsJob implements ShouldQueue
                             ]
                         );
 
+                        // Descargar y convertir foto localmente si aún no existe
+                        if (empty($candidate->local_photo_url) && !empty($candidate->photo_url)) {
+                            $docNumber = $candidate->id_hoja_vida ?: ('JEE_' . $candidate->jee_candidate_id);
+                            $filename = "$docNumber/foto.webp";
+                            $disk = \Illuminate\Support\Facades\Storage::disk('candidates');
+
+                            if (!$disk->exists($filename)) {
+                                try {
+                                    $rawContent = @file_get_contents($candidate->photo_url);
+                                    if ($rawContent !== false && $rawContent !== '') {
+                                        $image = @imagecreatefromstring($rawContent);
+                                        if ($image !== false) {
+                                            ob_start();
+                                            imagewebp($image, null, 85);
+                                            $webpData = ob_get_clean();
+                                            imagedestroy($image);
+
+                                            $disk->put($filename, $webpData);
+                                            $candidate->update(['local_photo_url' => $filename]);
+                                        }
+                                    }
+                                } catch (\Throwable $imgEx) {
+                                    Log::warning("Error descargando foto para candidato {$candidate->id}: " . $imgEx->getMessage());
+                                }
+                            } else {
+                                $candidate->update(['local_photo_url' => $filename]);
+                            }
+                        }
+
                         // Escribir fila en el archivo CSV para backup y futuras ejecuciones de Seeders
                         if ($csvFile) {
                             fputcsv($csvFile, [
