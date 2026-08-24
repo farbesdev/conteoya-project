@@ -29,9 +29,9 @@ return new class extends Migration
                     ps.odpe,
                     ps.pdf_file,
                     ps.pdf_page,
-                    dep.code AS department_code,
+                    COALESCE(dist.department_code, dep.code) AS department_code,
                     ps.department_name,
-                    prov.code AS province_code,
+                    COALESCE(dist.province_code, prov.code) AS province_code,
                     ps.province_name,
                     dist.code AS district_code,
                     ps.district_name,
@@ -39,10 +39,13 @@ return new class extends Migration
                     el.name AS electoral_location_name,
                     el.address AS electoral_location_address
                 FROM polling_stations ps
-                INNER JOIN departments dep ON UPPER(TRIM(dep.name)) = UPPER(TRIM(ps.department_name))
-                INNER JOIN provinces prov ON UPPER(TRIM(prov.name)) = UPPER(TRIM(ps.province_name))
-                INNER JOIN districts dist ON UPPER(TRIM(dist.name)) = UPPER(TRIM(ps.district_name))
                 LEFT JOIN electoral_locations el ON el.id = ps.electoral_location_id
+                LEFT JOIN districts dist ON dist.code = el.district_code 
+                    OR UPPER(TRIM(dist.name)) = UPPER(TRIM(ps.district_name))
+                LEFT JOIN provinces prov ON prov.code = dist.province_code 
+                    OR UPPER(TRIM(prov.name)) = UPPER(TRIM(ps.province_name))
+                LEFT JOIN departments dep ON dep.code = dist.department_code 
+                    OR UPPER(TRIM(dep.name)) = UPPER(TRIM(ps.department_name))
             ");
 
             // 2. Vista optimizada de listas electorales con sus partidos y candidatos (sin CROSS JOIN)
@@ -77,7 +80,6 @@ return new class extends Migration
                 LEFT JOIN candidacies c ON c.electoral_list_id = lis.id AND c.status::text IN ('INSCRITO', 'ADMITIDO')
                 LEFT JOIN candidates cand ON cand.id = c.candidate_id
                 WHERE lis.status::text IN ('INSCRITO', 'ADMITIDO')
-                  AND c.position::text IN ('GOBERNADOR REGIONAL', 'ALCALDE PROVINCIAL', 'ALCALDE DISTRITAL')
             ");
 
             // 3. Stored Procedure O(1) de alto rendimiento en PostgreSQL 16 con búsquedas directas
@@ -101,19 +103,19 @@ return new class extends Migration
                         ps.code,
                         ps.registered_voters,
                         ps.status,
-                        COALESCE(d.department_code, ps.department_name) AS department_code,
+                        COALESCE(d.department_code, dep.code) AS department_code,
                         COALESCE(dep.name, ps.department_name) AS department_name,
-                        COALESCE(d.province_code, ps.province_name) AS province_code,
+                        COALESCE(d.province_code, prov.code) AS province_code,
                         COALESCE(prov.name, ps.province_name) AS province_name,
-                        COALESCE(d.code, ps.district_name) AS district_code,
+                        d.code AS district_code,
                         COALESCE(d.name, ps.district_name) AS district_name,
                         COALESCE(el.name, 'LOCAL DE VOTACIÓN') AS location_name
                     INTO v_station
                     FROM polling_stations ps
                     LEFT JOIN electoral_locations el ON el.id = ps.electoral_location_id
-                    LEFT JOIN districts d ON d.code = el.district_code
-                    LEFT JOIN provinces prov ON prov.code = d.province_code
-                    LEFT JOIN departments dep ON dep.code = d.department_code
+                    LEFT JOIN districts d ON (d.code = el.district_code OR UPPER(TRIM(d.name)) = UPPER(TRIM(ps.district_name)))
+                    LEFT JOIN provinces prov ON (prov.code = d.province_code OR UPPER(TRIM(prov.name)) = UPPER(TRIM(ps.province_name)))
+                    LEFT JOIN departments dep ON (dep.code = d.department_code OR UPPER(TRIM(dep.name)) = UPPER(TRIM(ps.department_name)))
                     WHERE ps.code = p_station_code
                     LIMIT 1;
 
@@ -166,7 +168,7 @@ return new class extends Migration
                                             'local_photo_url', cand.local_photo_url,
                                             'position', c.position,
                                             'list_number', c.list_number
-                                        ) ORDER BY c.list_number ASC
+                                        ) ORDER BY (CASE WHEN c.position IN ('GOBERNADOR REGIONAL', 'ALCALDE PROVINCIAL', 'ALCALDE DISTRITAL') THEN 0 ELSE 1 END), c.list_number ASC
                                     )
                                     FROM candidacies c
                                     INNER JOIN candidates cand ON cand.id = c.candidate_id
@@ -180,13 +182,13 @@ return new class extends Migration
                           AND lis.status IN ('INSCRITO', 'ADMITIDO')
                           AND (
                               (v_level.code IN ('REGIONAL_GOBERNADOR', 'REGIONAL_CONSEJERO') 
-                               AND (lis.department_code IS NULL OR lis.department_code = v_station.department_code))
+                               AND (lis.department_code IS NOT NULL AND lis.department_code = v_station.department_code))
                               OR
                               (v_level.code IN ('MUNICIPAL_PROVINCIAL', 'PROVINCIAL_ALCALDE', 'PROVINCIAL_REGIDOR') 
-                               AND (lis.province_code IS NULL OR lis.province_code = v_station.province_code))
+                               AND (lis.province_code IS NOT NULL AND lis.province_code = v_station.province_code))
                               OR
                               (v_level.code IN ('MUNICIPAL_DISTRITAL', 'DISTRITAL_ALCALDE', 'DISTRITAL_REGIDOR') 
-                               AND (lis.district_code IS NULL OR lis.district_code = v_station.district_code))
+                               AND (lis.district_code IS NOT NULL AND lis.district_code = v_station.district_code))
                           )
                         ORDER BY po.name ASC
                     ) q;

@@ -29,10 +29,14 @@ class BallotPartyItem {
     String? candName;
     String? candPos;
     if (candidatesList.isNotEmpty) {
-      final first = candidatesList.first;
-      if (first is Map<String, dynamic>) {
-        candName = first['candidate_name']?.toString();
-        candPos = first['position']?.toString();
+      // Buscar primero al candidato a Gobernador o Alcalde
+      final exec = candidatesList.firstWhere(
+        (c) => c is Map<String, dynamic> && ['GOBERNADOR REGIONAL', 'ALCALDE PROVINCIAL', 'ALCALDE DISTRITAL'].contains(c['position']),
+        orElse: () => candidatesList.first,
+      );
+      if (exec is Map<String, dynamic>) {
+        candName = exec['candidate_name']?.toString();
+        candPos = exec['position']?.toString();
       }
     }
 

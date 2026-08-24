@@ -324,9 +324,7 @@ class CatalogController extends Controller
                     ->with(['politicalOrganization', 'candidacies.candidate']);
 
                 if (!empty($deptCodes)) {
-                    $listsQuery->where(function ($q) use ($deptCodes) {
-                        $q->whereNull('department_code')->orWhereIn('department_code', $deptCodes);
-                    });
+                    $listsQuery->whereIn('department_code', $deptCodes);
                 }
 
                 $lists = $listsQuery->get()->map(function ($list) use ($base) {
@@ -338,6 +336,11 @@ class CatalogController extends Controller
                         $orgLogo = str_starts_with($org->logo_url, '/storage/') ? ($base . $org->logo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $org->logo_url);
                     }
 
+                    // Encontrar primero al candidato a Gobernador Regional
+                    $candidacies = $list->candidacies->sortBy(function ($c) {
+                        return ($c->position === 'GOBERNADOR REGIONAL') ? 0 : 1;
+                    });
+
                     return [
                         'electoral_list_id' => $list->id,
                         'political_organization_id' => $list->political_organization_id,
@@ -347,7 +350,7 @@ class CatalogController extends Controller
                         'local_logo_url' => $org?->local_logo_url ? ($base . '/storage/political-organizationals/' . ltrim($org->local_logo_url, '/')) : null,
                         'is_provincial_admitted' => true,
                         'is_distrital_admitted' => true,
-                        'candidates' => $list->candidacies->map(function ($c) use ($base) {
+                        'candidates' => $candidacies->map(function ($c) use ($base) {
                             $photo = null;
                             if ($c->candidate?->local_photo_url) {
                                 $photo = $base . '/storage/candidates/' . ltrim($c->candidate->local_photo_url, '/');
@@ -364,7 +367,7 @@ class CatalogController extends Controller
                                 'position' => $c->position,
                                 'list_number' => $c->list_number,
                             ];
-                        }),
+                        })->values()->all(),
                     ];
                 })->all();
             }
