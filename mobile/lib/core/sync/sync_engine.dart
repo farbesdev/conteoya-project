@@ -294,6 +294,28 @@ class SyncEngine {
           await db.savePoliticalOrganizations(orgCompanions);
         }
 
+        // 4. Precarga y caché offline de plantillas de cédula para las mesas del usuario
+        for (final st in stationCompanions) {
+          final stCode = st.code.value;
+          for (final lvlId in [1, 2]) {
+            try {
+              final bResponse = await apiClient.get<Map<String, dynamic>>(
+                '/ballot-template',
+                queryParameters: {
+                  'polling_station_code': stCode,
+                  'electoral_level_id': lvlId,
+                },
+              );
+              if (bResponse.statusCode == 200 && bResponse.data != null) {
+                final bData = bResponse.data!['data'];
+                if (bData != null) {
+                  await db.saveBallotTemplateString(stCode, lvlId, jsonEncode(bData));
+                }
+              }
+            } catch (_) {}
+          }
+        }
+
         return {
           'polling_stations': stationCompanions.length,
           'personeros': personeroCompanions.length,

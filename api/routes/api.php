@@ -23,6 +23,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
     Route::get('/provinces', [CatalogController::class, 'provinces']);
     Route::get('/districts', [CatalogController::class, 'districts']);
     Route::get('/elections', [CatalogController::class, 'elections']);
+    Route::get('/ballot-template', [CatalogController::class, 'ballotTemplate']);
+    Route::get('/electoral-lists', [CatalogController::class, 'electoralLists']);
 
     // Rutas protegidas Sanctum con RateLimit por IP y verificación de usuario activo
     Route::middleware(['auth:sanctum', 'active_user'])->group(function () {

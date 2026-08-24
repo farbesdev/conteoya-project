@@ -6,6 +6,7 @@ import '../features/personeros/data/personeros_repository.dart';
 import '../features/personeros/domain/personero_model.dart';
 import '../features/mesas/data/mesas_repository.dart';
 import '../features/mesas/domain/mesa_model.dart';
+import '../features/acts/data/ballot_repository.dart';
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
@@ -44,6 +45,12 @@ final mesasRepositoryProvider = Provider<MesasRepository>((ref) {
   final db = ref.watch(appDatabaseProvider);
   final apiClient = ref.watch(apiClientProvider);
   return MesasRepository(db: db, apiClient: apiClient);
+});
+
+final ballotRepositoryProvider = Provider<BallotRepository>((ref) {
+  final db = ref.watch(appDatabaseProvider);
+  final apiClient = ref.watch(apiClientProvider);
+  return BallotRepository(db: db, apiClient: apiClient);
 });
 
 // Streams Reactivos

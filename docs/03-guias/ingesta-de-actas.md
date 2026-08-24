@@ -14,20 +14,51 @@ El proceso de registro e ingesta de actas electorales en **ConteoYA** sigue una 
 4. El motor de validación [`ActValidator`](file:///home/fredy/Documents/Proyectos/conteoya-project/mobile/lib/features/acts/domain/act_validator.dart) ejecuta comprobaciones de consistencia numérica en tiempo real emitiendo **Soft Warnings** si existen descuadres.
 5. El personero confirma los datos y la app guarda localmente en Drift SQLite y encola una operación de sincronización idempotente hacia el backend Laravel.
 
+---
+
+## 2. Estrategia de Solución Híbrida Offline-First (Cache-First Resiliente)
+
+Para atender a más de **101,000 mesas de votación** a nivel nacional sin saturar el almacenamiento de los dispositivos móviles ni depender de una conexión continua a internet, ConteoYA implementa una arquitectura híbrida con doble nivel de visualización:
+
+### 2.1. Flujo Operativo para Personeros y Usuarios (No Técnico)
+Permite a los personeros y miembros de mesa comprender cómo la aplicación garantiza la captura ininterrumpida de sus actas con o sin cobertura celular:
+
+![Diagrama de Flujo para Usuarios y Personeros](../assets/images/flujo_usuario_offline_first.jpg)
+
+1. **Apertura del Acta:** El personero selecciona su mesa asignada en la app móvil.
+2. **Carga Inmediata (Cache Local):** Si la información ya fue descargada previamente, la cédula y listas de candidatos cargan en **0 segundos sin gastar datos móviles**.
+3. **Descarga Automática con Señal:** Si es la primera vez que abre la mesa y tiene señal, la app consulta el backend oficial y guarda la plantilla localmente.
+4. **Modo Seguro Offline:** Si se encuentra en una zona remota sin señal de internet, el sistema activa el catálogo maestro local para permitir el registro y fotografía sin bloqueos.
+
+### 2.2. Arquitectura Técnica de Ingesta (Para Desarrolladores)
+Detalla la interacción entre el cliente Flutter (SQLite Drift), el motor de sincronización (`SyncEngine`) y el backend Laravel 12 con PostgreSQL 16 y Redis:
+
+![Arquitectura Técnica Híbrida Offline-First](../assets/images/hybrid_offline_first_architecture.jpg)
+
 ```mermaid
 sequenceDiagram
     autonumber
     actor P as Personero / Administrador
     participant UI as ActFormScreen (Flutter UI)
+    participant REPO as BallotRepository (Cache-First)
+    participant DB as SQLite Drift (Persistencia Local)
     participant VAL as ActValidator (Reglas de Dominio)
     participant HASH as HashUtils (SHA-256)
-    participant DB as SQLite Drift (Persistencia Local)
     participant SYNC as SyncEngine (Cola Offline)
     participant API as Laravel 12 API (Backend Ingesta)
 
     P->>UI: Selecciona Mesa y Nivel Electoral (Regional / Municipal)
-    UI->>DB: getPollingStationByCode() y consulta candidatos admitidos JEE
-    UI-->>P: Renderiza formulario con padrón y lista de partidos
+    UI->>REPO: getBallotTemplate(mesa, levelId)
+    alt Plantilla en SQLite Local
+        REPO->>DB: getBallotTemplateString(mesa, levelId)
+        DB-->>REPO: JSON de Cédula Oficial
+    else Hay conexión a Internet
+        REPO->>API: GET /api/v1/catalog/ballot-template
+        API-->>REPO: 200 OK (Cédula oficial por Ubigeo)
+        REPO->>DB: saveBallotTemplateString() (Caché local)
+    end
+    REPO-->>UI: BallotTemplateResult (Cédula con Partidos y Candidatos)
+    UI-->>P: Renderiza formulario con padrón y organizaciones admitidas
 
     opt Asistencia Fotográfica
         P->>UI: Captura fotografía del acta física

@@ -129,213 +129,20 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
   }
 
   Future<void> _initializeParties() async {
-    final db = ref.read(appDatabaseProvider);
-    final station = await db.getPollingStationByCode(widget.pollingStationCode);
+    setState(() {
+      _isLoadingParties = true;
+    });
 
-    final isHuanucoPuertoInca = widget.pollingStationCode.startsWith('040') ||
-        (station?.departmentName.toUpperCase().contains('HUÁNUCO') ?? false) ||
-        (station?.departmentName.toUpperCase().contains('HUANUCO') ?? false);
-
-    final registeredVoters = station?.registeredVoters ?? 300;
+    final ballotRepo = ref.read(ballotRepositoryProvider);
+    final ballotTemplate = await ballotRepo.getBallotTemplate(
+      pollingStationCode: widget.pollingStationCode,
+      electoralLevelId: _selectedLevelId,
+    );
 
     if (mounted) {
-      _registeredVotersController.text = registeredVoters.toString();
+      _registeredVotersController.text = ballotTemplate.registeredVoters.toString();
       _votersWhoVotedController.text = '0';
-    }
 
-    List<Map<String, Object?>> selectedParties;
-
-    if (isHuanucoPuertoInca) {
-      if (_selectedLevelId == 1) {
-        // 🏛️ Elección Regional — Huánuco (Candidaturas Oficiales JEE)
-        _totalVotesController.text = '0';
-        _blankVotesController.text = '0';
-        _nullVotesController.text = '0';
-
-        selectedParties = [
-          {
-            'id': 2925,
-            'name': 'PARTIDO POLITICO PERU PRIMERO',
-            'shortName': 'PERU PRIMERO',
-            'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2925.png',
-            'votes': '0',
-            'provVotes': '0',
-            'distVotes': '0',
-            'provAdmitted': true,
-            'distAdmitted': true,
-          },
-          {
-            'id': 14,
-            'name': 'PARTIDO DEMOCRATICO SOMOS PERU',
-            'shortName': 'SOMOS PERU',
-            'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/14.png',
-            'votes': '0',
-            'provVotes': '0',
-            'distVotes': '0',
-            'provAdmitted': true,
-            'distAdmitted': true,
-          },
-          {
-            'id': 3040,
-            'name': 'RENOVACION POPULAR PERU',
-            'shortName': 'RENOVACION',
-            'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/3040.png',
-            'votes': '0',
-            'provVotes': '0',
-            'distVotes': '0',
-            'provAdmitted': true,
-            'distAdmitted': true,
-          },
-          {
-            'id': 2956,
-            'name': 'PARTIDO PAIS PARA TODOS',
-            'shortName': 'PAIS PARA TODOS',
-            'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2956.png',
-            'votes': '0',
-            'provVotes': '0',
-            'distVotes': '0',
-            'provAdmitted': true,
-            'distAdmitted': true,
-          },
-          {
-            'id': 2933,
-            'name': 'LIBERTAD POPULAR',
-            'shortName': 'LIBERTAD',
-            'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2933.png',
-            'votes': '0',
-            'provVotes': '0',
-            'distVotes': '0',
-            'provAdmitted': true,
-            'distAdmitted': true,
-          },
-          {
-            'id': 2938,
-            'name': 'UNIDOS POR EL DESARROLLO DE HUANUCO - UDH',
-            'shortName': 'UDH',
-            'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2938.png',
-            'votes': '0',
-            'provVotes': '0',
-            'distVotes': '0',
-            'provAdmitted': true,
-            'distAdmitted': true,
-          },
-          {
-            'id': 2162,
-            'name': 'MOVIMIENTO REGIONAL HUANUCO PRIMERO',
-            'shortName': 'HUANUCO 1RO',
-            'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2162.png',
-            'votes': '0',
-            'provVotes': '0',
-            'distVotes': '0',
-            'provAdmitted': true,
-            'distAdmitted': true,
-          },
-          {
-            'id': 2901,
-            'name': 'FRENTE POPULAR AGRICOLA FIA DEL PERU - FREPAP',
-            'shortName': 'FREPAP',
-            'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2901.png',
-            'votes': '0',
-            'provVotes': '0',
-            'distVotes': '0',
-            'provAdmitted': true,
-            'distAdmitted': true,
-          },
-        ];
-      } else {
-        // 🏙️ Elección Municipal Provincial (Puerto Inca) y Distrital (Yuyapichis / Codo del Pozuzo)
-        _provTotalVotesController.text = '0';
-        _provBlankVotesController.text = '0';
-        _provNullVotesController.text = '0';
-        _provChallengedVotesController.text = '0';
-
-        _distTotalVotesController.text = '0';
-        _distBlankVotesController.text = '0';
-        _distNullVotesController.text = '0';
-        _distChallengedVotesController.text = '0';
-
-        selectedParties = [
-          {
-            'id': 2925,
-            'name': 'PARTIDO POLITICO PERU PRIMERO',
-            'shortName': 'PERU PRIMERO',
-            'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2925.png',
-            'votes': '0',
-            'provVotes': '0',
-            'distVotes': '0',
-            'provAdmitted': true, // Postula a Provincial Puerto Inca
-            'distAdmitted': true, // Postula a Distrital Yuyapichis
-          },
-          {
-            'id': 14,
-            'name': 'PARTIDO DEMOCRATICO SOMOS PERU',
-            'shortName': 'SOMOS PERU',
-            'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/14.png',
-            'votes': '0',
-            'provVotes': '0',
-            'distVotes': '0',
-            'provAdmitted': true, // Postula a Provincial Puerto Inca
-            'distAdmitted': true, // Postula a Distrital Yuyapichis
-          },
-          {
-            'id': 3040,
-            'name': 'RENOVACION POPULAR PERU',
-            'shortName': 'RENOVACION',
-            'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/3040.png',
-            'votes': '0',
-            'provVotes': '0',
-            'distVotes': '0',
-            'provAdmitted': true, // Postula a Provincial Puerto Inca
-            'distAdmitted': true, // Postula a Distrital Yuyapichis
-          },
-          {
-            'id': 2956,
-            'name': 'PARTIDO PAIS PARA TODOS',
-            'shortName': 'PAIS PARA TODOS',
-            'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2956.png',
-            'votes': '0',
-            'provVotes': '0',
-            'distVotes': '0',
-            'provAdmitted': true, // Postula a Provincial Puerto Inca
-            'distAdmitted': true, // Postula a Distrital Yuyapichis
-          },
-          {
-            'id': 4,
-            'name': 'ACCION POPULAR',
-            'shortName': 'AP',
-            'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/4.png',
-            'votes': '0',
-            'provVotes': '0',
-            'distVotes': '0',
-            'provAdmitted': true, // Postula a Provincial Puerto Inca
-            'distAdmitted': false, // No postula a Distrital Yuyapichis
-          },
-          {
-            'id': 2980,
-            'name': 'AHORA NACION - AN',
-            'shortName': 'AN',
-            'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2980.png',
-            'votes': '0',
-            'provVotes': '0',
-            'distVotes': '0',
-            'provAdmitted': true, // Postula a Provincial Puerto Inca
-            'distAdmitted': false, // No postula a Distrital Yuyapichis
-          },
-          {
-            'id': 2901,
-            'name': 'FRENTE POPULAR AGRICOLA FIA DEL PERU - FREPAP',
-            'shortName': 'FREPAP',
-            'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2901.png',
-            'votes': '0',
-            'provVotes': '0',
-            'distVotes': '0',
-            'provAdmitted': true, // Postula a Provincial Puerto Inca
-            'distAdmitted': false, // No postula a Distrital Yuyapichis
-          },
-        ];
-      }
-    } else {
-      // 🏛️ Elección Lima Metropolitana / Lima Cercado
       if (_selectedLevelId == 1) {
         _totalVotesController.text = '0';
         _blankVotesController.text = '0';
@@ -353,103 +160,32 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
         _distChallengedVotesController.text = '0';
       }
 
-      selectedParties = [
-        {
-          'id': 4,
-          'name': 'ACCIÓN POPULAR',
-          'shortName': 'AP',
-          'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/4.png',
-          'votes': '0',
-          'provVotes': '0',
-          'distVotes': '0',
-          'provAdmitted': true,
-          'distAdmitted': true,
-        },
-        {
-          'id': 14,
-          'name': 'PARTIDO DEMOCRÁTICO SOMOS PERÚ',
-          'shortName': 'SOMOS PERU',
-          'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/14.png',
-          'votes': '0',
-          'provVotes': '0',
-          'distVotes': '0',
-          'provAdmitted': true,
-          'distAdmitted': true,
-        },
-        {
-          'id': 1257,
-          'name': 'ALIANZA PARA EL PROGRESO',
-          'shortName': 'APP',
-          'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/1257.png',
-          'votes': '0',
-          'provVotes': '0',
-          'distVotes': '0',
-          'provAdmitted': true,
-          'distAdmitted': true,
-        },
-        {
-          'id': 1264,
-          'name': 'JUNTOS POR EL PERÚ',
-          'shortName': 'JP',
-          'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/1264.png',
-          'votes': '0',
-          'provVotes': '0',
-          'distVotes': '0',
-          'provAdmitted': true,
-          'distAdmitted': true,
-        },
-        {
-          'id': 1366,
-          'name': 'FUERZA POPULAR',
-          'shortName': 'FP',
-          'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/1366.png',
-          'votes': '0',
-          'provVotes': '0',
-          'distVotes': '0',
-          'provAdmitted': true,
-          'distAdmitted': true,
-        },
-        {
-          'id': 2173,
-          'name': 'AVANZA PAIS - PARTIDO DE INTEGRACION SOCIAL',
-          'shortName': 'AVANZA PAIS',
-          'logoUrl': 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2173.png',
-          'votes': '0',
-          'provVotes': '0',
-          'distVotes': '0',
-          'provAdmitted': true,
-          'distAdmitted': true,
-        },
-      ];
-    }
-
-    if (mounted) {
       setState(() {
-        _partyEntries = selectedParties.map((p) {
+        _partyEntries = ballotTemplate.parties.map((p) {
           return PartyFormEntry(
-            id: p['id'] as int,
-            name: p['name'] as String,
-            shortName: p['shortName'] as String?,
-            logoUrl: p['logoUrl'] as String?,
-            isProvincialAdmitted: p['provAdmitted'] as bool? ?? true,
-            isDistritalAdmitted: p['distAdmitted'] as bool? ?? true,
-            votesController: TextEditingController(text: p['votes'] as String),
+            id: p.id,
+            name: p.name,
+            shortName: p.shortName,
+            logoUrl: p.logoUrl,
+            isProvincialAdmitted: p.isProvincialAdmitted,
+            isDistritalAdmitted: p.isDistritalAdmitted,
+            votesController: TextEditingController(text: '0'),
             votesProvincialController: TextEditingController(
-              text: (p['provAdmitted'] as bool? ?? true) ? (p['provVotes'] as String) : '0',
+              text: p.isProvincialAdmitted ? '0' : '0',
             ),
             votesDistritalController: TextEditingController(
-              text: (p['distAdmitted'] as bool? ?? true) ? (p['distVotes'] as String) : '0',
+              text: p.isDistritalAdmitted ? '0' : '0',
             ),
           );
         }).toList();
         _isLoadingParties = false;
       });
 
-      _recalculateValidation();
+      _recalculateFromVotes();
     }
   }
 
-  void _recalculateValidation() {
+  void _recalculateFromVotes() {
     final registered = int.tryParse(_registeredVotersController.text) ?? 0;
 
     if (_selectedLevelId == 2) {
@@ -474,16 +210,15 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       final sumDistCandidates = distCandidates.fold<int>(0, (prev, elem) => prev + elem);
       final distTotal = sumDistCandidates + distBlank + distNull + distChallenged;
 
-      // Actualizar automáticamente los controladores
+      // Actualizar automáticamente los controladores de totales
       _provTotalVotesController.text = provTotal.toString();
       _distTotalVotesController.text = distTotal.toString();
       _votersWhoVotedController.text = provTotal.toString();
-      final voters = provTotal;
 
       setState(() {
         _validationResult = ActValidator.validateMunicipal(
           registeredVoters: registered,
-          votersWhoVoted: voters,
+          votersWhoVoted: provTotal,
           provTotalVotes: provTotal,
           provBlankVotes: provBlank,
           provNullVotes: provNull,
@@ -507,10 +242,71 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       final sumCandidates = candidateVotes.fold<int>(0, (prev, elem) => prev + elem);
       final total = sumCandidates + blank + nullVotes + challenged;
 
-      // Actualizar automáticamente los controladores
+      // Actualizar automáticamente los controladores de totales
       _totalVotesController.text = total.toString();
       _votersWhoVotedController.text = total.toString();
-      final voters = total;
+
+      setState(() {
+        _validationResult = ActValidator.validate(
+          registeredVoters: registered,
+          votersWhoVoted: total,
+          totalVotes: total,
+          blankVotes: blank,
+          nullVotes: nullVotes,
+          challengedVotes: challenged,
+          candidateVotes: candidateVotes,
+        );
+      });
+    }
+  }
+
+  void _recalculateOnlyValidation() {
+    final registered = int.tryParse(_registeredVotersController.text) ?? 0;
+    final voters = int.tryParse(_votersWhoVotedController.text) ?? 0;
+
+    if (_selectedLevelId == 2) {
+      final provTotal = int.tryParse(_provTotalVotesController.text) ?? 0;
+      final provBlank = int.tryParse(_provBlankVotesController.text) ?? 0;
+      final provNull = int.tryParse(_provNullVotesController.text) ?? 0;
+      final provChallenged = int.tryParse(_provChallengedVotesController.text) ?? 0;
+      final provCandidates = _partyEntries
+          .where((p) => p.isProvincialAdmitted)
+          .map((p) => int.tryParse(p.votesProvincialController.text) ?? 0)
+          .toList();
+
+      final distTotal = int.tryParse(_distTotalVotesController.text) ?? 0;
+      final distBlank = int.tryParse(_distBlankVotesController.text) ?? 0;
+      final distNull = int.tryParse(_distNullVotesController.text) ?? 0;
+      final distChallenged = int.tryParse(_distChallengedVotesController.text) ?? 0;
+      final distCandidates = _partyEntries
+          .where((p) => p.isDistritalAdmitted)
+          .map((p) => int.tryParse(p.votesDistritalController.text) ?? 0)
+          .toList();
+
+      setState(() {
+        _validationResult = ActValidator.validateMunicipal(
+          registeredVoters: registered,
+          votersWhoVoted: voters,
+          provTotalVotes: provTotal,
+          provBlankVotes: provBlank,
+          provNullVotes: provNull,
+          provChallengedVotes: provChallenged,
+          provCandidateVotes: provCandidates,
+          distTotalVotes: distTotal,
+          distBlankVotes: distBlank,
+          distNullVotes: distNull,
+          distChallengedVotes: distChallenged,
+          distCandidateVotes: distCandidates,
+        );
+      });
+    } else {
+      final total = int.tryParse(_totalVotesController.text) ?? 0;
+      final blank = int.tryParse(_blankVotesController.text) ?? 0;
+      final nullVotes = int.tryParse(_nullVotesController.text) ?? 0;
+      final challenged = int.tryParse(_challengedVotesController.text) ?? 0;
+      final candidateVotes = _partyEntries
+          .map((p) => int.tryParse(p.votesController.text) ?? 0)
+          .toList();
 
       setState(() {
         _validationResult = ActValidator.validate(
@@ -583,7 +379,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
               _partyEntries[1].confidence = 0.82;
             }
           });
-          _recalculateValidation();
+          _recalculateFromVotes();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Valores OCR cargados. Por favor confirme antes de guardar.'),
@@ -1170,7 +966,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                                                 borderSide: BorderSide(color: borderColor),
                                               ),
                                             ),
-                                            onChanged: (_) => _recalculateValidation(),
+                                            onChanged: (_) => _recalculateFromVotes(),
                                           )
                                         : Container(
                                             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1213,7 +1009,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                                                 borderSide: BorderSide(color: borderColor),
                                               ),
                                             ),
-                                            onChanged: (_) => _recalculateValidation(),
+                                            onChanged: (_) => _recalculateFromVotes(),
                                           )
                                         : Container(
                                             padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1254,7 +1050,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                                           borderSide: BorderSide(color: borderColor),
                                         ),
                                       ),
-                                      onChanged: (_) => _recalculateValidation(),
+                                      onChanged: (_) => _recalculateFromVotes(),
                                     ),
                                   ),
                               ],
@@ -1275,11 +1071,11 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                       icon: Icons.location_city_rounded,
                       child: Column(
                         children: [
-                          _buildNumberField('Votos en Blanco', _provBlankVotesController),
-                          _buildNumberField('Votos Nulos', _provNullVotesController),
-                          _buildNumberField('Votos Impugnados', _provChallengedVotesController),
+                          _buildNumberField('Votos en Blanco', _provBlankVotesController, onChanged: (_) => _recalculateFromVotes()),
+                          _buildNumberField('Votos Nulos', _provNullVotesController, onChanged: (_) => _recalculateFromVotes()),
+                          _buildNumberField('Votos Impugnados', _provChallengedVotesController, onChanged: (_) => _recalculateFromVotes()),
                           Divider(color: borderColor, height: 24),
-                          _buildNumberField('Total Votos Emitidos (Provincial)', _provTotalVotesController),
+                          _buildNumberField('Total Votos Emitidos (Provincial)', _provTotalVotesController, onChanged: (_) => _recalculateOnlyValidation()),
                         ],
                       ),
                     ),
@@ -1290,11 +1086,11 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                       icon: Icons.holiday_village_rounded,
                       child: Column(
                         children: [
-                          _buildNumberField('Votos en Blanco', _distBlankVotesController),
-                          _buildNumberField('Votos Nulos', _distNullVotesController),
-                          _buildNumberField('Votos Impugnados', _distChallengedVotesController),
+                          _buildNumberField('Votos en Blanco', _distBlankVotesController, onChanged: (_) => _recalculateFromVotes()),
+                          _buildNumberField('Votos Nulos', _distNullVotesController, onChanged: (_) => _recalculateFromVotes()),
+                          _buildNumberField('Votos Impugnados', _distChallengedVotesController, onChanged: (_) => _recalculateFromVotes()),
                           Divider(color: borderColor, height: 24),
-                          _buildNumberField('Total Votos Emitidos (Distrital)', _distTotalVotesController),
+                          _buildNumberField('Total Votos Emitidos (Distrital)', _distTotalVotesController, onChanged: (_) => _recalculateOnlyValidation()),
                         ],
                       ),
                     ),
@@ -1305,8 +1101,8 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                       icon: Icons.calculate_outlined,
                       child: Column(
                         children: [
-                          _buildNumberField('Electores Hábiles', _registeredVotersController),
-                          _buildNumberField('Ciudadanos que Votaron', _votersWhoVotedController),
+                          _buildNumberField('Electores Hábiles', _registeredVotersController, onChanged: (_) => _recalculateOnlyValidation()),
+                          _buildNumberField('Ciudadanos que Votaron', _votersWhoVotedController, onChanged: (_) => _recalculateOnlyValidation()),
                         ],
                       ),
                     ),
@@ -1316,13 +1112,13 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                       icon: Icons.calculate_outlined,
                       child: Column(
                         children: [
-                          _buildNumberField('Electores Hábiles', _registeredVotersController),
-                          _buildNumberField('Ciudadanos que Votaron', _votersWhoVotedController),
-                          _buildNumberField('Total de Votos Emitidos', _totalVotesController),
+                          _buildNumberField('Electores Hábiles', _registeredVotersController, onChanged: (_) => _recalculateOnlyValidation()),
+                          _buildNumberField('Ciudadanos que Votaron', _votersWhoVotedController, onChanged: (_) => _recalculateOnlyValidation()),
+                          _buildNumberField('Total de Votos Emitidos', _totalVotesController, onChanged: (_) => _recalculateOnlyValidation()),
                           Divider(color: borderColor, height: 24),
-                          _buildNumberField('Votos en Blanco', _blankVotesController),
-                          _buildNumberField('Votos Nulos', _nullVotesController),
-                          _buildNumberField('Votos Impugnados', _challengedVotesController),
+                          _buildNumberField('Votos en Blanco', _blankVotesController, onChanged: (_) => _recalculateFromVotes()),
+                          _buildNumberField('Votos Nulos', _nullVotesController, onChanged: (_) => _recalculateFromVotes()),
+                          _buildNumberField('Votos Impugnados', _challengedVotesController, onChanged: (_) => _recalculateFromVotes()),
                         ],
                       ),
                     ),
@@ -1427,7 +1223,11 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
     );
   }
 
-  Widget _buildNumberField(String label, TextEditingController controller) {
+  Widget _buildNumberField(
+    String label,
+    TextEditingController controller, {
+    void Function(String)? onChanged,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final inputFill = isDark ? const Color(0xFF0B1120) : const Color(0xFFF1F5F9);
     final borderColor = AppColors.borderOf(context);
@@ -1463,7 +1263,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                   borderSide: BorderSide(color: borderColor),
                 ),
               ),
-              onChanged: (_) => _recalculateValidation(),
+              onChanged: onChanged ?? (_) => _recalculateFromVotes(),
             ),
           ),
         ],

@@ -28,6 +28,7 @@ class AppDatabase extends _$AppDatabase {
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
+          await _ensureBallotTemplatesTableCreated();
         },
         onUpgrade: (m, from, to) async {
           final migrator = createMigrator();
@@ -47,6 +48,7 @@ class AppDatabase extends _$AppDatabase {
               await migrator.addColumn(localPollingStationsTable, localPollingStationsTable.odpe);
             } catch (_) {}
           }
+          await _ensureBallotTemplatesTableCreated();
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
@@ -91,9 +93,25 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(localPoliticalOrganizationsTable);
           } catch (_) {}
 
+          await _ensureBallotTemplatesTableCreated();
+
           await seedInitialDataIfEmpty();
         },
       );
+
+  Future<void> _ensureBallotTemplatesTableCreated() async {
+    try {
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS local_ballot_templates_table (
+          polling_station_code TEXT NOT NULL,
+          electoral_level_id INTEGER NOT NULL,
+          template_json TEXT NOT NULL,
+          updated_at INTEGER NOT NULL,
+          PRIMARY KEY (polling_station_code, electoral_level_id)
+        )
+      ''');
+    } catch (_) {}
+  }
 
   // ─── DAOs & Consultas Transaccionales para Actas ────────────────────────────
   Future<void> saveCompleteAct({
@@ -355,6 +373,48 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  // ─── DAOs para Plantillas de Cédula (Ballot Templates) ────────────────────
+  Future<String?> getBallotTemplateString(String pollingStationCode, int electoralLevelId) async {
+    try {
+      final rows = await customSelect(
+        'SELECT template_json FROM local_ballot_templates_table WHERE polling_station_code = ? AND electoral_level_id = ? LIMIT 1',
+        variables: [
+          Variable.withString(pollingStationCode),
+          Variable.withInt(electoralLevelId),
+        ],
+      ).get();
+
+      if (rows.isNotEmpty) {
+        return rows.first.read<String>('template_json');
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<void> saveBallotTemplateString(String pollingStationCode, int electoralLevelId, String templateJson) async {
+    try {
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS local_ballot_templates_table (
+          polling_station_code TEXT NOT NULL,
+          electoral_level_id INTEGER NOT NULL,
+          template_json TEXT NOT NULL,
+          updated_at INTEGER NOT NULL,
+          PRIMARY KEY (polling_station_code, electoral_level_id)
+        )
+      ''');
+
+      await customInsert(
+        'INSERT OR REPLACE INTO local_ballot_templates_table (polling_station_code, electoral_level_id, template_json, updated_at) VALUES (?, ?, ?, ?)',
+        variables: [
+          Variable.withString(pollingStationCode),
+          Variable.withInt(electoralLevelId),
+          Variable.withString(templateJson),
+          Variable.withInt(DateTime.now().millisecondsSinceEpoch ~/ 1000),
+        ],
+      );
+    } catch (_) {}
+  }
+
   // ─── DAOs para Operaciones de Sincronización ───────────────────────────────
   Future<void> enqueueSyncOperation(LocalSyncOperationsTableCompanion op) {
     return into(localSyncOperationsTable).insertOnConflictUpdate(op);
@@ -427,9 +487,18 @@ class AppDatabase extends _$AppDatabase {
           departmentName: const Value('LIMA'),
           registeredVoters: const Value(310),
         ),
-        // Mesas de Puerto Inca - Huánuco
+        // Mesas oficiales reales de Puerto Inca - Huánuco (Rango ONPE 021038 - 021056)
         LocalPollingStationsTableCompanion.insert(
-          code: '040101',
+          code: '021038',
+          locationName: 'I.E. 32617 YUYAPICHIS',
+          districtCode: const Value('001275'),
+          districtName: const Value('YUYAPICHIS'),
+          provinceName: const Value('PUERTO INCA'),
+          departmentName: const Value('HUÁNUCO'),
+          registeredVoters: const Value(300),
+        ),
+        LocalPollingStationsTableCompanion.insert(
+          code: '021039',
           locationName: 'I.E. AGROPECUARIO PUERTO INCA',
           districtCode: const Value('001272'),
           districtName: const Value('PUERTO INCA'),
@@ -438,7 +507,7 @@ class AppDatabase extends _$AppDatabase {
           registeredVoters: const Value(280),
         ),
         LocalPollingStationsTableCompanion.insert(
-          code: '040102',
+          code: '021040',
           locationName: 'I.E. 32223 CODO DEL POZUZO',
           districtCode: const Value('001274'),
           districtName: const Value('CODO DEL POZUZO'),
@@ -447,22 +516,13 @@ class AppDatabase extends _$AppDatabase {
           registeredVoters: const Value(290),
         ),
         LocalPollingStationsTableCompanion.insert(
-          code: '040103',
+          code: '021041',
           locationName: 'I.E. TOURNAVISTA',
           districtCode: const Value('001272'),
           districtName: const Value('TOURNAVISTA'),
           provinceName: const Value('PUERTO INCA'),
           departmentName: const Value('HUÁNUCO'),
           registeredVoters: const Value(275),
-        ),
-        LocalPollingStationsTableCompanion.insert(
-          code: '040104',
-          locationName: 'I.E. YUYAPICHIS',
-          districtCode: const Value('001275'),
-          districtName: const Value('YUYAPICHIS'),
-          provinceName: const Value('PUERTO INCA'),
-          departmentName: const Value('HUÁNUCO'),
-          registeredVoters: const Value(305),
         ),
       ]);
     } catch (_) {}
@@ -475,7 +535,7 @@ class AppDatabase extends _$AppDatabase {
             dni: '44001122',
             firstName: 'Personero',
             lastName: 'Puerto Inca (Yuyapichis)',
-            pollingStationCode: '040104',
+            pollingStationCode: '021038',
             phoneNumber: const Value('+51 962 111 222'),
             email: const Value('personero.puertoinca@conteoya.pe'),
           ),
@@ -500,74 +560,86 @@ class AppDatabase extends _$AppDatabase {
       } catch (_) {}
     }
 
-    // Actualizar o sembrar Organizaciones Políticas con sus logos oficiales reales de Azure Blob
+    // Actualizar o sembrar Organizaciones Políticas con IDs canónicos de JEE/PostgreSQL
     await batch((b) {
       b.insertAllOnConflictUpdate(localPoliticalOrganizationsTable, [
         LocalPoliticalOrganizationsTableCompanion.insert(
-          id: const Value(4),
+          id: const Value(1),
           name: 'ACCIÓN POPULAR',
           shortName: const Value('AP'),
           logoUrl: const Value('https://stovotoinformadodev.blob.core.windows.net/contenedor-2/4.png'),
         ),
         LocalPoliticalOrganizationsTableCompanion.insert(
-          id: const Value(14),
+          id: const Value(2),
           name: 'PARTIDO DEMOCRÁTICO SOMOS PERÚ',
           shortName: const Value('SOMOS PERU'),
           logoUrl: const Value('https://stovotoinformadodev.blob.core.windows.net/contenedor-2/14.png'),
         ),
         LocalPoliticalOrganizationsTableCompanion.insert(
-          id: const Value(1257),
+          id: const Value(6),
           name: 'ALIANZA PARA EL PROGRESO',
           shortName: const Value('APP'),
           logoUrl: const Value('https://stovotoinformadodev.blob.core.windows.net/contenedor-2/1257.png'),
         ),
         LocalPoliticalOrganizationsTableCompanion.insert(
-          id: const Value(1264),
+          id: const Value(7),
           name: 'JUNTOS POR EL PERÚ',
           shortName: const Value('JP'),
           logoUrl: const Value('https://stovotoinformadodev.blob.core.windows.net/contenedor-2/1264.png'),
         ),
         LocalPoliticalOrganizationsTableCompanion.insert(
-          id: const Value(1366),
+          id: const Value(8),
           name: 'FUERZA POPULAR',
           shortName: const Value('FP'),
           logoUrl: const Value('https://stovotoinformadodev.blob.core.windows.net/contenedor-2/1366.png'),
         ),
         LocalPoliticalOrganizationsTableCompanion.insert(
-          id: const Value(2173),
+          id: const Value(17),
           name: 'AVANZA PAIS - PARTIDO DE INTEGRACION SOCIAL',
           shortName: const Value('AVANZA PAIS'),
           logoUrl: const Value('https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2173.png'),
         ),
         LocalPoliticalOrganizationsTableCompanion.insert(
-          id: const Value(2731),
+          id: const Value(21),
           name: 'PODEMOS PERU',
           shortName: const Value('PODEMOS'),
           logoUrl: const Value('https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2731.png'),
         ),
         LocalPoliticalOrganizationsTableCompanion.insert(
-          id: const Value(2840),
+          id: const Value(25),
           name: 'PARTIDO MORADO',
           shortName: const Value('PM'),
           logoUrl: const Value('https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2840.png'),
         ),
         LocalPoliticalOrganizationsTableCompanion.insert(
-          id: const Value(2857),
+          id: const Value(26),
           name: 'PARTIDO FRENTE DE LA ESPERANZA 2021',
           shortName: const Value('FE 2021'),
           logoUrl: const Value('https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2857.png'),
         ),
         LocalPoliticalOrganizationsTableCompanion.insert(
-          id: const Value(3040),
-          name: 'RENOVACIÓN POPULAR',
-          shortName: const Value('RP'),
-          logoUrl: const Value('https://stovotoinformadodev.blob.core.windows.net/contenedor-2/3040.png'),
+          id: const Value(37),
+          name: 'PARTIDO POLITICO PERU PRIMERO',
+          shortName: const Value('PERU PRIMERO'),
+          logoUrl: const Value('https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2925.png'),
         ),
         LocalPoliticalOrganizationsTableCompanion.insert(
-          id: const Value(2980),
+          id: const Value(55),
           name: 'AHORA NACION - AN',
           shortName: const Value('AN'),
           logoUrl: const Value('https://stovotoinformadodev.blob.core.windows.net/contenedor-2/2980.png'),
+        ),
+        LocalPoliticalOrganizationsTableCompanion.insert(
+          id: const Value(65),
+          name: 'ALIANZA ELECTORAL VENCEREMOS',
+          shortName: const Value('VENCEREMOS'),
+          logoUrl: const Value('https://stovotoinformadodev.blob.core.windows.net/contenedor-2/3028.png'),
+        ),
+        LocalPoliticalOrganizationsTableCompanion.insert(
+          id: const Value(68),
+          name: 'RENOVACIÓN POPULAR',
+          shortName: const Value('RP'),
+          logoUrl: const Value('https://stovotoinformadodev.blob.core.windows.net/contenedor-2/3040.png'),
         ),
       ]);
     });

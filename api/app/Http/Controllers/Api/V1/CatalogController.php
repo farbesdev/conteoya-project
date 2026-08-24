@@ -178,10 +178,12 @@ class CatalogController extends Controller
             $provCode = $district?->province_code ?? \App\Models\Province::where('name', $provName)->value('code');
             $deptCode = $district?->department_code ?? \App\Models\Department::where('name', $deptName)->value('code');
 
+            $allowedStatuses = ['INSCRITO', 'ADMITIDO', 'PERIODO DE TACHA', 'TACHA EN TRAMITE', 'PUBLICADO'];
+
             if ($levelId == 2) {
                 // Nivel Municipal Provincial - Distrital Combinado
                 $provLists = ElectoralList::where('electoral_level_id', 2)
-                    ->where('status', 'INSCRITO')
+                    ->whereIn('status', $allowedStatuses)
                     ->where(function ($q) use ($provCode) {
                         if ($provCode) {
                             $q->whereNull('province_code')->orWhere('province_code', $provCode);
@@ -191,7 +193,7 @@ class CatalogController extends Controller
                     ->get();
 
                 $distLists = ElectoralList::where('electoral_level_id', 3)
-                    ->where('status', 'INSCRITO')
+                    ->whereIn('status', $allowedStatuses)
                     ->where(function ($q) use ($distCode) {
                         if ($distCode) {
                             $q->whereNull('district_code')->orWhere('district_code', $distCode);
@@ -266,7 +268,7 @@ class CatalogController extends Controller
                 // Nivel Simple (Regional u otro)
                 $base = request()->getSchemeAndHttpHost();
                 $listsQuery = ElectoralList::where('electoral_level_id', $levelId)
-                    ->where('status', 'INSCRITO')
+                    ->whereIn('status', $allowedStatuses)
                     ->with(['politicalOrganization', 'candidacies.candidate']);
 
                 if ($levelId == 1 && $deptCode) {
@@ -278,6 +280,11 @@ class CatalogController extends Controller
                 $lists = $listsQuery->get()->map(function ($list) use ($base) {
                     $org = $list->political_organization;
                     $orgLogo = null;
+                    if ($org?->local_logo_url) {
+                        $orgLogo = $base . '/storage/political-organizationals/' . ltrim($org->local_logo_url, '/');
+                    } elseif ($org?->logo_url) {
+                        $orgLogo = str_starts_with($org->logo_url, '/storage/') ? ($base . $org->logo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $org->logo_url);
+                    }
                     if ($org?->local_logo_url) {
                         $orgLogo = $base . '/storage/political-organizationals/' . ltrim($org->local_logo_url, '/');
                     } elseif ($org?->logo_url) {

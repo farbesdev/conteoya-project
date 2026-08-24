@@ -115,3 +115,14 @@ class LocalPersonerosTable extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
+@DataClassName('LocalBallotTemplate')
+class LocalBallotTemplatesTable extends Table {
+  TextColumn get pollingStationCode => text()();
+  IntColumn get electoralLevelId => integer()();
+  TextColumn get templateJson => text()();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {pollingStationCode, electoralLevelId};
+}
+

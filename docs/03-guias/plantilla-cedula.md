@@ -5,9 +5,13 @@
 
 ---
 
-## 1. Propósito
+## 1. Propósito y Arquitectura Híbrida
 
 Permite a la aplicación móvil o interfaz web consultar en un único round-trip todos los datos de la mesa, el nivel de elección, las organizaciones políticas en contienda y sus candidatos ordenados, resolviendo el ubigeo sin necesidad de que la mesa cuente con un registro en `electoral_locations`.
+
+En la aplicación móvil Flutter, esta plantilla se descarga y persiste automáticamente en SQLite Drift a través del [`BallotRepository`](file:///home/fredy/Documents/Proyectos/conteoya-project/mobile/lib/features/acts/data/ballot_repository.dart) siguiendo la **Estrategia Híbrida Cache-First Resiliente** documentada en la [Guía de Ingesta de Actas](./ingesta-de-actas.md#2-estrategia-de-solución-híbrida-offline-first-cache-first-resiliente).
+
+![Arquitectura Técnica Híbrida](../assets/images/hybrid_offline_first_architecture.jpg)
 
 ---
 
