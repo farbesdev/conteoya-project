@@ -105,17 +105,15 @@ class BallotRepository {
           }
         }
 
-        if (parties.isNotEmpty) {
-          return BallotTemplateResult(
-            pollingStationCode: pollingStationCode,
-            electoralLevelId: electoralLevelId,
-            registeredVoters: (data['station']?['registered_voters'] as int?) ?? regVoters,
-            departmentName: data['station']?['department_name']?.toString() ?? depName,
-            provinceName: data['station']?['province_name']?.toString() ?? provName,
-            districtName: data['station']?['district_name']?.toString() ?? distName,
-            parties: parties,
-          );
-        }
+        return BallotTemplateResult(
+          pollingStationCode: pollingStationCode,
+          electoralLevelId: electoralLevelId,
+          registeredVoters: (data['station']?['registered_voters'] as int?) ?? regVoters,
+          departmentName: data['station']?['department_name']?.toString() ?? depName,
+          provinceName: data['station']?['province_name']?.toString() ?? provName,
+          districtName: data['station']?['district_name']?.toString() ?? distName,
+          parties: parties,
+        );
       }
     } catch (_) {
       // Fallback a caché local si la red no está disponible
