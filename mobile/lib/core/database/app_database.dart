@@ -149,12 +149,28 @@ class AppDatabase extends _$AppDatabase {
     required List<LocalActResultsTableCompanion> results,
   }) {
     return transaction(() async {
+      // Si existe un acta previa para la misma mesa y nivel con distinto UUID, limpiar duplicados
+      final stationCode = act.pollingStationCode.value;
+      final levelId = act.electoralLevelId.value;
+      final currentUuid = act.clientActUuid.value;
+
+      final previousActs = await (select(localActsTable)
+            ..where((t) =>
+                t.pollingStationCode.equals(stationCode) &
+                t.electoralLevelId.equals(levelId) &
+                t.clientActUuid.equals(currentUuid).not()))
+          .get();
+
+      for (final prev in previousActs) {
+        await deleteActByClientUuid(prev.clientActUuid);
+      }
+
       await into(localActsTable).insertOnConflictUpdate(act);
       await into(localActTotalsTable).insertOnConflictUpdate(totals);
 
       // Eliminar resultados previos para esta acta y reinsertar
       await (delete(localActResultsTable)
-            ..where((tbl) => tbl.clientActUuid.equals(act.clientActUuid.value)))
+            ..where((tbl) => tbl.clientActUuid.equals(currentUuid)))
           .go();
 
       for (final res in results) {
@@ -191,18 +207,23 @@ class AppDatabase extends _$AppDatabase {
         .watch();
   }
 
-  Future<LocalAct?> getActByStationAndLevel(String pollingStationCode, int electoralLevelId) {
-    return (select(localActsTable)
+  Future<LocalAct?> getActByStationAndLevel(String pollingStationCode, int electoralLevelId) async {
+    final rows = await (select(localActsTable)
           ..where((t) =>
               t.pollingStationCode.equals(pollingStationCode) &
-              t.electoralLevelId.equals(electoralLevelId)))
-        .getSingleOrNull();
+              t.electoralLevelId.equals(electoralLevelId))
+          ..orderBy([(t) => OrderingTerm.desc(t.capturedAt)])
+          ..limit(1))
+        .get();
+    return rows.firstOrNull;
   }
 
-  Future<LocalActTotal?> getTotalsForAct(String clientActUuid) {
-    return (select(localActTotalsTable)
-          ..where((t) => t.clientActUuid.equals(clientActUuid)))
-        .getSingleOrNull();
+  Future<LocalActTotal?> getTotalsForAct(String clientActUuid) async {
+    final rows = await (select(localActTotalsTable)
+          ..where((t) => t.clientActUuid.equals(clientActUuid))
+          ..limit(1))
+        .get();
+    return rows.firstOrNull;
   }
 
   Future<List<LocalActResult>> getResultsForAct(String clientActUuid) {
@@ -211,10 +232,12 @@ class AppDatabase extends _$AppDatabase {
         .get();
   }
 
-  Future<LocalActEvidence?> getEvidenceForAct(String clientActUuid) {
-    return (select(localActEvidenceTable)
-          ..where((t) => t.clientActUuid.equals(clientActUuid)))
-        .getSingleOrNull();
+  Future<LocalActEvidence?> getEvidenceForAct(String clientActUuid) async {
+    final rows = await (select(localActEvidenceTable)
+          ..where((t) => t.clientActUuid.equals(clientActUuid))
+          ..limit(1))
+        .get();
+    return rows.firstOrNull;
   }
 
   // ─── DAOs para Personeros ──────────────────────────────────────────────────
