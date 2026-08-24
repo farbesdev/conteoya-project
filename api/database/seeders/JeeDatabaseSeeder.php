@@ -197,6 +197,8 @@ class JeeDatabaseSeeder extends Seeder
             ['matchColumns' => ['jee_solicitud_id'], 'updateColumns' => ['political_organization_id', 'electoral_level_id', 'department_code', 'province_code', 'district_code', 'status', 'updated_at']]
         );
 
+        $listsMap = DB::table('electoral_lists')->pluck('id', 'jee_solicitud_id')->toArray();
+
         // 7. CANDIDATOS & FOTOGRAFÍAS
         $this->command->info("Cargando Candidatos y Candidacias de todas las listas...");
         $stmt = $sqlite->query("SELECT id, id_solicitud_lista, id_hoja_vida, full_name, position, status, list_number, photo_url FROM candidates");
