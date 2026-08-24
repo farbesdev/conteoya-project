@@ -21,7 +21,7 @@ return new class extends Migration
             // 1. Vista indexable y liviana de normalización de mesas con Ubigeo (sin joins por string difuso)
             DB::statement("
                 CREATE OR REPLACE VIEW v_polling_stations_ubigeo AS
-                SELECT 
+                SELECT
                     ps.id AS polling_station_id,
                     ps.code AS polling_station_code,
                     ps.registered_voters,
@@ -29,26 +29,26 @@ return new class extends Migration
                     ps.odpe,
                     ps.pdf_file,
                     ps.pdf_page,
-                    COALESCE(d.department_code, ps.department_name) AS department_code,
-                    COALESCE(dep.name, ps.department_name) AS department_name,
-                    COALESCE(d.province_code, ps.province_name) AS province_code,
-                    COALESCE(prov.name, ps.province_name) AS province_name,
-                    COALESCE(d.code, ps.district_name) AS district_code,
-                    COALESCE(d.name, ps.district_name) AS district_name,
+                    dep.code AS department_code,
+                    ps.department_name,
+                    prov.code AS province_code,
+                    ps.province_name,
+                    dist.code AS district_code,
+                    ps.district_name,
                     el.id AS electoral_location_id,
                     el.name AS electoral_location_name,
                     el.address AS electoral_location_address
                 FROM polling_stations ps
+                INNER JOIN departments dep ON UPPER(TRIM(dep.name)) = UPPER(TRIM(ps.department_name))
+                INNER JOIN provinces prov ON UPPER(TRIM(prov.name)) = UPPER(TRIM(ps.province_name))
+                INNER JOIN districts dist ON UPPER(TRIM(dist.name)) = UPPER(TRIM(ps.district_name))
                 LEFT JOIN electoral_locations el ON el.id = ps.electoral_location_id
-                LEFT JOIN districts d ON d.code = el.district_code
-                LEFT JOIN provinces prov ON prov.code = d.province_code
-                LEFT JOIN departments dep ON dep.code = d.department_code
             ");
 
             // 2. Vista optimizada de listas electorales con sus partidos y candidatos (sin CROSS JOIN)
             DB::statement("
                 CREATE OR REPLACE VIEW v_electoral_ballot_lists AS
-                SELECT 
+                SELECT
                     lis.id AS electoral_list_id,
                     lis.electoral_level_id,
                     el.code AS electoral_level_code,
@@ -74,9 +74,10 @@ return new class extends Migration
                 FROM electoral_lists lis
                 INNER JOIN electoral_levels el ON el.id = lis.electoral_level_id
                 INNER JOIN political_organizations po ON po.id = lis.political_organization_id
-                LEFT JOIN candidacies c ON c.electoral_list_id = lis.id AND c.status = 'INSCRITO'
+                LEFT JOIN candidacies c ON c.electoral_list_id = lis.id AND c.status::text = 'INSCRITO'::text
                 LEFT JOIN candidates cand ON cand.id = c.candidate_id
-                WHERE lis.status = 'INSCRITO'
+                WHERE lis.status::text = 'INSCRITO'
+                  AND c.position::text IN ('GOBERNADOR REGIONAL', 'ALCALDE PROVINCIAL', 'ALCALDE DISTRITAL')
             ");
 
             // 3. Stored Procedure O(1) de alto rendimiento en PostgreSQL 16 con búsquedas directas
