@@ -149,32 +149,31 @@ class AppDatabase extends _$AppDatabase {
     required List<LocalActResultsTableCompanion> results,
   }) {
     return transaction(() async {
-      // Si existe un acta previa para la misma mesa y nivel con distinto UUID, limpiar duplicados
       final stationCode = act.pollingStationCode.value;
       final levelId = act.electoralLevelId.value;
       final currentUuid = act.clientActUuid.value;
 
-      final previousActs = await (select(localActsTable)
+      // 1. Limpiar cualquier registro previo de esta acta o de la misma mesa y nivel electoral
+      final actsToDelete = await (select(localActsTable)
             ..where((t) =>
-                t.pollingStationCode.equals(stationCode) &
-                t.electoralLevelId.equals(levelId) &
-                t.clientActUuid.equals(currentUuid).not()))
+                (t.pollingStationCode.equals(stationCode) & t.electoralLevelId.equals(levelId)) |
+                t.clientActUuid.equals(currentUuid)))
           .get();
 
-      for (final prev in previousActs) {
-        await (delete(localActEvidenceTable)..where((t) => t.clientActUuid.equals(prev.clientActUuid))).go();
-        await (delete(localActResultsTable)..where((t) => t.clientActUuid.equals(prev.clientActUuid))).go();
-        await (delete(localActTotalsTable)..where((t) => t.clientActUuid.equals(prev.clientActUuid))).go();
-        await (delete(localActsTable)..where((t) => t.clientActUuid.equals(prev.clientActUuid))).go();
+      for (final a in actsToDelete) {
+        await (delete(localActEvidenceTable)..where((t) => t.clientActUuid.equals(a.clientActUuid))).go();
+        await (delete(localActResultsTable)..where((t) => t.clientActUuid.equals(a.clientActUuid))).go();
+        await (delete(localActTotalsTable)..where((t) => t.clientActUuid.equals(a.clientActUuid))).go();
+        await (delete(localActsTable)..where((t) => t.clientActUuid.equals(a.clientActUuid))).go();
       }
 
-      await into(localActsTable).insertOnConflictUpdate(act);
-      await into(localActTotalsTable).insertOnConflictUpdate(totals);
+      // Limpieza defensiva de totales o resultados con el mismo UUID
+      await (delete(localActTotalsTable)..where((t) => t.clientActUuid.equals(currentUuid))).go();
+      await (delete(localActResultsTable)..where((t) => t.clientActUuid.equals(currentUuid))).go();
 
-      // Eliminar resultados previos para esta acta y reinsertar
-      await (delete(localActResultsTable)
-            ..where((tbl) => tbl.clientActUuid.equals(currentUuid)))
-          .go();
+      // 2. Inserción limpia sin conflictos de clave única
+      await into(localActsTable).insert(act);
+      await into(localActTotalsTable).insert(totals);
 
       for (final res in results) {
         await into(localActResultsTable).insert(res);
