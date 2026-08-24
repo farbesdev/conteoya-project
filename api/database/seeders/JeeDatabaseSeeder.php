@@ -197,46 +197,18 @@ class JeeDatabaseSeeder extends Seeder
             ['matchColumns' => ['jee_solicitud_id'], 'updateColumns' => ['political_organization_id', 'electoral_level_id', 'department_code', 'province_code', 'district_code', 'status', 'updated_at']]
         );
 
-        $listsMap = DB::table('electoral_lists')->pluck('id', 'jee_solicitud_id')->toArray();
-
         // 7. CANDIDATOS & FOTOGRAFÍAS
-        $this->command->info("Cargando Candidatos y descargando fotografías...");
-        $stmt = $sqlite->query("SELECT id, id_solicitud_lista, id_hoja_vida, full_name, position, status, list_number, photo_url FROM candidates LIMIT 500");
+        $this->command->info("Cargando Candidatos y Candidacias de todas las listas...");
+        $stmt = $sqlite->query("SELECT id, id_solicitud_lista, id_hoja_vida, full_name, position, status, list_number, photo_url FROM candidates");
         
         $candidatesRows = [];
         $candidaciesRaw = [];
+        $chunkLimit = 2000;
+        $totalProcessed = 0;
 
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
             $localPhotoUrl = null;
             $docNumber = $row['id_hoja_vida'] ?: ('JEE_' . $row['id']);
-
-            if (!empty($row['photo_url'])) {
-                $filename = "$docNumber/foto.webp";
-                $disk     = Storage::disk('candidates');
-
-                if ($disk->exists($filename)) {
-                    // Foto ya descargada previamente — reutilizar sin volver a descargar
-                    $localPhotoUrl = $filename;
-                } else {
-                    try {
-                        $rawContent = @file_get_contents($row['photo_url']);
-                        if ($rawContent !== false && $rawContent !== '') {
-                            $image = @imagecreatefromstring($rawContent);
-                            if ($image !== false) {
-                                ob_start();
-                                imagewebp($image, null, 85);
-                                $webpData = ob_get_clean();
-                                imagedestroy($image);
-
-                                $disk->put($filename, $webpData);
-                                $localPhotoUrl = $filename;
-                            }
-                        }
-                    } catch (\Throwable $e) {
-                        $this->command->warn("Error foto candidato " . $row['id'] . ": " . $e->getMessage());
-                    }
-                }
-            }
 
             $candidatesRows[] = [
                 'jee_candidate_id' => $row['id'],
@@ -258,19 +230,37 @@ class JeeDatabaseSeeder extends Seeder
                     'status' => $row['status'] ?: 'INSCRITO',
                 ];
             }
+
+            if (count($candidatesRows) >= $chunkLimit) {
+                $this->batchInsertOrUpdate(
+                    'candidates',
+                    ['jee_candidate_id', 'id_hoja_vida', 'document_number', 'full_name', 'photo_url', 'local_photo_url', 'created_at', 'updated_at'],
+                    $candidatesRows,
+                    ['matchColumns' => ['jee_candidate_id'], 'updateColumns' => ['id_hoja_vida', 'document_number', 'full_name', 'photo_url', 'local_photo_url', 'updated_at'], 'verbose' => false]
+                );
+                $totalProcessed += count($candidatesRows);
+                $this->command->info("  [candidates] procesados: {$totalProcessed}...");
+                $candidatesRows = [];
+            }
         }
 
-        $this->batchInsertOrUpdate(
-            'candidates',
-            ['jee_candidate_id', 'id_hoja_vida', 'document_number', 'full_name', 'photo_url', 'local_photo_url', 'created_at', 'updated_at'],
-            $candidatesRows,
-            ['matchColumns' => ['jee_candidate_id'], 'updateColumns' => ['id_hoja_vida', 'document_number', 'full_name', 'photo_url', 'local_photo_url', 'updated_at']]
-        );
-
-        $candidateMap = DB::table('candidates')->pluck('id', 'jee_candidate_id')->toArray();
+        if (!empty($candidatesRows)) {
+            $this->batchInsertOrUpdate(
+                'candidates',
+                ['jee_candidate_id', 'id_hoja_vida', 'document_number', 'full_name', 'photo_url', 'local_photo_url', 'created_at', 'updated_at'],
+                $candidatesRows,
+                ['matchColumns' => ['jee_candidate_id'], 'updateColumns' => ['id_hoja_vida', 'document_number', 'full_name', 'photo_url', 'local_photo_url', 'updated_at'], 'verbose' => false]
+            );
+            $totalProcessed += count($candidatesRows);
+            $this->command->info("  [candidates] total final: {$totalProcessed} candidatos insertados.");
+        }
 
         // 8. CANDIDACIAS
+        $this->command->info("Vinculando Candidacias (candidacies)...");
+        $candidateMap = DB::table('candidates')->pluck('id', 'jee_candidate_id')->toArray();
+
         $candidaciesRows = [];
+        $totalCandidacies = 0;
         foreach ($candidaciesRaw as $cRaw) {
             $candId = $candidateMap[$cRaw['jee_candidate_id']] ?? null;
             if ($candId) {
@@ -283,15 +273,31 @@ class JeeDatabaseSeeder extends Seeder
                     'created_at' => $now,
                     'updated_at' => $now,
                 ];
+
+                if (count($candidaciesRows) >= $chunkLimit) {
+                    $this->batchInsertOrUpdate(
+                        'candidacies',
+                        ['electoral_list_id', 'candidate_id', 'position', 'list_number', 'status', 'created_at', 'updated_at'],
+                        $candidaciesRows,
+                        ['matchColumns' => ['electoral_list_id', 'candidate_id'], 'updateColumns' => ['position', 'list_number', 'status', 'updated_at'], 'verbose' => false]
+                    );
+                    $totalCandidacies += count($candidaciesRows);
+                    $this->command->info("  [candidacies] procesadas: {$totalCandidacies}...");
+                    $candidaciesRows = [];
+                }
             }
         }
 
-        $this->batchInsertOrUpdate(
-            'candidacies',
-            ['electoral_list_id', 'candidate_id', 'position', 'list_number', 'status', 'created_at', 'updated_at'],
-            $candidaciesRows,
-            ['matchColumns' => ['electoral_list_id', 'candidate_id'], 'updateColumns' => ['position', 'list_number', 'status', 'updated_at']]
-        );
+        if (!empty($candidaciesRows)) {
+            $this->batchInsertOrUpdate(
+                'candidacies',
+                ['electoral_list_id', 'candidate_id', 'position', 'list_number', 'status', 'created_at', 'updated_at'],
+                $candidaciesRows,
+                ['matchColumns' => ['electoral_list_id', 'candidate_id'], 'updateColumns' => ['position', 'list_number', 'status', 'updated_at'], 'verbose' => false]
+            );
+            $totalCandidacies += count($candidaciesRows);
+            $this->command->info("  [candidacies] total final: {$totalCandidacies} candidacias vinculadas.");
+        }
 
         // 9. HOJAS DE VIDA DE CANDIDATOS (candidate_cvs)
         $this->command->info("Cargando Hojas de Vida de Candidatos (candidate_cvs)...");
