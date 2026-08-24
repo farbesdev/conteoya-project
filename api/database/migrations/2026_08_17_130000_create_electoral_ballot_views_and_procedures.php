@@ -74,9 +74,9 @@ return new class extends Migration
                 FROM electoral_lists lis
                 INNER JOIN electoral_levels el ON el.id = lis.electoral_level_id
                 INNER JOIN political_organizations po ON po.id = lis.political_organization_id
-                LEFT JOIN candidacies c ON c.electoral_list_id = lis.id AND c.status::text = 'INSCRITO'::text
+                LEFT JOIN candidacies c ON c.electoral_list_id = lis.id AND c.status::text IN ('INSCRITO', 'ADMITIDO')
                 LEFT JOIN candidates cand ON cand.id = c.candidate_id
-                WHERE lis.status::text = 'INSCRITO'
+                WHERE lis.status::text IN ('INSCRITO', 'ADMITIDO')
                   AND c.position::text IN ('GOBERNADOR REGIONAL', 'ALCALDE PROVINCIAL', 'ALCALDE DISTRITAL')
             ");
 
@@ -171,13 +171,13 @@ return new class extends Migration
                                     FROM candidacies c
                                     INNER JOIN candidates cand ON cand.id = c.candidate_id
                                     WHERE c.electoral_list_id = lis.id
-                                      AND c.status = 'INSCRITO'
+                                      AND c.status IN ('INSCRITO', 'ADMITIDO')
                                 ), '[]'::jsonb
                             ) AS candidates
                         FROM electoral_lists lis
                         INNER JOIN political_organizations po ON po.id = lis.political_organization_id
                         WHERE lis.electoral_level_id = p_level_id
-                          AND lis.status = 'INSCRITO'
+                          AND lis.status IN ('INSCRITO', 'ADMITIDO')
                           AND (
                               (v_level.code IN ('REGIONAL_GOBERNADOR', 'REGIONAL_CONSEJERO') 
                                AND (lis.department_code IS NULL OR lis.department_code = v_station.department_code))

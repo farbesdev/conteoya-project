@@ -536,9 +536,9 @@ SELECT
 FROM electoral_lists lis
     INNER JOIN electoral_levels el ON el.id = lis.electoral_level_id
     INNER JOIN political_organizations po ON po.id = lis.political_organization_id
-    LEFT JOIN candidacies c ON c.electoral_list_id = lis.id AND c.status::text = 'INSCRITO'::text
+    LEFT JOIN candidacies c ON c.electoral_list_id = lis.id AND c.status::text IN ('INSCRITO', 'ADMITIDO')
     LEFT JOIN candidates cand ON cand.id = c.candidate_id
-WHERE lis.status::text = 'INSCRITO'
+WHERE lis.status::text IN ('INSCRITO', 'ADMITIDO')
   AND c.position::text IN ('GOBERNADOR REGIONAL', 'ALCALDE PROVINCIAL', 'ALCALDE DISTRITAL');
 ```
 
