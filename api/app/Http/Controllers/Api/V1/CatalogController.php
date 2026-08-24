@@ -160,17 +160,19 @@ class CatalogController extends Controller
             $provName = trim($station->province_name ?? '');
             $distName = trim($station->district_name ?? '');
 
-            // 1. Resolver Departamento exacto
-            $department = \App\Models\Department::whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$deptName])->first();
-            $deptCode = $department?->code;
+            // 1. Resolver Departamento exacto (puede tener códigos múltiples por fuente JEE/ONPE como 10 y 16)
+            $deptCodes = \App\Models\Department::whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$deptName])->pluck('code')->toArray();
+            if (empty($deptCodes) && $district?->department_code) {
+                $deptCodes = [$district->department_code];
+            }
 
             // 2. Resolver Distrito y Provincia exactos
             $district = \App\Models\District::whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$distName])->first();
             $distCode = $district?->code;
             $provCode = $district?->province_code ?? \App\Models\Province::whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$provName])->value('code');
 
-            if (!$deptCode && $district?->department_code) {
-                $deptCode = $district->department_code;
+            if (empty($deptCodes) && $district?->department_code) {
+                $deptCodes = [$district->department_code];
             }
 
             $allowedStatuses = ['INSCRITO', 'ADMITIDO', 'PERIODO DE TACHA', 'TACHA EN TRAMITE', 'PUBLICADO'];
@@ -266,8 +268,8 @@ class CatalogController extends Controller
                     ->whereIn('status', $allowedStatuses)
                     ->with(['politicalOrganization', 'candidacies.candidate']);
 
-                if ($levelId == 1 && $deptCode) {
-                    $listsQuery->where('department_code', $deptCode);
+                if ($levelId == 1 && !empty($deptCodes)) {
+                    $listsQuery->whereIn('department_code', $deptCodes);
                 }
 
                 $lists = $listsQuery->get()->map(function ($list) use ($base) {
