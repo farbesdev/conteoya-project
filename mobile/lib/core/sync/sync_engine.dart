@@ -121,66 +121,71 @@ class SyncEngine {
           : rawPendingOps;
 
       if (pendingOps.isNotEmpty) {
-        final operationsPayload = pendingOps.map((op) {
-          final Map<String, Object?> parsedPayload =
-              jsonDecode(op.payloadJson) as Map<String, Object?>;
-          return {
-            'client_operation_id': op.clientOperationId,
-            'entity_type': op.entityType,
-            'entity_id': op.entityId,
-            'operation': op.operation,
-            'payload': parsedPayload,
-            'checksum': op.checksum,
-          };
-        }).toList();
+        try {
+          final operationsPayload = pendingOps.map((op) {
+            final Map<String, Object?> parsedPayload =
+                jsonDecode(op.payloadJson) as Map<String, Object?>;
+            return {
+              'client_operation_id': op.clientOperationId,
+              'entity_type': op.entityType,
+              'entity_id': op.entityId,
+              'operation': op.operation,
+              'payload': parsedPayload,
+              'checksum': op.checksum,
+            };
+          }).toList();
 
-        final response = await apiClient.post<Map<String, Object?>>(
-          '/sync',
-          data: {
-            'device_uuid': pendingOps.first.deviceUuid,
-            'operations': operationsPayload,
-          },
-        );
+          final response = await apiClient.post<Map<String, Object?>>(
+            '/sync',
+            data: {
+              'device_uuid': pendingOps.first.deviceUuid,
+              'operations': operationsPayload,
+            },
+          );
 
-        if (response.statusCode == 200 && response.data != null) {
-          final dataList = response.data!['data'] as List<Object?>? ?? [];
-          for (final item in dataList) {
-            if (item is Map<String, Object?>) {
-              final clientOpId = item['client_operation_id'] as String?;
-              final status = item['status'] as String? ?? 'FAILED';
+          if (response.statusCode == 200 && response.data != null) {
+            final dataList = response.data!['data'] as List<Object?>? ?? [];
+            for (final item in dataList) {
+              if (item is Map<String, Object?>) {
+                final clientOpId = item['client_operation_id'] as String?;
+                final status = item['status'] as String? ?? 'FAILED';
 
-              if (clientOpId != null) {
-                if (status == 'SYNCED') {
-                  await db.updateSyncOpStatus(clientOpId, 'SYNCED');
+                if (clientOpId != null) {
+                  if (status == 'SYNCED') {
+                    await db.updateSyncOpStatus(clientOpId, 'SYNCED');
 
-                  // Encontrar la operación para actualizar el estado de entidades locales
-                  final op = pendingOps.firstWhere((o) => o.clientOperationId == clientOpId);
-                  if (op.entityType == 'acts') {
-                    if (op.operation == 'DELETE') {
-                      await db.deleteActByClientUuid(op.entityId);
-                    } else {
-                      final serverActId = (item['result'] as Map<String, Object?>?)?['act_id'] as int?;
-                      await db.updateActStatus(op.entityId, 'SYNCED', serverActId: serverActId);
+                    // Encontrar la operación para actualizar el estado de entidades locales
+                    final op = pendingOps.firstWhere((o) => o.clientOperationId == clientOpId);
+                    if (op.entityType == 'acts') {
+                      if (op.operation == 'DELETE') {
+                        await db.deleteActByClientUuid(op.entityId);
+                      } else {
+                        final serverActId = (item['result'] as Map<String, Object?>?)?['act_id'] as int?;
+                        await db.updateActStatus(op.entityId, 'SYNCED', serverActId: serverActId);
+                      }
+                    } else if (op.entityType == 'personeros' && op.operation == 'DELETE') {
+                      await db.deletePersoneroByDni(op.entityId);
+                    } else if (op.entityType == 'polling_stations' && op.operation == 'DELETE') {
+                      await db.deletePollingStationByCode(op.entityId);
                     }
-                  } else if (op.entityType == 'personeros' && op.operation == 'DELETE') {
-                    await db.deletePersoneroByDni(op.entityId);
-                  } else if (op.entityType == 'polling_stations' && op.operation == 'DELETE') {
-                    await db.deletePollingStationByCode(op.entityId);
+                  } else {
+                    final error = item['error'] as String? ?? 'Error en sincronización';
+                    final op = pendingOps.firstWhere((o) => o.clientOperationId == clientOpId);
+                    final nextDelay = ExponentialBackoff.calculateDelay(op.attempts + 1);
+                    await db.updateSyncOpStatus(
+                      clientOpId,
+                      'FAILED',
+                      error: error,
+                      nextSchedule: DateTime.now().add(nextDelay),
+                    );
                   }
-                } else {
-                  final error = item['error'] as String? ?? 'Error en sincronización';
-                  final op = pendingOps.firstWhere((o) => o.clientOperationId == clientOpId);
-                  final nextDelay = ExponentialBackoff.calculateDelay(op.attempts + 1);
-                  await db.updateSyncOpStatus(
-                    clientOpId,
-                    'FAILED',
-                    error: error,
-                    nextSchedule: DateTime.now().add(nextDelay),
-                  );
                 }
               }
             }
           }
+        } catch (e) {
+          // Capturar errores de red/401 en el push para resiliencia offline
+          // Las operaciones permanecerán en estado PENDING para el próximo ciclo
         }
       }
 

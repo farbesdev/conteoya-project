@@ -137,129 +137,146 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       _isLoadingParties = true;
     });
 
-    final db = ref.read(appDatabaseProvider);
-    final ballotRepo = ref.read(ballotRepositoryProvider);
-    final ballotTemplate = await ballotRepo.getBallotTemplate(
-      pollingStationCode: widget.pollingStationCode,
-      electoralLevelId: _selectedLevelId,
-    );
+    try {
+      final db = ref.read(appDatabaseProvider);
+      final ballotRepo = ref.read(ballotRepositoryProvider);
+      final ballotTemplate = await ballotRepo.getBallotTemplate(
+        pollingStationCode: widget.pollingStationCode,
+        electoralLevelId: _selectedLevelId,
+      );
 
-    // 1. Buscar si ya existe un acta previa (borrador o confirmada) en SQLite local
-    final existingAct = await db.getActByStationAndLevel(widget.pollingStationCode, _selectedLevelId);
-    LocalActTotal? existingTotals;
-    List<LocalActResult> existingResults = [];
-    LocalActEvidence? existingEvidence;
+      // 1. Buscar si ya existe un acta previa (borrador o confirmada) en SQLite local
+      final existingAct = await db.getActByStationAndLevel(widget.pollingStationCode, _selectedLevelId);
+      LocalActTotal? existingTotals;
+      List<LocalActResult> existingResults = [];
+      LocalActEvidence? existingEvidence;
 
-    LocalActTotal? existingDistTotals;
-    List<LocalActResult> existingDistResults = [];
+      LocalActTotal? existingDistTotals;
+      List<LocalActResult> existingDistResults = [];
 
-    if (existingAct != null) {
-      _clientActUuid = existingAct.clientActUuid;
-      existingTotals = await db.getTotalsForAct(existingAct.clientActUuid);
-      existingResults = await db.getResultsForAct(existingAct.clientActUuid);
-      existingEvidence = await db.getEvidenceForAct(existingAct.clientActUuid);
+      if (existingAct != null) {
+        _clientActUuid = existingAct.clientActUuid;
+        existingTotals = await db.getTotalsForAct(existingAct.clientActUuid);
+        existingResults = await db.getResultsForAct(existingAct.clientActUuid);
+        existingEvidence = await db.getEvidenceForAct(existingAct.clientActUuid);
 
-      if (_selectedLevelId == 2) {
-        // En municipal, buscar también el acta distrital asociada (nivel 3)
-        final distAct = await db.getActByStationAndLevel(widget.pollingStationCode, 3);
-        if (distAct != null) {
-          existingDistTotals = await db.getTotalsForAct(distAct.clientActUuid);
-          existingDistResults = await db.getResultsForAct(distAct.clientActUuid);
-        }
-      }
-    }
-
-    if (mounted) {
-      _registeredVotersController.text = existingTotals != null
-          ? existingTotals.registeredVoters.toString()
-          : ballotTemplate.registeredVoters.toString();
-      _votersWhoVotedController.text = existingTotals != null
-          ? existingTotals.votersWhoVoted.toString()
-          : '0';
-
-      if (_selectedLevelId == 1) {
-        _totalVotesController.text = existingTotals != null ? existingTotals.totalVotes.toString() : '0';
-        _blankVotesController.text = existingTotals != null ? existingTotals.blankVotes.toString() : '0';
-        _nullVotesController.text = existingTotals != null ? existingTotals.nullVotes.toString() : '0';
-        _challengedVotesController.text = existingTotals != null ? existingTotals.challengedVotes.toString() : '0';
-      } else {
-        _provTotalVotesController.text = existingTotals != null ? existingTotals.totalVotes.toString() : '0';
-        _provBlankVotesController.text = existingTotals != null ? existingTotals.blankVotes.toString() : '0';
-        _provNullVotesController.text = existingTotals != null ? existingTotals.nullVotes.toString() : '0';
-        _provChallengedVotesController.text = existingTotals != null ? existingTotals.challengedVotes.toString() : '0';
-
-        _distTotalVotesController.text = existingDistTotals != null ? existingDistTotals.totalVotes.toString() : '0';
-        _distBlankVotesController.text = existingDistTotals != null ? existingDistTotals.blankVotes.toString() : '0';
-        _distNullVotesController.text = existingDistTotals != null ? existingDistTotals.nullVotes.toString() : '0';
-        _distChallengedVotesController.text = existingDistTotals != null ? existingDistTotals.challengedVotes.toString() : '0';
-      }
-
-      final resultsByOrg = {
-        for (final r in existingResults) r.politicalOrganizationId: r
-      };
-      final distResultsByOrg = {
-        for (final r in existingDistResults) r.politicalOrganizationId: r
-      };
-
-      setState(() {
-        _partyEntries = ballotTemplate.parties.map((p) {
-          final res = resultsByOrg[p.id];
-          final distRes = distResultsByOrg[p.id];
-          final votesStr = res != null ? res.votes.toString() : '0';
-          final distVotesStr = distRes != null ? distRes.votes.toString() : '0';
-
-          return PartyFormEntry(
-            id: p.id,
-            name: p.name,
-            shortName: p.shortName,
-            logoUrl: p.logoUrl,
-            isProvincialAdmitted: p.isProvincialAdmitted,
-            isDistritalAdmitted: p.isDistritalAdmitted,
-            candidateName: p.candidateName,
-            candidatePosition: p.candidatePosition,
-            source: res?.source ?? 'MANUAL',
-            confidence: res?.confidence ?? 1.0,
-            votesController: TextEditingController(text: votesStr),
-            votesProvincialController: TextEditingController(
-              text: p.isProvincialAdmitted ? votesStr : '0',
-            ),
-            votesDistritalController: TextEditingController(
-              text: p.isDistritalAdmitted ? distVotesStr : '0',
-            ),
-          );
-        }).toList();
-
-        if (existingEvidence != null) {
-          final file = File(existingEvidence.localFilePath);
-          if (file.existsSync()) {
-            _capturedPhoto = file;
-            _photoSha256 = existingEvidence.sha256Hash;
+        if (_selectedLevelId == 2) {
+          // En municipal, buscar también el acta distrital asociada (nivel 3)
+          final distAct = await db.getActByStationAndLevel(widget.pollingStationCode, 3);
+          if (distAct != null) {
+            existingDistTotals = await db.getTotalsForAct(distAct.clientActUuid);
+            existingDistResults = await db.getResultsForAct(distAct.clientActUuid);
           }
         }
+      }
 
-        _isLoadingParties = false;
-      });
+      if (mounted) {
+        _registeredVotersController.text = existingTotals != null
+            ? existingTotals.registeredVoters.toString()
+            : ballotTemplate.registeredVoters.toString();
+        _votersWhoVotedController.text = existingTotals != null
+            ? existingTotals.votersWhoVoted.toString()
+            : '0';
 
-      // Si la lista de partidos está vacía (sin caché local ni API disponible),
-      // avisar al personero que debe sincronizar antes de registrar el acta.
-      if (ballotTemplate.parties.isEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  '⚠️ No se encontraron organizaciones políticas para esta mesa. '
-                  'Verifica tu conexión y sincroniza el padrón antes de registrar el acta.',
-                ),
-                backgroundColor: Colors.orange,
-                duration: Duration(seconds: 8),
+        if (_selectedLevelId == 1) {
+          _totalVotesController.text = existingTotals != null ? existingTotals.totalVotes.toString() : '0';
+          _blankVotesController.text = existingTotals != null ? existingTotals.blankVotes.toString() : '0';
+          _nullVotesController.text = existingTotals != null ? existingTotals.nullVotes.toString() : '0';
+          _challengedVotesController.text = existingTotals != null ? existingTotals.challengedVotes.toString() : '0';
+        } else {
+          _provTotalVotesController.text = existingTotals != null ? existingTotals.totalVotes.toString() : '0';
+          _provBlankVotesController.text = existingTotals != null ? existingTotals.blankVotes.toString() : '0';
+          _provNullVotesController.text = existingTotals != null ? existingTotals.nullVotes.toString() : '0';
+          _provChallengedVotesController.text = existingTotals != null ? existingTotals.challengedVotes.toString() : '0';
+
+          _distTotalVotesController.text = existingDistTotals != null ? existingDistTotals.totalVotes.toString() : '0';
+          _distBlankVotesController.text = existingDistTotals != null ? existingDistTotals.blankVotes.toString() : '0';
+          _distNullVotesController.text = existingDistTotals != null ? existingDistTotals.nullVotes.toString() : '0';
+          _distChallengedVotesController.text = existingDistTotals != null ? existingDistTotals.challengedVotes.toString() : '0';
+        }
+
+        final resultsByOrg = {
+          for (final r in existingResults) r.politicalOrganizationId: r
+        };
+        final distResultsByOrg = {
+          for (final r in existingDistResults) r.politicalOrganizationId: r
+        };
+
+        setState(() {
+          _partyEntries = ballotTemplate.parties.map((p) {
+            final res = resultsByOrg[p.id];
+            final distRes = distResultsByOrg[p.id];
+            final votesStr = res != null ? res.votes.toString() : '0';
+            final distVotesStr = distRes != null ? distRes.votes.toString() : '0';
+
+            return PartyFormEntry(
+              id: p.id,
+              name: p.name,
+              shortName: p.shortName,
+              logoUrl: p.logoUrl,
+              isProvincialAdmitted: p.isProvincialAdmitted,
+              isDistritalAdmitted: p.isDistritalAdmitted,
+              candidateName: p.candidateName,
+              candidatePosition: p.candidatePosition,
+              source: res?.source ?? 'MANUAL',
+              confidence: res?.confidence ?? 1.0,
+              votesController: TextEditingController(text: votesStr),
+              votesProvincialController: TextEditingController(
+                text: p.isProvincialAdmitted ? votesStr : '0',
+              ),
+              votesDistritalController: TextEditingController(
+                text: p.isDistritalAdmitted ? distVotesStr : '0',
               ),
             );
+          }).toList();
+
+          if (existingEvidence != null) {
+            try {
+              final file = File(existingEvidence.localFilePath);
+              if (file.existsSync()) {
+                _capturedPhoto = file;
+                _photoSha256 = existingEvidence.sha256Hash;
+              }
+            } catch (_) {}
           }
         });
-      }
 
-      _recalculateFromVotes();
+        // Si la lista de partidos está vacía (sin caché local ni API disponible),
+        // avisar al personero que debe sincronizar antes de registrar el acta.
+        if (ballotTemplate.parties.isEmpty) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    '⚠️ No se encontraron organizaciones políticas para esta mesa. '
+                    'Verifica tu conexión y sincroniza el padrón antes de registrar el acta.',
+                  ),
+                  backgroundColor: Colors.orange,
+                  duration: Duration(seconds: 8),
+                ),
+              );
+            }
+          });
+        }
+
+        _recalculateFromVotes();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Aviso: No se pudieron cargar los datos de la cédula ($e).'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingParties = false;
+        });
+      }
     }
   }
 
