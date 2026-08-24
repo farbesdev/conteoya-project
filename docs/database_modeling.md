@@ -474,16 +474,73 @@ El esquema físico de PostgreSQL está definido y versionado mediante **migracio
 | `2026_08_13_153500_make_personero_id_nullable_in_sync_operations_table` | `sync_operations.personero_id` pasa a ser nullable |
 | `2026_08_14_120000_add_odpe_and_pdf_fields_to_polling_stations_table` | Soporte directo de ubigeos, ODPE y PDF en `polling_stations` |
 | `2026_08_17_130000_create_electoral_ballot_views_and_procedures` | Vistas SQL (`v_polling_stations_ubigeo`, `v_electoral_ballot_lists`) y función almacenada (`fn_get_polling_station_ballot`) |
+| `2026_08_20_180000_create_candidate_cvs_table` | Tabla `candidate_cvs` para almacenamiento de hojas de vida (JNE Declara) |
 
 ---
 
 ## 7. Vistas SQL y Funciones Almacenadas (PostgreSQL 16)
 
 ### `v_polling_stations_ubigeo`
-Vista normalizada que desacopla la mesa de sufragio de la necesidad de un registro en `electoral_locations`. Combina dinámicamente ubigeos normalizados por código o por nombre con fallback a las columnas directas de `polling_stations`.
+Vista normalizada que vincula directamente las mesas de sufragio con los códigos y nombres oficiales de departamentos, provincias y distritos mediante normalización de texto `UPPER(TRIM())`:
+```sql
+SELECT
+    ps.id AS polling_station_id,
+    ps.code AS polling_station_code,
+    ps.registered_voters,
+    ps.status AS station_status,
+    ps.odpe,
+    ps.pdf_file,
+    ps.pdf_page,
+    dep.code AS department_code,
+    ps.department_name,
+    prov.code AS province_code,
+    ps.province_name,
+    dist.code AS district_code,
+    ps.district_name,
+    el.id AS electoral_location_id,
+    el.name AS electoral_location_name,
+    el.address AS electoral_location_address
+FROM polling_stations ps
+INNER JOIN departments dep ON UPPER(TRIM(dep.name)) = UPPER(TRIM(ps.department_name))
+INNER JOIN provinces prov ON UPPER(TRIM(prov.name)) = UPPER(TRIM(ps.province_name))
+INNER JOIN districts dist ON UPPER(TRIM(dist.name)) = UPPER(TRIM(ps.district_name))
+LEFT JOIN electoral_locations el ON el.id = ps.electoral_location_id;
+```
 
 ### `v_electoral_ballot_lists`
-Vista relacional que cruza cada mesa de sufragio (`polling_stations`) con las listas electorales (`electoral_lists`), organizaciones políticas (`political_organizations`) y candidatos (`candidates`/`candidacies`) que postulan en dicha circunscripción según el tipo de nivel electoral (Regional, Provincial, Distrital).
+Vista relacional que cruza cada lista electoral inscrita con su organización política y sus candidatos a cargos ejecutivos principales (`GOBERNADOR REGIONAL`, `ALCALDE PROVINCIAL`, `ALCALDE DISTRITAL`):
+```sql
+SELECT
+    lis.id AS electoral_list_id,
+    lis.electoral_level_id,
+    el.code AS electoral_level_code,
+    el.name AS electoral_level_name,
+    el.has_preferential_vote,
+    lis.department_code,
+    lis.province_code,
+    lis.district_code,
+    lis.status AS list_status,
+    po.id AS political_organization_id,
+    po.jee_id,
+    po.name AS political_organization_name,
+    po.short_name AS political_organization_short_name,
+    po.logo_url,
+    po.local_logo_url,
+    cand.id AS candidate_id,
+    cand.full_name AS candidate_name,
+    cand.document_number AS candidate_document,
+    cand.photo_url AS candidate_photo_url,
+    cand.local_photo_url AS candidate_local_photo_url,
+    c.position AS candidacy_position,
+    c.list_number AS candidacy_list_number
+FROM electoral_lists lis
+    INNER JOIN electoral_levels el ON el.id = lis.electoral_level_id
+    INNER JOIN political_organizations po ON po.id = lis.political_organization_id
+    LEFT JOIN candidacies c ON c.electoral_list_id = lis.id AND c.status::text = 'INSCRITO'::text
+    LEFT JOIN candidates cand ON cand.id = c.candidate_id
+WHERE lis.status::text = 'INSCRITO'
+  AND c.position::text IN ('GOBERNADOR REGIONAL', 'ALCALDE PROVINCIAL', 'ALCALDE DISTRITAL');
+```
 
 ### `fn_get_polling_station_ballot(p_station_code VARCHAR, p_level_id BIGINT)`
 Función almacenada (`PL/pgSQL`, `STABLE`) que computa y retorna en formato `JSONB` de alto rendimiento toda la estructura de la cédula de votación lista para ingesta de actas electorales:
