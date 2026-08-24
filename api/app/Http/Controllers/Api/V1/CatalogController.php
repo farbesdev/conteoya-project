@@ -160,17 +160,13 @@ class CatalogController extends Controller
             $provName = trim($station->province_name ?? '');
             $distName = trim($station->district_name ?? '');
 
-            // 1. Resolver Departamento exacto (puede tener códigos múltiples por fuente JEE/ONPE como 10 y 16)
-            $deptCodes = \App\Models\Department::whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$deptName])->pluck('code')->toArray();
-            if (empty($deptCodes) && $district?->department_code) {
-                $deptCodes = [$district->department_code];
-            }
-
-            // 2. Resolver Distrito y Provincia exactos
+            // 1. Resolver Distrito y Provincia exactos
             $district = \App\Models\District::whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$distName])->first();
             $distCode = $district?->code;
             $provCode = $district?->province_code ?? \App\Models\Province::whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$provName])->value('code');
 
+            // 2. Resolver Departamento exacto (puede tener códigos múltiples por fuente JEE/ONPE como 10 y 16)
+            $deptCodes = \App\Models\Department::whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$deptName])->pluck('code')->toArray();
             if (empty($deptCodes) && $district?->department_code) {
                 $deptCodes = [$district->department_code];
             }
@@ -269,7 +265,9 @@ class CatalogController extends Controller
                     ->with(['politicalOrganization', 'candidacies.candidate']);
 
                 if ($levelId == 1 && !empty($deptCodes)) {
-                    $listsQuery->whereIn('department_code', $deptCodes);
+                    $listsQuery->where(function ($q) use ($deptCodes) {
+                        $q->whereNull('department_code')->orWhereIn('department_code', $deptCodes);
+                    });
                 }
 
                 $lists = $listsQuery->get()->map(function ($list) use ($base) {
@@ -323,7 +321,7 @@ class CatalogController extends Controller
                     'code' => $station->code,
                     'registered_voters' => $station->registered_voters,
                     'status' => $station->status,
-                    'department_code' => $deptCode,
+                    'department_code' => $deptCodes[0] ?? null,
                     'department_name' => $station->department_name,
                     'province_code' => $provCode,
                     'province_name' => $station->province_name,
