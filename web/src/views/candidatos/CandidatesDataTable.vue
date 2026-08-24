@@ -6,6 +6,7 @@ import MovilCardList from '@/components/MovilCardList.vue'
 import CandidateDetailDialog from './CandidateDetailDialog.vue'
 import CandidateFormDialog from './CandidateFormDialog.vue'
 import CandidateCvDialog from './CandidateCvDialog.vue'
+import CandidateImportDialog from './CandidateImportDialog.vue'
 
 const search = ref('')
 const selectedStatus = ref<string | null>(null)
@@ -46,6 +47,9 @@ const candidateToDetail = ref<CandidateItem | null>(null)
 // Modal Hoja de Vida (Visor y Editor)
 const isCvOpen = ref(false)
 const candidateToCv = ref<CandidateItem | null>(null)
+
+// Modal Importar Padrón JSON JEE
+const isImportOpen = ref(false)
 
 // Modal Crear / Editar
 const isFormOpen = ref(false)
@@ -351,6 +355,15 @@ onUnmounted(() => {
               {{ isSyncing ? 'Sincronizando...' : 'Sincronizar Hojas de Vida' }}
             </VBtn>
             <VBtn
+              variant="tonal"
+              color="success"
+              prepend-icon="ri-file-upload-line"
+              density="comfortable"
+              @click="isImportOpen = true"
+            >
+              Importar Padrón (JSON)
+            </VBtn>
+            <VBtn
               variant="flat"
               color="primary"
               prepend-icon="ri-user-add-line"
@@ -603,6 +616,12 @@ onUnmounted(() => {
       v-model="isCvOpen"
       :candidate="candidateToCv"
       @saved="loadCandidates"
+    />
+
+    <!-- Modal Importación de Padrón JEE (JSON) -->
+    <CandidateImportDialog
+      v-model="isImportOpen"
+      @imported="loadCandidates"
     />
 
     <!-- Modal Crear / Editar Candidato -->

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use App\Models\Department;
 use App\Models\Province;
 use App\Models\District;
@@ -154,10 +155,10 @@ class CatalogController extends Controller
         $levelCode = $level ? $level->code : 'REGIONAL_GOBERNADOR';
         $driver = config('database.default');
 
-        // Caché L1 en Redis (24 horas) para responder en < 1ms a miles de personeros en concurrencia
+        // Caché L1 en Redis — TTL 1 hora: balance entre rendimiento y corrección rápida de datos
         $cacheKey = "catalog:ballot_template:{$stationCode}:{$levelCode}";
 
-        $ballotData = Cache::remember($cacheKey, 86400, function () use ($stationCode, $level, $levelCode) {
+        $ballotData = Cache::remember($cacheKey, 3600, function () use ($stationCode, $level, $levelCode) {
             $station = \App\Models\PollingStation::where('code', $stationCode)->first();
             if (!$station)
                 return null;
@@ -167,15 +168,63 @@ class CatalogController extends Controller
             $provName = trim($station->province_name ?? '');
             $distName = trim($station->district_name ?? '');
 
-            // 1. Resolver Distrito y Provincia exactos
-            $district = \App\Models\District::whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$distName])->first();
-            $distCode = $district?->code;
-            $provCode = $district?->province_code ?? \App\Models\Province::whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$provName])->value('code');
+            // ─────────────────────────────────────────────────────────────────────
+            // RESOLUCIÓN DE department_code (3 estrategias en orden de confiabilidad)
+            // ─────────────────────────────────────────────────────────────────────
+            //
+            // Estrategia 1 (PRIMARIA — más confiable): Usar el campo department_code
+            // almacenado directamente en polling_stations, derivado del ubigeo RENIEC
+            // del distrito. No depende de comparación de nombres ni tildes.
+            $deptCodes = [];
+            if (!empty($station->department_code)) {
+                $deptCodes = [$station->department_code];
+            }
 
-            // 2. Resolver Departamento exacto
-            $deptCodes = \App\Models\Department::whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$deptName])->pluck('code')->toArray();
+            // Helper: genera el raw SQL para comparación de texto tolerante a tildes.
+            // En PostgreSQL usa unaccent() (requiere extensión). En SQLite usa LOWER(TRIM()).
+            $isPgsql = DB::getDriverName() === 'pgsql';
+            $nameCmp = $isPgsql
+                ? 'unaccent(LOWER(TRIM(%s))) = unaccent(LOWER(TRIM(?)))'
+                : 'LOWER(TRIM(%s)) = LOWER(TRIM(?))';
+
+            // Estrategia 2 (SECUNDARIA): Resolver por ubigeo del distrito via JOIN
+            // (cubre mesas donde department_code aún no fue poblado por la migración)
+            $district = \App\Models\District::whereRaw(
+                sprintf($nameCmp, 'name'), [$distName]
+            )->first();
+            $distCode = $district?->code;
+            $provCode = $district?->province_code ?? \App\Models\Province::whereRaw(
+                sprintf($nameCmp, 'name'), [$provName]
+            )->value('code');
+
             if (empty($deptCodes) && $district?->department_code) {
                 $deptCodes = [$district->department_code];
+            }
+
+            // Estrategia 3 (FALLBACK): Comparación de nombre de departamento tolerante
+            // a tildes via unaccent (PostgreSQL) o LOWER(TRIM) (SQLite/test).
+            if (empty($deptCodes) && !empty($deptName)) {
+                $deptCodes = \App\Models\Department::whereRaw(
+                    sprintf($nameCmp, 'name'), [$deptName]
+                )->pluck('code')->toArray();
+            }
+
+            // ─────────────────────────────────────────────────────────────────────
+            // GUARDIA: Si el departamento no se pudo resolver por ninguna estrategia,
+            // retornar null → 404. NUNCA filtrar sin condición de departamento.
+            // (Sin esta guardia, el whereIn vacío devolvería listas de otro dept.)
+            // ─────────────────────────────────────────────────────────────────────
+            if (empty($deptCodes)) {
+                \Illuminate\Support\Facades\Log::error(
+                    '[BallotTemplate] No se pudo resolver department_code para la mesa.',
+                    [
+                        'station_code' => $stationCode,
+                        'department_name' => $deptName,
+                        'province_name'   => $provName,
+                        'district_name'   => $distName,
+                    ]
+                );
+                return null;
             }
 
             // Solo estados válidos de listas participantes en la cédula oficial
@@ -396,10 +445,57 @@ class CatalogController extends Controller
         });
 
         if (!$ballotData) {
-            return response()->json(['message' => 'Mesa o nivel electoral no encontrado'], 404);
+            return response()->json(['message' => 'Mesa o nivel electoral no encontrado o no se pudo resolver el departamento. Contacte al administrador del sistema.'], 404);
         }
 
         return response()->json(['data' => $ballotData]);
     }
-}
 
+    /**
+     * Invalida la caché Redis de la plantilla de cédula electoral para una mesa específica
+     * o para todas las mesas (solo ADMIN).
+     *
+     * @unauthenticated false
+     * @tags Catalog
+     *
+     * @queryParam station_code string Código de la mesa a invalidar. Si se omite, invalida todas. Example: 021038
+     */
+    public function clearBallotTemplateCache(Request $request): \Illuminate\Http\JsonResponse
+    {
+        // Solo ADMIN puede invalidar caché de cédulas electorales
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+        if (!$user || $user->role?->name !== 'ADMIN') {
+            return response()->json(['message' => 'No autorizado. Solo ADMIN puede invalidar la caché de cédulas.'], 403);
+        }
+
+        $stationCode = $request->query('station_code');
+
+        try {
+            $redis = app('redis')->connection();
+
+            if ($stationCode) {
+                $pattern = "*catalog:ballot_template:{$stationCode}:*";
+                $keys = $redis->keys($pattern);
+            } else {
+                $keys = $redis->keys('*catalog:ballot_template*');
+            }
+
+            $count = 0;
+            if (!empty($keys)) {
+                $count = count($keys);
+                $redis->del($keys);
+            }
+
+            return response()->json([
+                'message' => "Caché invalidada correctamente.",
+                'keys_deleted' => $count,
+                'station_code' => $stationCode ?? 'TODAS',
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Error al invalidar caché Redis: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+}

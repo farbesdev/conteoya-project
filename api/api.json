@@ -7,7 +7,7 @@
     },
     "servers": [
         {
-            "url": "http://localhost/api"
+            "url": "http://127.0.0.1:8000/api"
         }
     ],
     "paths": {
@@ -1359,6 +1359,233 @@
                 }
             }
         },
+        "/v1/candidates/import-json": {
+            "post": {
+                "operationId": "candidateImport.importJson",
+                "summary": "Subir e Importar Archivo JSON de Candidatos JEE (>150MB)",
+                "tags": [
+                    "Candidatos - Importaci\u00f3n de Padr\u00f3n JEE",
+                    "CandidateImport"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "contentMediaType": "application/octet-stream",
+                                        "description": "Maximum file size: 350000 kilobytes."
+                                    }
+                                },
+                                "required": [
+                                    "file"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Archivo JSON recibido correctamente. Procesamiento iniciado en segundo plano."
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "string",
+                                                    "const": "running"
+                                                },
+                                                "file_name": {
+                                                    "type": "string"
+                                                },
+                                                "total": {
+                                                    "type": "integer"
+                                                },
+                                                "processed": {
+                                                    "type": "integer"
+                                                },
+                                                "new_candidates": {
+                                                    "type": "integer"
+                                                },
+                                                "updated_candidates": {
+                                                    "type": "integer"
+                                                },
+                                                "new_lists": {
+                                                    "type": "integer"
+                                                },
+                                                "percentage": {
+                                                    "type": "number"
+                                                },
+                                                "last_candidate_name": {
+                                                    "type": "string",
+                                                    "const": "Archivo recibido. Iniciando procesamiento en cola..."
+                                                },
+                                                "started_at": {
+                                                    "type": "string"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "status",
+                                                "file_name",
+                                                "total",
+                                                "processed",
+                                                "new_candidates",
+                                                "updated_candidates",
+                                                "new_lists",
+                                                "percentage",
+                                                "last_candidate_name",
+                                                "started_at",
+                                                "updated_at"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Ya existe un proceso de importaci\u00f3n en ejecuci\u00f3n."
+                                        },
+                                        "data": {}
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/candidates/import-json/status": {
+            "get": {
+                "operationId": "candidateImport.getStatus",
+                "summary": "Consultar Progreso en Tiempo Real de la Importaci\u00f3n JSON",
+                "tags": [
+                    "Candidatos - Importaci\u00f3n de Padr\u00f3n JEE",
+                    "CandidateImport"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Estado de importaci\u00f3n de candidatos JEE."
+                                        },
+                                        "data": {}
+                                    },
+                                    "required": [
+                                        "message",
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/candidates/import-json/cancel": {
+            "post": {
+                "operationId": "candidateImport.cancelImport",
+                "summary": "Cancelar Proceso de Importaci\u00f3n Activo",
+                "tags": [
+                    "Candidatos - Importaci\u00f3n de Padr\u00f3n JEE",
+                    "CandidateImport"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "No hay ning\u00fan proceso de importaci\u00f3n activo para cancelar."
+                                                },
+                                                "data": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "message",
+                                                "data"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "const": "Proceso de importaci\u00f3n cancelado exitosamente."
+                                                },
+                                                "data": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "message",
+                                                "data"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/candidates/sync-cvs": {
             "post": {
                 "operationId": "candidateCvSync.startSync",
@@ -1746,9 +1973,6 @@
                                 }
                             }
                         }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
             }
@@ -1783,9 +2007,6 @@
                                 }
                             }
                         }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
             }
@@ -1820,9 +2041,6 @@
                                 }
                             }
                         }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
             }
@@ -1847,6 +2065,272 @@
                                 }
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/v1/ballot-template": {
+            "get": {
+                "operationId": "catalog.ballotTemplate",
+                "summary": "Retorna la plantilla estructurada de la c\u00e9dula electoral (mesa, organizaciones, listas y candidatos)\npara el registro de actas electorales mediante consulta a la vista/procedimiento de base de datos",
+                "tags": [
+                    "Catalog"
+                ],
+                "parameters": [
+                    {
+                        "name": "polling_station_code",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": [
+                                                "object",
+                                                "null"
+                                            ],
+                                            "properties": {
+                                                "station": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer"
+                                                        },
+                                                        "code": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "registered_voters": {
+                                                            "type": "integer"
+                                                        },
+                                                        "status": {
+                                                            "type": "string"
+                                                        },
+                                                        "department_code": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "department_name": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "province_code": {},
+                                                        "province_name": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "district_code": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        },
+                                                        "district_name": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "id",
+                                                        "code",
+                                                        "registered_voters",
+                                                        "status",
+                                                        "department_code",
+                                                        "department_name",
+                                                        "province_code",
+                                                        "province_name",
+                                                        "district_code",
+                                                        "district_name"
+                                                    ]
+                                                },
+                                                "electoral_level": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer"
+                                                        },
+                                                        "code": {
+                                                            "type": "string"
+                                                        },
+                                                        "name": {
+                                                            "type": "string"
+                                                        },
+                                                        "has_preferential_vote": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "required": [
+                                                        "id",
+                                                        "code",
+                                                        "name",
+                                                        "has_preferential_vote"
+                                                    ]
+                                                },
+                                                "lists": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "electoral_list_id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "political_organization_id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "political_organization_name": {
+                                                                "type": "string"
+                                                            },
+                                                            "political_organization_short_name": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "logo_url": {
+                                                                "anyOf": [
+                                                                    {
+                                                                        "type": "string"
+                                                                    },
+                                                                    {
+                                                                        "type": "array",
+                                                                        "items": {}
+                                                                    }
+                                                                ]
+                                                            },
+                                                            "local_logo_url": {
+                                                                "type": [
+                                                                    "string",
+                                                                    "null"
+                                                                ]
+                                                            },
+                                                            "is_provincial_admitted": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "is_distrital_admitted": {
+                                                                "type": "boolean"
+                                                            },
+                                                            "candidates": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "object",
+                                                                    "properties": {
+                                                                        "candidate_id": {
+                                                                            "type": "integer"
+                                                                        },
+                                                                        "candidate_name": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "candidate_document": {
+                                                                            "type": [
+                                                                                "string",
+                                                                                "null"
+                                                                            ]
+                                                                        },
+                                                                        "photo_url": {
+                                                                            "anyOf": [
+                                                                                {
+                                                                                    "type": "string"
+                                                                                },
+                                                                                {
+                                                                                    "type": "array",
+                                                                                    "items": {}
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        "local_photo_url": {
+                                                                            "type": [
+                                                                                "string",
+                                                                                "null"
+                                                                            ]
+                                                                        },
+                                                                        "position": {
+                                                                            "type": "string"
+                                                                        },
+                                                                        "list_number": {
+                                                                            "type": "integer"
+                                                                        }
+                                                                    },
+                                                                    "required": [
+                                                                        "candidate_id",
+                                                                        "candidate_name",
+                                                                        "candidate_document",
+                                                                        "photo_url",
+                                                                        "local_photo_url",
+                                                                        "position",
+                                                                        "list_number"
+                                                                    ]
+                                                                }
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "electoral_list_id",
+                                                            "political_organization_id",
+                                                            "political_organization_name",
+                                                            "political_organization_short_name",
+                                                            "logo_url",
+                                                            "local_logo_url",
+                                                            "is_provincial_admitted",
+                                                            "is_distrital_admitted",
+                                                            "candidates"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "station",
+                                                "electoral_level",
+                                                "lists"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Mesa o nivel electoral no encontrado"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -2010,288 +2494,6 @@
                                 }
                             }
                         }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/AuthenticationException"
-                    }
-                }
-            }
-        },
-        "/v1/ballot-template": {
-            "get": {
-                "operationId": "catalog.ballotTemplate",
-                "summary": "Retorna la plantilla estructurada de la c\u00e9dula electoral (mesa, organizaciones, listas y candidatos)\npara el registro de actas electorales mediante consulta a la vista/procedimiento de base de datos",
-                "tags": [
-                    "Catalog"
-                ],
-                "parameters": [
-                    {
-                        "name": "polling_station_code",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "electoral_level_id",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "data": {
-                                            "anyOf": [
-                                                {
-                                                    "type": "object",
-                                                    "properties": {
-                                                        "station": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                                "id": {
-                                                                    "type": "integer"
-                                                                },
-                                                                "code": {
-                                                                    "type": [
-                                                                        "string",
-                                                                        "null"
-                                                                    ]
-                                                                },
-                                                                "registered_voters": {
-                                                                    "type": "integer"
-                                                                },
-                                                                "status": {
-                                                                    "type": "string"
-                                                                },
-                                                                "department_code": {},
-                                                                "department_name": {
-                                                                    "type": [
-                                                                        "string",
-                                                                        "null"
-                                                                    ]
-                                                                },
-                                                                "province_code": {},
-                                                                "province_name": {
-                                                                    "type": [
-                                                                        "string",
-                                                                        "null"
-                                                                    ]
-                                                                },
-                                                                "district_code": {
-                                                                    "type": [
-                                                                        "string",
-                                                                        "null"
-                                                                    ]
-                                                                },
-                                                                "district_name": {
-                                                                    "type": [
-                                                                        "string",
-                                                                        "null"
-                                                                    ]
-                                                                }
-                                                            },
-                                                            "required": [
-                                                                "id",
-                                                                "code",
-                                                                "registered_voters",
-                                                                "status",
-                                                                "department_code",
-                                                                "department_name",
-                                                                "province_code",
-                                                                "province_name",
-                                                                "district_code",
-                                                                "district_name"
-                                                            ]
-                                                        },
-                                                        "electoral_level": {
-                                                            "type": "object",
-                                                            "properties": {
-                                                                "id": {
-                                                                    "type": "integer"
-                                                                },
-                                                                "code": {
-                                                                    "type": "string"
-                                                                },
-                                                                "name": {
-                                                                    "type": "string"
-                                                                },
-                                                                "has_preferential_vote": {
-                                                                    "type": "string"
-                                                                }
-                                                            },
-                                                            "required": [
-                                                                "id",
-                                                                "code",
-                                                                "name",
-                                                                "has_preferential_vote"
-                                                            ]
-                                                        },
-                                                        "lists": {
-                                                            "type": "array",
-                                                            "items": {
-                                                                "type": "object",
-                                                                "properties": {
-                                                                    "electoral_list_id": {
-                                                                        "type": "integer"
-                                                                    },
-                                                                    "political_organization_id": {
-                                                                        "type": "integer"
-                                                                    },
-                                                                    "political_organization_name": {
-                                                                        "type": [
-                                                                            "string",
-                                                                            "null"
-                                                                        ]
-                                                                    },
-                                                                    "political_organization_short_name": {
-                                                                        "type": [
-                                                                            "string",
-                                                                            "null"
-                                                                        ]
-                                                                    },
-                                                                    "logo_url": {
-                                                                        "anyOf": [
-                                                                            {
-                                                                                "type": "string"
-                                                                            },
-                                                                            {
-                                                                                "type": "array",
-                                                                                "items": {}
-                                                                            }
-                                                                        ]
-                                                                    },
-                                                                    "local_logo_url": {
-                                                                        "type": [
-                                                                            "string",
-                                                                            "null"
-                                                                        ]
-                                                                    },
-                                                                    "is_provincial_admitted": {
-                                                                        "type": "boolean"
-                                                                    },
-                                                                    "is_distrital_admitted": {
-                                                                        "type": "boolean"
-                                                                    },
-                                                                    "candidates": {
-                                                                        "type": "array",
-                                                                        "items": {
-                                                                            "type": "object",
-                                                                            "properties": {
-                                                                                "candidate_id": {
-                                                                                    "type": "integer"
-                                                                                },
-                                                                                "candidate_name": {
-                                                                                    "type": "string"
-                                                                                },
-                                                                                "candidate_document": {
-                                                                                    "type": [
-                                                                                        "string",
-                                                                                        "null"
-                                                                                    ]
-                                                                                },
-                                                                                "photo_url": {
-                                                                                    "anyOf": [
-                                                                                        {
-                                                                                            "type": "string"
-                                                                                        },
-                                                                                        {
-                                                                                            "type": "array",
-                                                                                            "items": {}
-                                                                                        }
-                                                                                    ]
-                                                                                },
-                                                                                "local_photo_url": {
-                                                                                    "type": [
-                                                                                        "string",
-                                                                                        "null"
-                                                                                    ]
-                                                                                },
-                                                                                "position": {
-                                                                                    "type": "string"
-                                                                                },
-                                                                                "list_number": {
-                                                                                    "type": "integer"
-                                                                                }
-                                                                            },
-                                                                            "required": [
-                                                                                "candidate_id",
-                                                                                "candidate_name",
-                                                                                "candidate_document",
-                                                                                "photo_url",
-                                                                                "local_photo_url",
-                                                                                "position",
-                                                                                "list_number"
-                                                                            ]
-                                                                        }
-                                                                    }
-                                                                },
-                                                                "required": [
-                                                                    "electoral_list_id",
-                                                                    "political_organization_id",
-                                                                    "political_organization_name",
-                                                                    "political_organization_short_name",
-                                                                    "logo_url",
-                                                                    "local_logo_url",
-                                                                    "is_provincial_admitted",
-                                                                    "is_distrital_admitted",
-                                                                    "candidates"
-                                                                ]
-                                                            }
-                                                        }
-                                                    },
-                                                    "required": [
-                                                        "station",
-                                                        "electoral_level",
-                                                        "lists"
-                                                    ]
-                                                },
-                                                {
-                                                    "type": "null"
-                                                },
-                                                {
-                                                    "type": "object"
-                                                }
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "data"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "const": "Mesa o nivel electoral no encontrado"
-                                        }
-                                    },
-                                    "required": [
-                                        "message"
-                                    ]
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "$ref": "#/components/responses/ValidationException"
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"

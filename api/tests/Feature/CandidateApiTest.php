@@ -94,4 +94,52 @@ class CandidateApiTest extends TestCase
                 ],
             ]);
     }
+
+    public function test_authenticated_user_can_upload_and_check_json_import_status(): void
+    {
+        $fakeJson = json_encode([
+            [
+                'idOrganizacionPolitica' => 4,
+                'strOrganizacionPolitica' => 'ACCION POPULAR',
+                'strCodExpedienteExt' => 'ERM.2026099999',
+                'strTipoEleccion' => 'MUNICIPAL DISTRITAL',
+                'strUbigeoPostula' => '030103',
+                'strCargoEleccion' => 'ALCALDE DISTRITAL',
+                'idPosicion' => 1,
+                'strDocumentoIdentidad' => '99887766',
+                'strNombreCompleto' => 'PEREZ-GARCIA-JUAN',
+                'strEstadoPersona' => 'INSCRITO',
+                'strEstado' => 'INSCRITO',
+            ]
+        ]);
+
+        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('candidatos_test.json', $fakeJson);
+
+        $uploadResponse = $this->actingAs($this->adminUser, 'sanctum')
+            ->postJson('/api/v1/candidates/import-json', [
+                'file' => $file,
+            ]);
+
+        $uploadResponse->assertStatus(202)
+            ->assertJsonStructure([
+                'message',
+                'data' => [
+                    'status',
+                    'processed',
+                ],
+            ]);
+
+        $statusResponse = $this->actingAs($this->adminUser, 'sanctum')
+            ->getJson('/api/v1/candidates/import-json/status');
+
+        $statusResponse->assertOk()
+            ->assertJsonStructure([
+                'message',
+                'data' => [
+                    'status',
+                    'processed',
+                    'new_candidates',
+                ],
+            ]);
+    }
 }

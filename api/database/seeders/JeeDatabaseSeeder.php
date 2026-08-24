@@ -329,6 +329,9 @@ class JeeDatabaseSeeder extends Seeder
         $cvRows = [];
         $csvPath = base_path('../database/files/candidate_cvs.csv');
 
+        // Mapear por documento (DNI) e id_hoja_vida a candidate.id
+        $candDocMap = DB::table('candidates')->whereNotNull('document_number')->pluck('id', 'document_number')->toArray();
+
         // Prioridad 1: Cargar desde CSV sincronizado previamente (en database/files/candidate_cvs.csv)
         if (file_exists($csvPath) && ($handle = @fopen($csvPath, 'r')) !== false) {
             $this->command->info("→ Encontrado archivo CSV sincronizado ($csvPath). Cargando...");
@@ -337,83 +340,39 @@ class JeeDatabaseSeeder extends Seeder
                 if (!empty($data[0])) {
                     $idHojaVida = (string) $data[0];
                     $rawCandId  = $data[1] ?? null;
-                    // Mapear al ID real de candidate si existe
-                    $candId = isset($candidateMap[$rawCandId]) ? $candidateMap[$rawCandId] : (is_numeric($rawCandId) ? (int)$rawCandId : null);
+                    // Mapear al ID real de candidate
+                    $candId = $candidateMap[$rawCandId] ?? ($candDocMap[$idHojaVida] ?? null);
 
-                    $cvRows[] = [
-                        'id_hoja_vida'         => $idHojaVida,
-                        'candidate_id'         => $candId,
-                        'general_data'         => !empty($data[2]) ? $data[2] : null,
-                        'academic_data'        => !empty($data[3]) ? $data[3] : null,
-                        'work_experience'      => !empty($data[4]) ? $data[4] : null,
-                        'political_trajectory' => !empty($data[5]) ? $data[5] : null,
-                        'sworn_declaration'    => !empty($data[6]) ? $data[6] : null,
-                        'penal_sentences'      => !empty($data[7]) ? $data[7] : null,
-                        'additional_info'      => !empty($data[8]) ? $data[8] : null,
-                        'created_at'           => $now,
-                        'updated_at'           => $now,
-                    ];
-                }
-            }
-            fclose($handle);
-        }
-
-        // Prioridad 2: Si no hay CSV, intentar leer de la tabla candidate_cvs de SQLite
-        if (empty($cvRows)) {
-            try {
-                $stmt = $sqlite->query("SELECT id_hoja_vida, candidate_id, general_data, academic_data, work_experience, political_trajectory, sworn_declaration, penal_sentences, additional_info FROM candidate_cvs");
-                while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                    if (!empty($row['id_hoja_vida'])) {
-                        $candId = $candidateMap[$row['candidate_id']] ?? null;
+                    if ($candId) {
                         $cvRows[] = [
-                            'id_hoja_vida'         => (string) $row['id_hoja_vida'],
+                            'id_hoja_vida'         => $idHojaVida,
                             'candidate_id'         => $candId,
-                            'general_data'         => $row['general_data'] ?: null,
-                            'academic_data'        => $row['academic_data'] ?: null,
-                            'work_experience'      => $row['work_experience'] ?: null,
-                            'political_trajectory' => $row['political_trajectory'] ?: null,
-                            'sworn_declaration'    => $row['sworn_declaration'] ?: null,
-                            'penal_sentences'      => $row['penal_sentences'] ?: null,
-                            'additional_info'      => $row['additional_info'] ?: null,
+                            'general_data'         => !empty($data[2]) ? $data[2] : null,
+                            'academic_data'        => !empty($data[3]) ? $data[3] : null,
+                            'work_experience'      => !empty($data[4]) ? $data[4] : null,
+                            'political_trajectory' => !empty($data[5]) ? $data[5] : null,
+                            'sworn_declaration'    => !empty($data[6]) ? $data[6] : null,
+                            'penal_sentences'      => !empty($data[7]) ? $data[7] : null,
+                            'additional_info'      => !empty($data[8]) ? $data[8] : null,
                             'created_at'           => $now,
                             'updated_at'           => $now,
                         ];
                     }
                 }
-            } catch (\Throwable $e) {
-                // SQLite no tiene la tabla o está vacía
             }
-        }
-
-        // Prioridad 3: Generar registros base para los candidatos con id_hoja_vida
-        if (empty($cvRows)) {
-            foreach ($candidatesRows as $cRow) {
-                if (!empty($cRow['id_hoja_vida'])) {
-                    $candId = $candidateMap[$cRow['jee_candidate_id']] ?? null;
-                    $cvRows[] = [
-                        'id_hoja_vida'         => (string) $cRow['id_hoja_vida'],
-                        'candidate_id'         => $candId,
-                        'general_data'         => json_encode(['dni' => $cRow['document_number'], 'nombre_completo' => $cRow['full_name']], JSON_UNESCAPED_UNICODE),
-                        'academic_data'        => json_encode([], JSON_UNESCAPED_UNICODE),
-                        'work_experience'      => json_encode([], JSON_UNESCAPED_UNICODE),
-                        'political_trajectory' => json_encode([], JSON_UNESCAPED_UNICODE),
-                        'sworn_declaration'    => json_encode([], JSON_UNESCAPED_UNICODE),
-                        'penal_sentences'      => json_encode([], JSON_UNESCAPED_UNICODE),
-                        'additional_info'      => json_encode(['fuente' => 'JNE Declara ERM 2026'], JSON_UNESCAPED_UNICODE),
-                        'created_at'           => $now,
-                        'updated_at'           => $now,
-                    ];
-                }
-            }
+            fclose($handle);
         }
 
         if (!empty($cvRows)) {
-            $this->batchInsertOrUpdate(
-                'candidate_cvs',
-                ['id_hoja_vida', 'candidate_id', 'general_data', 'academic_data', 'work_experience', 'political_trajectory', 'sworn_declaration', 'penal_sentences', 'additional_info', 'created_at', 'updated_at'],
-                $cvRows,
-                ['matchColumns' => ['id_hoja_vida'], 'updateColumns' => ['candidate_id', 'general_data', 'academic_data', 'work_experience', 'political_trajectory', 'sworn_declaration', 'penal_sentences', 'additional_info', 'updated_at']]
-            );
+            foreach (array_chunk($cvRows, 1000) as $cvChunk) {
+                $this->batchInsertOrUpdate(
+                    'candidate_cvs',
+                    ['id_hoja_vida', 'candidate_id', 'general_data', 'academic_data', 'work_experience', 'political_trajectory', 'sworn_declaration', 'penal_sentences', 'additional_info', 'created_at', 'updated_at'],
+                    $cvChunk,
+                    ['matchColumns' => ['id_hoja_vida'], 'updateColumns' => ['candidate_id', 'general_data', 'academic_data', 'work_experience', 'political_trajectory', 'sworn_declaration', 'penal_sentences', 'additional_info', 'updated_at'], 'verbose' => false]
+                );
+            }
+            $this->command->info("  [candidate_cvs] " . count($cvRows) . " hojas de vida cargadas.");
         }
 
         // 9. USUARIO DEMO & MESA DEMO

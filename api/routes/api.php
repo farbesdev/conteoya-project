@@ -46,6 +46,9 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         Route::post('/candidates/sync-cvs', [\App\Http\Controllers\Api\V1\CandidateCvSyncController::class, 'startSync']);
         Route::get('/candidates/sync-cvs/status', [\App\Http\Controllers\Api\V1\CandidateCvSyncController::class, 'getStatus']);
         Route::post('/candidates/sync-cvs/cancel', [\App\Http\Controllers\Api\V1\CandidateCvSyncController::class, 'cancelSync']);
+        Route::post('/candidates/import-json', [\App\Http\Controllers\Api\V1\CandidateImportController::class, 'importJson']);
+        Route::get('/candidates/import-json/status', [\App\Http\Controllers\Api\V1\CandidateImportController::class, 'getStatus']);
+        Route::post('/candidates/import-json/cancel', [\App\Http\Controllers\Api\V1\CandidateImportController::class, 'cancelImport']);
         Route::get('/candidates/{id}/cv', [\App\Http\Controllers\Api\V1\CandidateCvSyncController::class, 'getCv']);
         Route::put('/candidates/{id}/cv', [\App\Http\Controllers\Api\V1\CandidateCvSyncController::class, 'updateCv']);
         Route::apiResource('candidates', \App\Http\Controllers\Api\V1\CandidateController::class);
@@ -55,6 +58,8 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         // Plantilla y Listas Electorales
         Route::get('/electoral-lists', [CatalogController::class, 'electoralLists']);
         Route::get('/ballot-template', [CatalogController::class, 'ballotTemplate']);
+        // Invalidar caché de cédulas — solo ADMIN (verificado en el controller via authorize())
+        Route::delete('/ballot-template/cache', [CatalogController::class, 'clearBallotTemplateCache']);
 
         // Fase 1 & 2: Gestión y Auditoría de Actas Electorales
         Route::get('/acts', [\App\Http\Controllers\Api\V1\ActController::class, 'index']);

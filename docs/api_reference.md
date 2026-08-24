@@ -977,6 +977,42 @@ Retorna en tiempo real el progreso de la sincronización:
 ### `POST /api/v1/candidates/sync-cvs/cancel`
 Cancela o pausa la tarea en ejecución.
 
+### `POST /api/v1/candidates/import-json`
+Permite subir un archivo JSON con el padrón oficial JEE (>150MB) para procesamiento asíncrono en streaming por lotes (Redis Queue).
+- **Body (multipart/form-data):** `file` (archivo `.json`).
+- **Respuesta `202 Accepted`:**
+```json
+{
+  "message": "Archivo JSON recibido correctamente. Procesamiento iniciado en segundo plano.",
+  "data": {
+    "status": "running",
+    "file_name": "candidatos_todos_jee.json",
+    "processed": 0,
+    "new_candidates": 0,
+    "new_lists": 0
+  }
+}
+```
+
+### `GET /api/v1/candidates/import-json/status`
+Consulta el avance en tiempo real de la importación JSON:
+```json
+{
+  "message": "Estado de importación de candidatos JEE.",
+  "data": {
+    "status": "running",
+    "file_name": "candidatos_todos_jee.json",
+    "processed": 45000,
+    "new_candidates": 120,
+    "new_lists": 15,
+    "last_candidate_name": "PEREZ GARCIA JUAN"
+  }
+}
+```
+
+### `POST /api/v1/candidates/import-json/cancel`
+Cancela el proceso de importación activo.
+
 ---
 
 ## 🚩 Organizaciones Políticas

@@ -173,26 +173,10 @@ class BallotRepository {
       } catch (_) {}
     }
 
-    // 3. Fallback inteligente de emergencia si la mesa es 100% nueva y nunca se sincronizó
-    final localOrgs = await db.getAllPoliticalOrganizations();
-    final seenOrgIds = <int>{};
-    final fallbackParties = <BallotPartyItem>[];
-    for (final org in localOrgs) {
-      if (!seenOrgIds.contains(org.id)) {
-        seenOrgIds.add(org.id);
-        fallbackParties.add(
-          BallotPartyItem(
-            id: org.id,
-            name: org.name,
-            shortName: org.shortName,
-            logoUrl: org.logoUrl,
-            isProvincialAdmitted: true,
-            isDistritalAdmitted: true,
-          ),
-        );
-      }
-    }
-
+    // 3. Fallback de emergencia: no hay datos de API ni caché local.
+    // NUNCA devolver todas las organizaciones sin filtrar por departamento/nivel —
+    // eso causaría que el personero vea partidos de otros departamentos como cédula.
+    // Se devuelve lista vacía para que la UI muestre un mensaje de "sin conexión / sin datos".
     return BallotTemplateResult(
       pollingStationCode: pollingStationCode,
       electoralLevelId: electoralLevelId,
@@ -200,7 +184,7 @@ class BallotRepository {
       departmentName: depName,
       provinceName: provName,
       districtName: distName,
-      parties: fallbackParties,
+      parties: const [], // Lista vacía intencional — UI debe mostrar aviso de sincronización
     );
   }
 }

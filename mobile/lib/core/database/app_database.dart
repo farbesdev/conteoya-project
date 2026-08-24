@@ -22,7 +22,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? e]) : super(e ?? _openConnection());
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -48,6 +48,23 @@ class AppDatabase extends _$AppDatabase {
               await migrator.addColumn(localPollingStationsTable, localPollingStationsTable.odpe);
             } catch (_) {}
           }
+          if (from < 9) {
+            // Agregar departmentCode: código de departamento RENIEC (2 dígitos),
+            // derivado del districtCode. Corrige el bug de filtrado regional
+            // donde el nombre con tildes (HUÁNUCO) no coincidía con departments.name (HUANUCO).
+            try {
+              await migrator.addColumn(
+                localPollingStationsTable,
+                localPollingStationsTable.departmentCode,
+              );
+              // Poblar departmentCode para mesas existentes: extraer 2 primeros dígitos del districtCode
+              await customStatement(
+                "UPDATE local_polling_stations_table "
+                "SET department_code = SUBSTR(district_code, 1, 2) "
+                "WHERE department_code IS NULL AND LENGTH(district_code) >= 6",
+              );
+            } catch (_) {}
+          }
           await _ensureBallotTemplatesTableCreated();
         },
         beforeOpen: (details) async {
@@ -61,9 +78,21 @@ class AppDatabase extends _$AppDatabase {
             final stationColumns = await customSelect("PRAGMA table_info('local_polling_stations_table')").get();
             final hasDistrictName = stationColumns.any((row) => row.read<String>('name') == 'district_name');
             final hasOdpe = stationColumns.any((row) => row.read<String>('name') == 'odpe');
+            final hasDeptCode = stationColumns.any((row) => row.read<String>('name') == 'department_code');
+
             if (!hasDistrictName || !hasOdpe) {
+              // Recrear la tabla completa si le faltan columnas críticas
               await m.drop(localPollingStationsTable);
               await m.createTable(localPollingStationsTable);
+            } else if (!hasDeptCode) {
+              // Agregar solo department_code si es la única columna faltante (migración incremental)
+              await m.addColumn(localPollingStationsTable, localPollingStationsTable.departmentCode);
+              // Poblar departmentCode desde districtCode (primeros 2 dígitos del ubigeo RENIEC)
+              await customStatement(
+                "UPDATE local_polling_stations_table "
+                "SET department_code = SUBSTR(district_code, 1, 2) "
+                "WHERE department_code IS NULL AND LENGTH(district_code) >= 6",
+              );
             }
           } catch (_) {
             try {
@@ -302,6 +331,15 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> insertPollingStation(LocalPollingStationsTableCompanion station) async {
     final code = station.code.value;
+
+    // Derivar departmentCode automáticamente desde districtCode (primeros 2 dígitos del ubigeo RENIEC)
+    // Esto garantiza que el campo esté siempre poblado sin depender de nombres con posibles tildes.
+    final distCode = station.districtCode.present ? station.districtCode.value : '';
+    final derivedDeptCode = distCode.length >= 6 ? distCode.substring(0, 2) : null;
+    final deptCodeValue = station.departmentCode.present && station.departmentCode.value != null
+        ? Value<String?>(station.departmentCode.value)
+        : Value<String?>(derivedDeptCode);
+
     final existing = await (select(localPollingStationsTable)..where((t) => t.code.equals(code))).getSingleOrNull();
     if (existing != null) {
       await (update(localPollingStationsTable)..where((t) => t.code.equals(code))).write(
@@ -311,13 +349,16 @@ class AppDatabase extends _$AppDatabase {
           districtName: station.districtName,
           provinceName: station.provinceName,
           departmentName: station.departmentName,
+          departmentCode: deptCodeValue,
           registeredVoters: station.registeredVoters,
           status: station.status,
         ),
       );
       return existing.id;
     } else {
-      return into(localPollingStationsTable).insert(station);
+      return into(localPollingStationsTable).insert(
+        station.copyWith(departmentCode: deptCodeValue),
+      );
     }
   }
 

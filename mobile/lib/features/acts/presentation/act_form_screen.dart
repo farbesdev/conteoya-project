@@ -71,7 +71,7 @@ class ActFormScreen extends ConsumerStatefulWidget {
 }
 
 class _ActFormScreenState extends ConsumerState<ActFormScreen> {
-  final String _clientActUuid = const Uuid().v4();
+  String _clientActUuid = const Uuid().v4();
   late int _selectedLevelId;
 
   // Controllers de Totales Regional
@@ -137,35 +137,77 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       _isLoadingParties = true;
     });
 
+    final db = ref.read(appDatabaseProvider);
     final ballotRepo = ref.read(ballotRepositoryProvider);
     final ballotTemplate = await ballotRepo.getBallotTemplate(
       pollingStationCode: widget.pollingStationCode,
       electoralLevelId: _selectedLevelId,
     );
 
+    // 1. Buscar si ya existe un acta previa (borrador o confirmada) en SQLite local
+    final existingAct = await db.getActByStationAndLevel(widget.pollingStationCode, _selectedLevelId);
+    LocalActTotal? existingTotals;
+    List<LocalActResult> existingResults = [];
+    LocalActEvidence? existingEvidence;
+
+    LocalActTotal? existingDistTotals;
+    List<LocalActResult> existingDistResults = [];
+
+    if (existingAct != null) {
+      _clientActUuid = existingAct.clientActUuid;
+      existingTotals = await db.getTotalsForAct(existingAct.clientActUuid);
+      existingResults = await db.getResultsForAct(existingAct.clientActUuid);
+      existingEvidence = await db.getEvidenceForAct(existingAct.clientActUuid);
+
+      if (_selectedLevelId == 2) {
+        // En municipal, buscar también el acta distrital asociada (nivel 3)
+        final distAct = await db.getActByStationAndLevel(widget.pollingStationCode, 3);
+        if (distAct != null) {
+          existingDistTotals = await db.getTotalsForAct(distAct.clientActUuid);
+          existingDistResults = await db.getResultsForAct(distAct.clientActUuid);
+        }
+      }
+    }
+
     if (mounted) {
-      _registeredVotersController.text = ballotTemplate.registeredVoters.toString();
-      _votersWhoVotedController.text = '0';
+      _registeredVotersController.text = existingTotals != null
+          ? existingTotals.registeredVoters.toString()
+          : ballotTemplate.registeredVoters.toString();
+      _votersWhoVotedController.text = existingTotals != null
+          ? existingTotals.votersWhoVoted.toString()
+          : '0';
 
       if (_selectedLevelId == 1) {
-        _totalVotesController.text = '0';
-        _blankVotesController.text = '0';
-        _nullVotesController.text = '0';
-        _challengedVotesController.text = '0';
+        _totalVotesController.text = existingTotals != null ? existingTotals.totalVotes.toString() : '0';
+        _blankVotesController.text = existingTotals != null ? existingTotals.blankVotes.toString() : '0';
+        _nullVotesController.text = existingTotals != null ? existingTotals.nullVotes.toString() : '0';
+        _challengedVotesController.text = existingTotals != null ? existingTotals.challengedVotes.toString() : '0';
       } else {
-        _provTotalVotesController.text = '0';
-        _provBlankVotesController.text = '0';
-        _provNullVotesController.text = '0';
-        _provChallengedVotesController.text = '0';
+        _provTotalVotesController.text = existingTotals != null ? existingTotals.totalVotes.toString() : '0';
+        _provBlankVotesController.text = existingTotals != null ? existingTotals.blankVotes.toString() : '0';
+        _provNullVotesController.text = existingTotals != null ? existingTotals.nullVotes.toString() : '0';
+        _provChallengedVotesController.text = existingTotals != null ? existingTotals.challengedVotes.toString() : '0';
 
-        _distTotalVotesController.text = '0';
-        _distBlankVotesController.text = '0';
-        _distNullVotesController.text = '0';
-        _distChallengedVotesController.text = '0';
+        _distTotalVotesController.text = existingDistTotals != null ? existingDistTotals.totalVotes.toString() : '0';
+        _distBlankVotesController.text = existingDistTotals != null ? existingDistTotals.blankVotes.toString() : '0';
+        _distNullVotesController.text = existingDistTotals != null ? existingDistTotals.nullVotes.toString() : '0';
+        _distChallengedVotesController.text = existingDistTotals != null ? existingDistTotals.challengedVotes.toString() : '0';
       }
+
+      final resultsByOrg = {
+        for (final r in existingResults) r.politicalOrganizationId: r
+      };
+      final distResultsByOrg = {
+        for (final r in existingDistResults) r.politicalOrganizationId: r
+      };
 
       setState(() {
         _partyEntries = ballotTemplate.parties.map((p) {
+          final res = resultsByOrg[p.id];
+          final distRes = distResultsByOrg[p.id];
+          final votesStr = res != null ? res.votes.toString() : '0';
+          final distVotesStr = distRes != null ? distRes.votes.toString() : '0';
+
           return PartyFormEntry(
             id: p.id,
             name: p.name,
@@ -175,17 +217,47 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             isDistritalAdmitted: p.isDistritalAdmitted,
             candidateName: p.candidateName,
             candidatePosition: p.candidatePosition,
-            votesController: TextEditingController(text: '0'),
+            source: res?.source ?? 'MANUAL',
+            confidence: res?.confidence ?? 1.0,
+            votesController: TextEditingController(text: votesStr),
             votesProvincialController: TextEditingController(
-              text: p.isProvincialAdmitted ? '0' : '0',
+              text: p.isProvincialAdmitted ? votesStr : '0',
             ),
             votesDistritalController: TextEditingController(
-              text: p.isDistritalAdmitted ? '0' : '0',
+              text: p.isDistritalAdmitted ? distVotesStr : '0',
             ),
           );
         }).toList();
+
+        if (existingEvidence != null) {
+          final file = File(existingEvidence.localFilePath);
+          if (file.existsSync()) {
+            _capturedPhoto = file;
+            _photoSha256 = existingEvidence.sha256Hash;
+          }
+        }
+
         _isLoadingParties = false;
       });
+
+      // Si la lista de partidos está vacía (sin caché local ni API disponible),
+      // avisar al personero que debe sincronizar antes de registrar el acta.
+      if (ballotTemplate.parties.isEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  '⚠️ No se encontraron organizaciones políticas para esta mesa. '
+                  'Verifica tu conexión y sincroniza el padrón antes de registrar el acta.',
+                ),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 8),
+              ),
+            );
+          }
+        });
+      }
 
       _recalculateFromVotes();
     }
@@ -427,11 +499,16 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       }
 
       if (mounted) {
+        // Si el acta fue confirmada, disparar sincronización inmediata en segundo plano
+        if (isConfirmation) {
+          ref.read(syncEngineProvider).syncPendingOperations();
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               isConfirmation
-                  ? 'Acta confirmada y encolada para sincronización.'
+                  ? 'Acta confirmada y enviada para sincronización.'
                   : 'Borrador guardado localmente.',
             ),
             backgroundColor: isConfirmation ? AppColors.success : AppColors.info,
@@ -491,6 +568,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
     );
 
     if (_capturedPhoto != null && _photoSha256 != null) {
+      await (db.delete(db.localActEvidenceTable)
+            ..where((tbl) => tbl.clientActUuid.equals(_clientActUuid)))
+          .go();
       await db.into(db.localActEvidenceTable).insert(
         LocalActEvidenceTableCompanion(
           clientActUuid: drift.Value(_clientActUuid),
@@ -564,8 +644,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
     final distNull = int.tryParse(_distNullVotesController.text) ?? 0;
     final distChallenged = int.tryParse(_distChallengedVotesController.text) ?? 0;
 
-    // UUID separado para el acta distrital (el provincial usa _clientActUuid)
-    final clientActUuidDist = const Uuid().v4();
+    // UUID para el acta distrital (reutilizar si ya existe en SQLite, o generar nuevo)
+    final existingDistAct = await db.getActByStationAndLevel(widget.pollingStationCode, 3);
+    final clientActUuidDist = existingDistAct?.clientActUuid ?? const Uuid().v4();
     final clientOpIdProv = const Uuid().v4();
     final clientOpIdDist = const Uuid().v4();
 
@@ -647,6 +728,9 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
 
     // ── 3. Evidencia fotográfica (asociada al acta provincial como primaria) ──
     if (_capturedPhoto != null && _photoSha256 != null) {
+      await (db.delete(db.localActEvidenceTable)
+            ..where((tbl) => tbl.clientActUuid.equals(_clientActUuid)))
+          .go();
       await db.into(db.localActEvidenceTable).insert(
         LocalActEvidenceTableCompanion(
           clientActUuid: drift.Value(_clientActUuid),
@@ -749,7 +833,6 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
     final currentLevel = getElectoralLevelById(_selectedLevelId);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textPrimary = AppColors.textPrimaryOf(context);
-    final textSecondary = AppColors.textSecondaryOf(context);
     final textMuted = AppColors.textMutedOf(context);
     final warningColor = AppColors.warningOf(context);
     final borderColor = AppColors.borderOf(context);

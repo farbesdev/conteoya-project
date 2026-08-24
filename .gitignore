@@ -33,6 +33,11 @@ Thumbs.db
 
 # Big Data & SQLite source
 #/database/erm2026.db
+*.bak
+/database/*.db.bak
+files/*.json
+files/*.xlsx
+files/*.csv
 
 # Mobile (Flutter / SQLite local)
 .dart_tool/

@@ -86,6 +86,10 @@ class LocalPollingStationsTable extends Table {
   TextColumn get districtName => text().withDefault(const Constant('LIMA - CERCADO'))();
   TextColumn get provinceName => text().withDefault(const Constant('LIMA'))();
   TextColumn get departmentName => text().withDefault(const Constant('LIMA'))();
+  /// Código de departamento RENIEC/INEI (2 dígitos). Derivado de los 2 primeros
+  /// dígitos del districtCode. Fuente de verdad para filtrado de cédulas regionales,
+  /// sin dependencia de nombres con posibles tildes o variantes ortográficas.
+  TextColumn get departmentCode => text().nullable()();
   TextColumn get odpe => text().nullable()();
   IntColumn get registeredVoters => integer().withDefault(const Constant(300))();
   TextColumn get status => text().withDefault(const Constant('ACTIVA'))();
