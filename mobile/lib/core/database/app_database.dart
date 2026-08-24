@@ -162,7 +162,10 @@ class AppDatabase extends _$AppDatabase {
           .get();
 
       for (final prev in previousActs) {
-        await deleteActByClientUuid(prev.clientActUuid);
+        await (delete(localActEvidenceTable)..where((t) => t.clientActUuid.equals(prev.clientActUuid))).go();
+        await (delete(localActResultsTable)..where((t) => t.clientActUuid.equals(prev.clientActUuid))).go();
+        await (delete(localActTotalsTable)..where((t) => t.clientActUuid.equals(prev.clientActUuid))).go();
+        await (delete(localActsTable)..where((t) => t.clientActUuid.equals(prev.clientActUuid))).go();
       }
 
       await into(localActsTable).insertOnConflictUpdate(act);

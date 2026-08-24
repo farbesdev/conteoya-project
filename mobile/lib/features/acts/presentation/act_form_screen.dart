@@ -533,6 +533,15 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
         );
         Navigator.pop(context);
       }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al guardar el acta: $e'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
     } finally {
       setState(() => _isSaving = false);
     }
