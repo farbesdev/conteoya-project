@@ -155,28 +155,23 @@ class CatalogController extends Controller
             if (!$level)
                 return null;
 
-            if ($driver === 'pgsql') {
-                $result = \Illuminate\Support\Facades\DB::select(
-                    "SELECT fn_get_polling_station_ballot(?, ?) AS ballot",
-                    [$stationCode, $levelId]
-                );
-                if (isset($result[0]->ballot)) {
-                    return json_decode($result[0]->ballot, true);
-                }
-            }
-
             // Resolver Ubigeo (departamento, provincia, distrito) de la mesa
-            $deptName = $station->department_name;
-            $provName = $station->province_name;
-            $distName = $station->district_name;
+            $deptName = trim($station->department_name ?? '');
+            $provName = trim($station->province_name ?? '');
+            $distName = trim($station->district_name ?? '');
 
-            $district = \App\Models\District::where(function ($q) use ($distName) {
-                $q->where('name', $distName)->orWhereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$distName ?? '']);
-            })->first();
+            // 1. Resolver Departamento exacto
+            $department = \App\Models\Department::whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$deptName])->first();
+            $deptCode = $department?->code;
 
+            // 2. Resolver Distrito y Provincia exactos
+            $district = \App\Models\District::whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$distName])->first();
             $distCode = $district?->code;
-            $provCode = $district?->province_code ?? \App\Models\Province::where('name', $provName)->value('code');
-            $deptCode = $district?->department_code ?? \App\Models\Department::where('name', $deptName)->value('code');
+            $provCode = $district?->province_code ?? \App\Models\Province::whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$provName])->value('code');
+
+            if (!$deptCode && $district?->department_code) {
+                $deptCode = $district->department_code;
+            }
 
             $allowedStatuses = ['INSCRITO', 'ADMITIDO', 'PERIODO DE TACHA', 'TACHA EN TRAMITE', 'PUBLICADO'];
 
@@ -186,7 +181,7 @@ class CatalogController extends Controller
                     ->whereIn('status', $allowedStatuses)
                     ->where(function ($q) use ($provCode) {
                         if ($provCode) {
-                            $q->whereNull('province_code')->orWhere('province_code', $provCode);
+                            $q->where('province_code', $provCode);
                         }
                     })
                     ->with(['politicalOrganization', 'candidacies.candidate'])
@@ -196,7 +191,7 @@ class CatalogController extends Controller
                     ->whereIn('status', $allowedStatuses)
                     ->where(function ($q) use ($distCode) {
                         if ($distCode) {
-                            $q->whereNull('district_code')->orWhere('district_code', $distCode);
+                            $q->where('district_code', $distCode);
                         }
                     })
                     ->with(['politicalOrganization', 'candidacies.candidate'])
@@ -272,9 +267,7 @@ class CatalogController extends Controller
                     ->with(['politicalOrganization', 'candidacies.candidate']);
 
                 if ($levelId == 1 && $deptCode) {
-                    $listsQuery->where(function ($q) use ($deptCode) {
-                        $q->whereNull('department_code')->orWhere('department_code', $deptCode);
-                    });
+                    $listsQuery->where('department_code', $deptCode);
                 }
 
                 $lists = $listsQuery->get()->map(function ($list) use ($base) {
