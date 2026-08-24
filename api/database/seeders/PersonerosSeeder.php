@@ -89,8 +89,8 @@ class PersonerosSeeder extends Seeder
         $totalUnique = count($personerosByDni);
         $this->command?->info("Total de personeros únicos a procesar: $totalUnique");
 
-        // 5. Procesar e insertar registros en chunks (lotes)
         $now = now()->toDateTimeString();
+        $defaultHashedPassword = Hash::make('password123');
         $userColumns = [
             'name',
             'email',
@@ -217,7 +217,7 @@ class PersonerosSeeder extends Seeder
                 $userBatch[] = [
                     'name'       => $fullName ?: "Personero DNI $dni",
                     'email'      => $email,
-                    'password'   => Hash::make("{$dni}!"),
+                    'password'   => $defaultHashedPassword,
                     'role'       => Role::PERSONERO,
                     'role_id'    => $personeroRole->id,
                     'is_active'  => false,
