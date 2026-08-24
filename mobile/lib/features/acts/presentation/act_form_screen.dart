@@ -23,6 +23,8 @@ class PartyFormEntry {
   final String? logoUrl;
   final bool isProvincialAdmitted;
   final bool isDistritalAdmitted;
+  final String? candidateName;
+  final String? candidatePosition;
   final TextEditingController votesController;
   final TextEditingController votesProvincialController;
   final TextEditingController votesDistritalController;
@@ -36,6 +38,8 @@ class PartyFormEntry {
     this.logoUrl,
     this.isProvincialAdmitted = true,
     this.isDistritalAdmitted = true,
+    this.candidateName,
+    this.candidatePosition,
     required this.votesController,
     required this.votesProvincialController,
     required this.votesDistritalController,
@@ -169,6 +173,8 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
             logoUrl: p.logoUrl,
             isProvincialAdmitted: p.isProvincialAdmitted,
             isDistritalAdmitted: p.isDistritalAdmitted,
+            candidateName: p.candidateName,
+            candidatePosition: p.candidatePosition,
             votesController: TextEditingController(text: '0'),
             votesProvincialController: TextEditingController(
               text: p.isProvincialAdmitted ? '0' : '0',
@@ -901,7 +907,6 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                             ),
                             child: Row(
                               children: [
-                                // Logo oficial de la Organización Política
                                 PartyLogoWidget(
                                   logoUrl: party.logoUrl,
                                   partyId: party.id,
@@ -922,6 +927,20 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
                                           fontSize: 13,
                                         ),
                                       ),
+                                      if (party.candidateName != null && party.candidateName!.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 2),
+                                          child: Text(
+                                            party.candidateName!,
+                                            style: const TextStyle(
+                                              color: AppColors.accent,
+                                              fontWeight: FontWeight.w500,
+                                              fontSize: 11,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
                                       if (party.source != 'MANUAL')
                                         Container(
                                           margin: const EdgeInsets.only(top: 4),

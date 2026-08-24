@@ -9,6 +9,8 @@ class BallotPartyItem {
   final String? logoUrl;
   final bool isProvincialAdmitted;
   final bool isDistritalAdmitted;
+  final String? candidateName;
+  final String? candidatePosition;
 
   const BallotPartyItem({
     required this.id,
@@ -17,9 +19,22 @@ class BallotPartyItem {
     this.logoUrl,
     this.isProvincialAdmitted = true,
     this.isDistritalAdmitted = true,
+    this.candidateName,
+    this.candidatePosition,
   });
 
   factory BallotPartyItem.fromJson(Map<String, dynamic> json) {
+    final candidatesList = json['candidates'] as List<dynamic>? ?? [];
+    String? candName;
+    String? candPos;
+    if (candidatesList.isNotEmpty) {
+      final first = candidatesList.first;
+      if (first is Map<String, dynamic>) {
+        candName = first['candidate_name']?.toString();
+        candPos = first['position']?.toString();
+      }
+    }
+
     return BallotPartyItem(
       id: json['political_organization_id'] as int? ?? (json['id'] as int? ?? 0),
       name: json['political_organization_name']?.toString() ??
@@ -29,6 +44,8 @@ class BallotPartyItem {
       logoUrl: json['logo_url']?.toString() ?? json['local_logo_url']?.toString(),
       isProvincialAdmitted: json['is_provincial_admitted'] as bool? ?? true,
       isDistritalAdmitted: json['is_distrital_admitted'] as bool? ?? true,
+      candidateName: candName ?? json['candidate_name']?.toString(),
+      candidatePosition: candPos ?? json['candidate_position']?.toString(),
     );
   }
 }

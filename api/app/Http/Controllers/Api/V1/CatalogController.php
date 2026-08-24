@@ -210,6 +210,24 @@ class CatalogController extends Controller
                         $orgLogo = str_starts_with($org->logo_url, '/storage/') ? ($base . $org->logo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $org->logo_url);
                     }
 
+                    $provCandidates = $list->candidacies->map(function ($c) use ($base) {
+                        $photo = null;
+                        if ($c->candidate?->local_photo_url) {
+                            $photo = $base . '/storage/candidates/' . ltrim($c->candidate->local_photo_url, '/');
+                        } elseif ($c->candidate?->photo_url) {
+                            $photo = str_starts_with($c->candidate->photo_url, '/storage/') ? ($base . $c->candidate->photo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $c->candidate->photo_url);
+                        }
+                        return [
+                            'candidate_id' => $c->candidate_id,
+                            'candidate_name' => $c->candidate?->full_name,
+                            'candidate_document' => $c->candidate?->document_number,
+                            'photo_url' => $photo,
+                            'local_photo_url' => $c->candidate?->local_photo_url ? ($base . '/storage/candidates/' . ltrim($c->candidate->local_photo_url, '/')) : null,
+                            'position' => $c->position,
+                            'list_number' => $c->list_number,
+                        ];
+                    })->all();
+
                     if (!isset($orgsMap[$orgId])) {
                         $orgsMap[$orgId] = [
                             'electoral_list_id' => $list->id,
@@ -220,10 +238,13 @@ class CatalogController extends Controller
                             'local_logo_url' => $org->local_logo_url ? ($base . '/storage/political-organizationals/' . ltrim($org->local_logo_url, '/')) : null,
                             'is_provincial_admitted' => true,
                             'is_distrital_admitted' => false,
-                            'candidates' => [],
+                            'candidates' => $provCandidates,
                         ];
                     } else {
                         $orgsMap[$orgId]['is_provincial_admitted'] = true;
+                        if (empty($orgsMap[$orgId]['candidates'])) {
+                            $orgsMap[$orgId]['candidates'] = $provCandidates;
+                        }
                     }
                 }
 
@@ -239,6 +260,24 @@ class CatalogController extends Controller
                         $orgLogo = str_starts_with($org->logo_url, '/storage/') ? ($base . $org->logo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $org->logo_url);
                     }
 
+                    $distCandidates = $list->candidacies->map(function ($c) use ($base) {
+                        $photo = null;
+                        if ($c->candidate?->local_photo_url) {
+                            $photo = $base . '/storage/candidates/' . ltrim($c->candidate->local_photo_url, '/');
+                        } elseif ($c->candidate?->photo_url) {
+                            $photo = str_starts_with($c->candidate->photo_url, '/storage/') ? ($base . $c->candidate->photo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $c->candidate->photo_url);
+                        }
+                        return [
+                            'candidate_id' => $c->candidate_id,
+                            'candidate_name' => $c->candidate?->full_name,
+                            'candidate_document' => $c->candidate?->document_number,
+                            'photo_url' => $photo,
+                            'local_photo_url' => $c->candidate?->local_photo_url ? ($base . '/storage/candidates/' . ltrim($c->candidate->local_photo_url, '/')) : null,
+                            'position' => $c->position,
+                            'list_number' => $c->list_number,
+                        ];
+                    })->all();
+
                     if (!isset($orgsMap[$orgId])) {
                         $orgsMap[$orgId] = [
                             'electoral_list_id' => $list->id,
@@ -249,7 +288,7 @@ class CatalogController extends Controller
                             'local_logo_url' => $org->local_logo_url ? ($base . '/storage/political-organizationals/' . ltrim($org->local_logo_url, '/')) : null,
                             'is_provincial_admitted' => false,
                             'is_distrital_admitted' => true,
-                            'candidates' => [],
+                            'candidates' => $distCandidates,
                         ];
                     } else {
                         $orgsMap[$orgId]['is_distrital_admitted'] = true;
@@ -271,13 +310,8 @@ class CatalogController extends Controller
                 }
 
                 $lists = $listsQuery->get()->map(function ($list) use ($base) {
-                    $org = $list->political_organization;
+                    $org = $list->politicalOrganization;
                     $orgLogo = null;
-                    if ($org?->local_logo_url) {
-                        $orgLogo = $base . '/storage/political-organizationals/' . ltrim($org->local_logo_url, '/');
-                    } elseif ($org?->logo_url) {
-                        $orgLogo = str_starts_with($org->logo_url, '/storage/') ? ($base . $org->logo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $org->logo_url);
-                    }
                     if ($org?->local_logo_url) {
                         $orgLogo = $base . '/storage/political-organizationals/' . ltrim($org->local_logo_url, '/');
                     } elseif ($org?->logo_url) {
