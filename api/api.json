@@ -2118,12 +2118,7 @@
                                                         "status": {
                                                             "type": "string"
                                                         },
-                                                        "department_code": {
-                                                            "type": [
-                                                                "string",
-                                                                "null"
-                                                            ]
-                                                        },
+                                                        "department_code": {},
                                                         "department_name": {
                                                             "type": [
                                                                 "string",
@@ -2319,7 +2314,7 @@
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "const": "Mesa o nivel electoral no encontrado"
+                                            "const": "Mesa o nivel electoral no encontrado o no se pudo resolver el departamento. Contacte al administrador del sistema."
                                         }
                                     },
                                     "required": [
@@ -2499,6 +2494,99 @@
                         "$ref": "#/components/responses/AuthenticationException"
                     }
                 }
+            }
+        },
+        "/v1/ballot-template/cache": {
+            "delete": {
+                "operationId": "catalog.clearBallotTemplateCache",
+                "summary": "Invalida la cach\u00e9 Redis de la plantilla de c\u00e9dula electoral para una mesa espec\u00edfica\no para todas las mesas (solo ADMIN)",
+                "tags": [
+                    "Catalog"
+                ],
+                "parameters": [
+                    {
+                        "name": "station_code",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "500": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Cach\u00e9 invalidada correctamente."
+                                        },
+                                        "keys_deleted": {
+                                            "type": "integer"
+                                        },
+                                        "station_code": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "array",
+                                                    "items": {}
+                                                },
+                                                {
+                                                    "type": "string"
+                                                }
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "message",
+                                        "keys_deleted",
+                                        "station_code"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "No autorizado. Solo ADMIN puede invalidar la cach\u00e9 de c\u00e9dulas."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
             }
         },
         "/v1/acts/{act}/evidence/upload-url": {
@@ -8253,6 +8341,12 @@
                             "string",
                             "null"
                         ]
+                    },
+                    "department_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
                     }
                 },
                 "required": [
@@ -8268,7 +8362,8 @@
                     "pdf_page",
                     "department_name",
                     "province_name",
-                    "district_name"
+                    "district_name",
+                    "department_code"
                 ],
                 "title": "PollingStation"
             },
