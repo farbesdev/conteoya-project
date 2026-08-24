@@ -136,23 +136,30 @@ class CatalogController extends Controller
     {
         $request->validate([
             'polling_station_code' => 'required|string',
-            'electoral_level_id' => 'required|integer',
         ]);
 
         $stationCode = $request->query('polling_station_code');
-        $levelId = (int) $request->query('electoral_level_id');
+        $levelParam = $request->query('electoral_level_id') ?? $request->query('electoral_level_code');
+        
+        // Buscar el nivel electoral por ID o por Código
+        $level = is_numeric($levelParam)
+            ? \App\Models\ElectoralLevel::find((int) $levelParam)
+            : \App\Models\ElectoralLevel::where('code', (string) $levelParam)->first();
+
+        if (!$level) {
+            $level = \App\Models\ElectoralLevel::where('code', 'REGIONAL_GOBERNADOR')->first();
+        }
+
+        $levelId = $level ? $level->id : 1;
+        $levelCode = $level ? $level->code : 'REGIONAL_GOBERNADOR';
         $driver = config('database.default');
 
         // Caché L1 en Redis (24 horas) para responder en < 1ms a miles de personeros en concurrencia
-        $cacheKey = "catalog:ballot_template:{$stationCode}:{$levelId}";
+        $cacheKey = "catalog:ballot_template:{$stationCode}:{$levelCode}";
 
-        $ballotData = Cache::remember($cacheKey, 86400, function () use ($stationCode, $levelId, $driver) {
+        $ballotData = Cache::remember($cacheKey, 86400, function () use ($stationCode, $level, $levelCode) {
             $station = \App\Models\PollingStation::where('code', $stationCode)->first();
             if (!$station)
-                return null;
-
-            $level = \App\Models\ElectoralLevel::find($levelId);
-            if (!$level)
                 return null;
 
             // Resolver Ubigeo (departamento, provincia, distrito) de la mesa
@@ -165,17 +172,28 @@ class CatalogController extends Controller
             $distCode = $district?->code;
             $provCode = $district?->province_code ?? \App\Models\Province::whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$provName])->value('code');
 
-            // 2. Resolver Departamento exacto (puede tener códigos múltiples por fuente JEE/ONPE como 10 y 16)
+            // 2. Resolver Departamento exacto
             $deptCodes = \App\Models\Department::whereRaw('LOWER(TRIM(name)) = LOWER(TRIM(?))', [$deptName])->pluck('code')->toArray();
             if (empty($deptCodes) && $district?->department_code) {
                 $deptCodes = [$district->department_code];
             }
 
-            $allowedStatuses = ['INSCRITO', 'ADMITIDO', 'PERIODO DE TACHA', 'TACHA EN TRAMITE', 'PUBLICADO'];
+            // Solo estados válidos de listas participantes en la cédula oficial
+            $allowedStatuses = ['INSCRITO', 'ADMITIDO'];
 
-            if ($levelId == 2) {
+            // Resolver los niveles electorales por código
+            $provLevel = \App\Models\ElectoralLevel::where('code', 'MUNICIPAL_PROVINCIAL')->first();
+            $distLevel = \App\Models\ElectoralLevel::where('code', 'MUNICIPAL_DISTRITAL')->first();
+            $regLevel = \App\Models\ElectoralLevel::where('code', 'REGIONAL_GOBERNADOR')->first();
+
+            $isMunicipal = in_array($levelCode, ['MUNICIPAL_PROVINCIAL', 'MUNICIPAL_DISTRITAL', 'MUNICIPAL_PROVINCIAL_DISTRITAL']) || $level->id == 2 || $level->id == 3;
+
+            if ($isMunicipal) {
                 // Nivel Municipal Provincial - Distrital Combinado
-                $provLists = ElectoralList::where('electoral_level_id', 2)
+                $provLevelId = $provLevel ? $provLevel->id : 2;
+                $distLevelId = $distLevel ? $distLevel->id : 3;
+
+                $provLists = ElectoralList::where('electoral_level_id', $provLevelId)
                     ->whereIn('status', $allowedStatuses)
                     ->where(function ($q) use ($provCode) {
                         if ($provCode) {
@@ -185,7 +203,7 @@ class CatalogController extends Controller
                     ->with(['politicalOrganization', 'candidacies.candidate'])
                     ->get();
 
-                $distLists = ElectoralList::where('electoral_level_id', 3)
+                $distLists = ElectoralList::where('electoral_level_id', $distLevelId)
                     ->whereIn('status', $allowedStatuses)
                     ->where(function ($q) use ($distCode) {
                         if ($distCode) {
@@ -196,8 +214,8 @@ class CatalogController extends Controller
                     ->get();
 
                 $orgsMap = [];
-
                 $base = request()->getSchemeAndHttpHost();
+
                 foreach ($provLists as $list) {
                     $org = $list->politicalOrganization;
                     if (!$org)
@@ -297,13 +315,15 @@ class CatalogController extends Controller
 
                 $lists = array_values($orgsMap);
             } else {
-                // Nivel Simple (Regional u otro)
+                // Nivel Regional
                 $base = request()->getSchemeAndHttpHost();
-                $listsQuery = ElectoralList::where('electoral_level_id', $levelId)
+                $regLevelId = $regLevel ? $regLevel->id : 1;
+
+                $listsQuery = ElectoralList::where('electoral_level_id', $regLevelId)
                     ->whereIn('status', $allowedStatuses)
                     ->with(['politicalOrganization', 'candidacies.candidate']);
 
-                if ($levelId == 1 && !empty($deptCodes)) {
+                if (!empty($deptCodes)) {
                     $listsQuery->where(function ($q) use ($deptCodes) {
                         $q->whereNull('department_code')->orWhereIn('department_code', $deptCodes);
                     });

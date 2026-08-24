@@ -1,6 +1,7 @@
 import 'dart:convert';
 import '../../../core/database/app_database.dart';
 import '../../../core/network/api_client.dart';
+import '../domain/electoral_level.dart';
 
 class BallotPartyItem {
   final int id;
@@ -93,11 +94,13 @@ class BallotRepository {
 
     // 1. Intentar descargar desde el API si hay conexión
     try {
+      final levelOption = getElectoralLevelById(electoralLevelId);
       final response = await apiClient.get<Map<String, dynamic>>(
         '/ballot-template',
         queryParameters: {
           'polling_station_code': pollingStationCode,
           'electoral_level_id': electoralLevelId,
+          'electoral_level_code': levelOption.code,
         },
       );
 
