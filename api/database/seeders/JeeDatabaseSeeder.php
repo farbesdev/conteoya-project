@@ -405,8 +405,12 @@ class JeeDatabaseSeeder extends Seeder
             'updated_at' => $now,
         ], ['matchColumns' => ['user_id']]);
 
+        $firstDistrictCode = DB::table('districts')->where('code', '150101')->value('code') 
+            ?? DB::table('districts')->value('code') 
+            ?? '150101';
+
         $locationId = $this->firstOrInsertGetId('electoral_locations', [
-            'district_code' => '000001',
+            'district_code' => $firstDistrictCode,
             'name' => 'IE 1001 SAN MARTIN',
             'address' => 'Av. Principal 123',
             'created_at' => $now,
