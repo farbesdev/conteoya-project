@@ -167,13 +167,27 @@ class JeeDatabaseSeeder extends Seeder
         $orgMap = DB::table('political_organizations')->pluck('id', 'jee_id')->toArray();
 
         // 6. LISTAS ELECTORALES
-        $this->command->info("Cargando Listas Electorales...");
+        $this->command->info("Cargando Listas Electorales y clasificando por nivel (Gobernador / Consejero / Municipal)...");
+        
+        // Mapear qué listas tienen candidatos a Gobernador/Vicegobernador para asignar nivel exacto
+        $govListsStmt = $sqlite->query("SELECT DISTINCT id_solicitud_lista FROM candidates WHERE position IN ('GOBERNADOR REGIONAL', 'VICEGOBERNADOR REGIONAL')");
+        $govListsSet = array_flip($govListsStmt->fetchAll(\PDO::FETCH_COLUMN));
+
         $stmt = $sqlite->query("SELECT id_solicitud_lista, organization_id, election_type, department_code, province_code, district_code, status FROM electoral_lists");
         $electoralListsRows = [];
 
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
             $orgId = $orgMap[$row['organization_id']] ?? null;
-            $levelId = $levelsMap[$row['election_type']] ?? $levelDistrital->id;
+            $type = strtoupper(trim($row['election_type'] ?? ''));
+
+            if ($type === 'REGIONAL' || $type === 'GOBERNADOR REGIONAL') {
+                // Si la lista regional no presenta fórmula ejecutiva (solo consejeros), asignar a Consejero Regional
+                $levelId = isset($govListsSet[$row['id_solicitud_lista']]) 
+                    ? $levelRegionalGov->id 
+                    : $levelRegionalCons->id;
+            } else {
+                $levelId = $levelsMap[$type] ?? $levelDistrital->id;
+            }
 
             if ($orgId) {
                 $electoralListsRows[] = [
