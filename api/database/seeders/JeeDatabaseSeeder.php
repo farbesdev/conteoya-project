@@ -208,9 +208,18 @@ class JeeDatabaseSeeder extends Seeder
         $chunkLimit = 2000;
         $totalProcessed = 0;
 
+        $diskCandidates = Storage::disk('candidates');
+        $candidatesStoragePath = storage_path('app/public/candidates');
+
         while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-            $localPhotoUrl = null;
             $docNumber = $row['id_hoja_vida'] ?: ('JEE_' . $row['id']);
+            $expectedFilename = "$docNumber/foto.webp";
+
+            // Si el archivo ya existe físicamente en el storage local, asignarlo directamente
+            $localPhotoUrl = null;
+            if (file_exists($candidatesStoragePath . '/' . $expectedFilename) || file_exists($candidatesStoragePath . "/$docNumber/foto.png") || file_exists($candidatesStoragePath . "/$docNumber/foto.jpg")) {
+                $localPhotoUrl = $expectedFilename;
+            }
 
             $candidatesRows[] = [
                 'jee_candidate_id' => $row['id'],
