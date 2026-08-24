@@ -197,6 +197,33 @@ class JeeDatabaseSeeder extends Seeder
             ['matchColumns' => ['jee_solicitud_id'], 'updateColumns' => ['political_organization_id', 'electoral_level_id', 'department_code', 'province_code', 'district_code', 'status', 'updated_at']]
         );
 
+        // Purgar candidacias y candidatos obsoletos del lote de 5 dígitos (jee_solicitud_id < 100000 o jee_candidate_id > 101446)
+        DB::statement('
+            DELETE FROM candidacies 
+            WHERE electoral_list_id IN (
+                SELECT id FROM electoral_lists 
+                WHERE jee_solicitud_id IS NOT NULL AND jee_solicitud_id < 100000
+            ) OR candidate_id IN (
+                SELECT id FROM candidates 
+                WHERE jee_candidate_id IS NOT NULL AND jee_candidate_id > 101446
+            )
+        ');
+        DB::statement('
+            DELETE FROM candidate_cvs 
+            WHERE candidate_id IN (
+                SELECT id FROM candidates 
+                WHERE jee_candidate_id IS NOT NULL AND jee_candidate_id > 101446
+            )
+        ');
+        DB::statement('
+            DELETE FROM electoral_lists 
+            WHERE jee_solicitud_id IS NOT NULL AND jee_solicitud_id < 100000
+        ');
+        DB::statement('
+            DELETE FROM candidates 
+            WHERE jee_candidate_id IS NOT NULL AND jee_candidate_id > 101446
+        ');
+
         $listsMap = DB::table('electoral_lists')->pluck('id', 'jee_solicitud_id')->toArray();
 
         // 7. CANDIDATOS & FOTOGRAFÍAS
