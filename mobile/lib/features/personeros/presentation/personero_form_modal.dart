@@ -111,6 +111,7 @@ class _PersoneroFormModalState extends ConsumerState<PersoneroFormModal> {
           pollingStationCodes: _selectedMesaCodes.toList(),
           phoneNumber: _phoneController.text,
           email: _emailController.text,
+          originalDni: widget.personeroToEdit!.dni,
         );
       } else {
         await repo.createPersonero(

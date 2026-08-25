@@ -498,7 +498,7 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                   try {
                     final apiClient = ref.read(apiClientProvider);
                     await apiClient.patch('/personeros/${personero.id}/toggle-access');
-                    await ref.read(personerosRepositoryProvider).togglePersoneroAccess(personero.id);
+                    await ref.read(personerosRepositoryProvider).togglePersoneroAccess(personero.id, dni: personero.dni);
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -535,7 +535,7 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                           try {
                             final apiClient = ref.read(apiClientProvider);
                             await apiClient.patch('/personeros/${personero.id}/toggle-access');
-                            await ref.read(personerosRepositoryProvider).togglePersoneroAccess(personero.id);
+                            await ref.read(personerosRepositoryProvider).togglePersoneroAccess(personero.id, dni: personero.dni);
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(

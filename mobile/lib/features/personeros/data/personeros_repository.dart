@@ -200,6 +200,7 @@ class PersonerosRepository {
     String? pollingStationCode,
     String? phoneNumber,
     String? email,
+    String? originalDni,
   }) async {
     final cleanDni = dni.trim();
     final cleanFirst = firstName.trim();
@@ -226,16 +227,25 @@ class PersonerosRepository {
 
     final primaryStation = cleanStations.first;
 
+    // Buscar en Drift local por ID primero
+    final byId = await (db.select(db.localPersonerosTable)
+      ..where((t) => t.id.equals(id))).getSingleOrNull();
+
+    // Si no está por ID (vino de la API remota con ID del servidor), intentar resolver el ID local por DNI original o DNI nuevo
+    final lookupDni = (originalDni ?? cleanDni).trim();
+    final existingLocal = byId ?? (lookupDni.isNotEmpty ? await db.getPersoneroByDni(lookupDni) : null);
+    final localId = existingLocal?.id ?? id;
+
     // 4. Validar que el DNI no pertenezca a OTRO personero
     final existingDni = await db.getPersoneroByDni(cleanDni);
-    if (existingDni != null && existingDni.id != id) {
+    if (existingDni != null && existingDni.id != localId) {
       throw PersoneroValidationException('El DNI $cleanDni ya pertenece a otro personero.');
     }
 
     // 5. Actualizar en Drift SQLite
     await db.updatePersonero(
       LocalPersonerosTableCompanion(
-        id: Value(id),
+        id: Value(localId),
         dni: Value(cleanDni),
         firstName: Value(cleanFirst),
         lastName: Value(cleanLast),
@@ -318,8 +328,9 @@ class PersonerosRepository {
     }
   }
 
-  Future<bool> togglePersoneroAccess(int id) async {
-    final existing = await (db.select(db.localPersonerosTable)..where((t) => t.id.equals(id))).getSingleOrNull();
+  Future<bool> togglePersoneroAccess(int id, {String? dni}) async {
+    final byId = await (db.select(db.localPersonerosTable)..where((t) => t.id.equals(id))).getSingleOrNull();
+    final existing = byId ?? (dni != null ? await db.getPersoneroByDni(dni) : null);
     if (existing == null) return false;
 
     final newState = !existing.isActive;
