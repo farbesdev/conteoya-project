@@ -10,6 +10,7 @@ const provinces = ref<ProvinceItem[]>([])
 const districts = ref<DistrictItem[]>([])
 
 const selectedElectionId = ref<number>(1)
+const selectedLevelId = ref<number | null>(resultsStore.filters.electoral_level_id || 1)
 const selectedDeptCode = ref<string | null>(null)
 const selectedProvCode = ref<string | null>(null)
 const selectedDistCode = ref<string | null>(null)
@@ -17,6 +18,9 @@ const selectedDistCode = ref<string | null>(null)
 const loadingDepts = ref(false)
 const loadingProvs = ref(false)
 const loadingDists = ref(false)
+
+const selectedElection = computed(() => elections.value.find(e => e.id === selectedElectionId.value))
+const electoralLevels = computed(() => selectedElection.value?.levels || [])
 
 onMounted(async () => {
   try {
@@ -31,9 +35,32 @@ onMounted(async () => {
   }
 })
 
+// Keep selectedLevelId in sync with store
+watch(
+  () => resultsStore.filters.electoral_level_id,
+  (val) => {
+    selectedLevelId.value = val || null
+  }
+)
+
 const onElectionChange = (val: number) => {
   selectedElectionId.value = val
   resultsStore.setFilter('election_id', val)
+
+  // Update level filter to the first level of the newly selected election
+  const elec = elections.value.find(e => e.id === val)
+  if (elec && elec.levels && elec.levels.length > 0) {
+    selectedLevelId.value = elec.levels[0].id
+    resultsStore.setFilter('electoral_level_id', elec.levels[0].id)
+  } else {
+    selectedLevelId.value = null
+    resultsStore.setFilter('electoral_level_id', undefined)
+  }
+}
+
+const onLevelChange = (val: number | null) => {
+  selectedLevelId.value = val
+  resultsStore.setFilter('electoral_level_id', val || undefined)
 }
 
 const onDeptChange = async (val: string | null) => {
@@ -89,6 +116,11 @@ const clearFilters = () => {
   selectedDistCode.value = null
   provinces.value = []
   districts.value = []
+
+  // Reset to default level of current election (usually 1)
+  const defaultLevelId = electoralLevels.value[0]?.id || 1
+  selectedLevelId.value = defaultLevelId
+
   resultsStore.resetFilters()
 }
 </script>
@@ -112,8 +144,24 @@ const clearFilters = () => {
           />
         </VCol>
 
+        <!-- Tipo de Elección -->
+        <VCol cols="12" md="2" sm="6">
+          <VSelect
+            v-model="selectedLevelId"
+            :items="electoralLevels"
+            item-title="name"
+            item-value="id"
+            label="Tipo de Elección"
+            density="compact"
+            variant="outlined"
+            prepend-inner-icon="ri-award-line"
+            :disabled="!electoralLevels.length"
+            @update:model-value="onLevelChange"
+          />
+        </VCol>
+
         <!-- Departamento -->
-        <VCol cols="12" md="3" sm="6">
+        <VCol cols="12" md="2" sm="6">
           <VAutocomplete
             v-model="selectedDeptCode"
             :items="departments"
@@ -131,7 +179,7 @@ const clearFilters = () => {
         </VCol>
 
         <!-- Provincia -->
-        <VCol cols="12" md="3" sm="6">
+        <VCol cols="12" md="2" sm="6">
           <VAutocomplete
             v-model="selectedProvCode"
             :items="provinces"

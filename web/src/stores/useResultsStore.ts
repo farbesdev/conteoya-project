@@ -20,7 +20,7 @@ export const useResultsStore = defineStore('results', () => {
   const currentElection = ref<{ id: number; code: string; name: string; date: string } | null>(null)
   const filters = ref<FilterParams>({
     election_id: 1,
-    electoral_level_id: undefined,
+    electoral_level_id: 1,
     department_code: undefined,
     province_code: undefined,
     district_code: undefined,
@@ -68,7 +68,7 @@ export const useResultsStore = defineStore('results', () => {
   const resetFilters = () => {
     filters.value = {
       election_id: 1,
-      electoral_level_id: undefined,
+      electoral_level_id: 1,
       department_code: undefined,
       province_code: undefined,
       district_code: undefined,
