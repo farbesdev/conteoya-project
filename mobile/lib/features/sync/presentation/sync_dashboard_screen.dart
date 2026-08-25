@@ -107,20 +107,48 @@ class SyncDashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
 
-            _buildPollingStationCard(
-              context: context,
-              code: '030390',
-              location: 'I.E. NUESTRA SEÑORA DE GUADALUPE',
-              district: 'LIMA - CERCADO',
-              voters: 300,
-            ),
-            const SizedBox(height: 12),
-            _buildPollingStationCard(
-              context: context,
-              code: '030391',
-              location: 'I.E. NUESTRA SEÑORA DE GUADALUPE',
-              district: 'LIMA - CERCADO',
-              voters: 300,
+            StreamBuilder<List<LocalPollingStation>>(
+              stream: db.select(db.localPollingStationsTable).watch(),
+              builder: (context, snapshot) {
+                final stations = snapshot.data ?? [];
+                if (stations.isEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.all(20),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(Icons.how_to_vote_outlined, color: AppColors.textMuted, size: 36),
+                        SizedBox(height: 8),
+                        Text(
+                          'No hay mesas asignadas localmente. Sincronice con el servidor.',
+                          style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return Column(
+                  children: stations.map((st) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _buildPollingStationCard(
+                        context: context,
+                        code: st.code,
+                        location: st.locationName,
+                        district: st.districtName,
+                        voters: st.registeredVoters,
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
             ),
 
             const SizedBox(height: 24),

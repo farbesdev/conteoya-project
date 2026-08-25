@@ -123,8 +123,6 @@ class AppDatabase extends _$AppDatabase {
           } catch (_) {}
 
           await _ensureBallotTemplatesTableCreated();
-
-          await seedInitialDataIfEmpty();
         },
       );
 
@@ -252,7 +250,6 @@ class AppDatabase extends _$AppDatabase {
         final m = createMigrator();
         await m.drop(localPersonerosTable);
         await m.createTable(localPersonerosTable);
-        await seedInitialDataIfEmpty();
       } catch (_) {}
       return <LocalPersonero>[];
     });
@@ -268,7 +265,6 @@ class AppDatabase extends _$AppDatabase {
         final m = createMigrator();
         await m.drop(localPersonerosTable);
         await m.createTable(localPersonerosTable);
-        await seedInitialDataIfEmpty();
         return await (select(localPersonerosTable)
               ..orderBy([(t) => OrderingTerm.asc(t.lastName), (t) => OrderingTerm.asc(t.firstName)]))
             .get();

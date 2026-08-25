@@ -242,7 +242,7 @@ class SyncEngine {
             final dni = item['dni']?.toString();
             final firstName = item['first_name']?.toString() ?? 'Personero';
             final lastName = item['last_name']?.toString() ?? ' ';
-            final stationCode = item['polling_station_code']?.toString() ?? '030390';
+            final stationCode = item['polling_station_code']?.toString() ?? '';
             if (dni != null && dni.isNotEmpty) {
               personeroCompanions.add(
                 LocalPersonerosTableCompanion.insert(

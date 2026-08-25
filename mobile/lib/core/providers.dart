@@ -10,8 +10,6 @@ import '../features/acts/data/ballot_repository.dart';
 
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
-  // Inicializar sembrado de datos local si la base de datos está vacía
-  db.seedInitialDataIfEmpty();
   ref.onDispose(() => db.close());
   return db;
 });

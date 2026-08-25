@@ -22,9 +22,9 @@ class AddMesaModal extends ConsumerStatefulWidget {
 class _AddMesaModalState extends ConsumerState<AddMesaModal> {
   final _formKey = GlobalKey<FormState>();
   final _codeController = TextEditingController();
-  final _locationController = TextEditingController(text: 'I.E. NUESTRA SEÑORA DE GUADALUPE');
-  final _districtController = TextEditingController(text: 'LIMA - CERCADO');
-  final _votersController = TextEditingController(text: '300');
+  final _locationController = TextEditingController();
+  final _districtController = TextEditingController();
+  final _votersController = TextEditingController();
 
   bool _isSaving = false;
   String? _errorMessage;

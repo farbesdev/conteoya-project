@@ -553,7 +553,7 @@ class _UserFormModalState extends ConsumerState<UserFormModal> {
       final firstName = nameParts.first;
       final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : ' ';
       final cleanDni = dni.isNotEmpty ? dni : 'DNI${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
-      final cleanMesa = _selectedMesaCode ?? '030390';
+      final cleanMesa = _selectedMesaCode ?? '';
 
       final repo = ref.read(personerosRepositoryProvider);
       await repo.createPersonero(
