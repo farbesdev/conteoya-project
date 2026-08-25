@@ -40,13 +40,20 @@ class BallotPartyItem {
       }
     }
 
+    String? rawLogo = json['logo_url']?.toString() ?? json['local_logo_url']?.toString();
+    if (rawLogo != null) {
+      rawLogo = rawLogo
+          .replaceAll('://127.0.0.1', '://10.0.2.2')
+          .replaceAll('://localhost', '://10.0.2.2');
+    }
+
     return BallotPartyItem(
       id: json['political_organization_id'] as int? ?? (json['id'] as int? ?? 0),
       name: json['political_organization_name']?.toString() ??
           (json['name']?.toString() ?? 'ORGANIZACIÓN POLÍTICA'),
       shortName: json['political_organization_short_name']?.toString() ??
           json['short_name']?.toString(),
-      logoUrl: json['logo_url']?.toString() ?? json['local_logo_url']?.toString(),
+      logoUrl: rawLogo,
       isProvincialAdmitted: json['is_provincial_admitted'] as bool? ?? true,
       isDistritalAdmitted: json['is_distrital_admitted'] as bool? ?? true,
       candidateName: candName ?? json['candidate_name']?.toString(),

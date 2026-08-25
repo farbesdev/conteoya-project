@@ -28,11 +28,18 @@ class PartyLogoWidget extends StatelessWidget {
             .take(3)
             .join();
 
-    final String? resolvedUrl = (logoUrl != null && logoUrl!.trim().startsWith('http'))
+    String? resolvedUrl = (logoUrl != null && logoUrl!.trim().startsWith('http'))
         ? logoUrl!.trim()
         : (partyId != null
             ? 'https://stovotoinformadodev.blob.core.windows.net/contenedor-2/$partyId.png'
             : null);
+
+    // En emulador Android, 127.0.0.1 y localhost deben mapearse a 10.0.2.2 (host)
+    if (resolvedUrl != null) {
+      resolvedUrl = resolvedUrl
+          .replaceAll('://127.0.0.1', '://10.0.2.2')
+          .replaceAll('://localhost', '://10.0.2.2');
+    }
 
     final hasValidUrl = resolvedUrl != null;
 
