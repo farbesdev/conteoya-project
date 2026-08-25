@@ -24,14 +24,16 @@ class ResultsAggregationService
      */
     public function getSummary(
         ?int $electionId = null,
+        ?int $electoralLevelId = null,
         ?string $departmentCode = null,
         ?string $provinceCode = null,
         ?string $districtCode = null
     ): array {
-        $cacheKey = "results:summary:{$electionId}:{$departmentCode}:{$provinceCode}:{$districtCode}";
+        $cacheKey = "results:summary:{$electionId}:{$electoralLevelId}:{$departmentCode}:{$provinceCode}:{$districtCode}";
 
         return Cache::remember($cacheKey, self::CACHE_TTL, function () use (
             $electionId,
+            $electoralLevelId,
             $departmentCode,
             $provinceCode,
             $districtCode
@@ -52,6 +54,10 @@ class ResultsAggregationService
                 $actsQuery->where('acts.election_id', $electionId);
             }
 
+            if ($electoralLevelId) {
+                $actsQuery->where('acts.electoral_level_id', $electoralLevelId);
+            }
+
             $this->applyUbigeoFilterToStations($actsQuery, $departmentCode, $provinceCode, $districtCode, 'polling_stations.');
 
             $processedStationsCount = (clone $actsQuery)->distinct('acts.polling_station_id')->count('acts.polling_station_id');
@@ -66,6 +72,10 @@ class ResultsAggregationService
 
             if ($electionId) {
                 $totalsQuery->where('acts.election_id', $electionId);
+            }
+
+            if ($electoralLevelId) {
+                $totalsQuery->where('acts.electoral_level_id', $electoralLevelId);
             }
             $this->applyUbigeoFilterToStations($totalsQuery, $departmentCode, $provinceCode, $districtCode, 'polling_stations.');
 
@@ -91,6 +101,10 @@ class ResultsAggregationService
 
             if ($electionId) {
                 $validVotesQuery->where('acts.election_id', $electionId);
+            }
+
+            if ($electoralLevelId) {
+                $validVotesQuery->where('acts.electoral_level_id', $electoralLevelId);
             }
             $this->applyUbigeoFilterToStations($validVotesQuery, $departmentCode, $provinceCode, $districtCode, 'polling_stations.');
 
@@ -152,7 +166,13 @@ class ResultsAggregationService
             $districtCode
         ) {
             $base = request()->getSchemeAndHttpHost();
-            $summary = $this->getSummary($electionId, $departmentCode, $provinceCode, $districtCode);
+            $summary = $this->getSummary(
+                electionId: $electionId,
+                electoralLevelId: $electoralLevelId,
+                departmentCode: $departmentCode,
+                provinceCode: $provinceCode,
+                districtCode: $districtCode
+            );
             $validVotes = $summary['valid_votes'];
             $totalVotes = $summary['total_votes'];
 

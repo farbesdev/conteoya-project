@@ -32,13 +32,15 @@ class ResultsController extends Controller
      */
     public function summary(Request $request): JsonResponse
     {
-        $electionId     = $request->filled('election_id') ? (int) $request->input('election_id') : null;
-        $departmentCode = $request->input('department_code');
-        $provinceCode   = $request->input('province_code');
-        $districtCode   = $request->input('district_code');
+        $electionId       = $request->filled('election_id') ? (int) $request->input('election_id') : null;
+        $electoralLevelId = $request->filled('electoral_level_id') ? (int) $request->input('electoral_level_id') : null;
+        $departmentCode   = $request->input('department_code');
+        $provinceCode     = $request->input('province_code');
+        $districtCode     = $request->input('district_code');
 
         $summary = $this->resultsService->getSummary(
             electionId: $electionId,
+            electoralLevelId: $electoralLevelId,
             departmentCode: $departmentCode,
             provinceCode: $provinceCode,
             districtCode: $districtCode
