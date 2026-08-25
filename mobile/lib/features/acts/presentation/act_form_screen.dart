@@ -74,6 +74,10 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
   String _clientActUuid = const Uuid().v4();
   late int _selectedLevelId;
 
+  String? _departmentName;
+  String? _provinceName;
+  String? _districtName;
+
   // Controllers de Totales Regional
   final TextEditingController _registeredVotersController = TextEditingController(text: '0');
   final TextEditingController _votersWhoVotedController = TextEditingController(text: '0');
@@ -171,6 +175,10 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       }
 
       if (mounted) {
+        _departmentName = ballotTemplate.departmentName;
+        _provinceName = ballotTemplate.provinceName;
+        _districtName = ballotTemplate.districtName;
+
         _registeredVotersController.text = existingTotals != null
             ? existingTotals.registeredVoters.toString()
             : ballotTemplate.registeredVoters.toString();
@@ -868,9 +876,22 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
     return Scaffold(
       backgroundColor: AppColors.backgroundOf(context),
       appBar: AppBar(
-        title: Text(
-          'Acta ${currentLevel.shortTitle} — Mesa ${widget.pollingStationCode}',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textPrimary),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Acta ${currentLevel.shortTitle}',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textPrimary),
+            ),
+            if (_departmentName != null)
+              Text(
+                'Mesa ${widget.pollingStationCode} • $_departmentName, $_provinceName, $_districtName',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.normal, color: textMuted),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+          ],
         ),
         actions: [
           IconButton(
