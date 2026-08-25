@@ -227,13 +227,17 @@ class PersonerosRepository {
 
     final primaryStation = cleanStations.first;
 
-    // Buscar en Drift local por ID primero
-    final byId = await (db.select(db.localPersonerosTable)
+    // Resolver el registro local usando el DNI primero (es la clave de negocio única y global)
+    final lookupDni = (originalDni ?? cleanDni).trim();
+    LocalPersonero? existingLocal;
+    if (lookupDni.isNotEmpty) {
+      existingLocal = await db.getPersoneroByDni(lookupDni);
+    }
+
+    // Si no está por DNI (ej: registro nuevo o DNI cambiado), buscar por ID local como fallback
+    existingLocal ??= await (db.select(db.localPersonerosTable)
       ..where((t) => t.id.equals(id))).getSingleOrNull();
 
-    // Si no está por ID (vino de la API remota con ID del servidor), intentar resolver el ID local por DNI original o DNI nuevo
-    final lookupDni = (originalDni ?? cleanDni).trim();
-    final existingLocal = byId ?? (lookupDni.isNotEmpty ? await db.getPersoneroByDni(lookupDni) : null);
     final localId = existingLocal?.id ?? id;
 
     // 4. Validar que el DNI no pertenezca a OTRO personero
@@ -329,8 +333,11 @@ class PersonerosRepository {
   }
 
   Future<bool> togglePersoneroAccess(int id, {String? dni}) async {
-    final byId = await (db.select(db.localPersonerosTable)..where((t) => t.id.equals(id))).getSingleOrNull();
-    final existing = byId ?? (dni != null ? await db.getPersoneroByDni(dni) : null);
+    LocalPersonero? existing;
+    if (dni != null && dni.trim().isNotEmpty) {
+      existing = await db.getPersoneroByDni(dni.trim());
+    }
+    existing ??= await (db.select(db.localPersonerosTable)..where((t) => t.id.equals(id))).getSingleOrNull();
     if (existing == null) return false;
 
     final newState = !existing.isActive;
