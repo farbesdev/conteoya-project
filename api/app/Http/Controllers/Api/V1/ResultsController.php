@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Election;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @tags Resultados y Consolidación Electoral
@@ -116,5 +117,49 @@ class ResultsController extends Controller
             'message' => 'Resultados de mesa electoral obtenidos exitosamente.',
             'data'    => $results,
         ]);
+    }
+
+    /**
+     * Reiniciar Base de Datos Electorales (Solo ADMIN)
+     *
+     * Elimina todos los registros de actas, totales, resultados, evidencias y logs de sincronización para
+     * reiniciar los conteos a cero durante fases de prueba.
+     *
+     * @unauthenticated false
+     * @tags Resultados y Consolidación Electoral
+     */
+    public function resetDatabase(Request $request): JsonResponse
+    {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+        if (!$user || $user->role !== 'ADMIN') {
+            return response()->json([
+                'message' => 'No autorizado. Solo administradores pueden reiniciar la base de datos.'
+            ], 403);
+        }
+
+        try {
+            DB::transaction(function () {
+                // Eliminar en orden debido a las relaciones de clave foránea
+                DB::table('ocr_ai_extractions')->delete();
+                DB::table('act_evidence')->delete();
+                DB::table('act_results')->delete();
+                DB::table('act_totals')->delete();
+                DB::table('acts')->delete();
+                DB::table('sync_operations')->delete();
+                DB::table('audit_logs')->delete();
+            });
+
+            // Invalidar la caché de resultados
+            $this->resultsService->invalidateCache();
+
+            return response()->json([
+                'message' => 'Base de datos de votación reiniciada exitosamente a cero.'
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => 'Error al reiniciar la base de datos: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

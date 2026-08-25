@@ -61,6 +61,9 @@ Route::prefix('v1')->middleware('throttle:api')->group(function () {
         // Invalidar caché de cédulas — solo ADMIN (verificado en el controller via authorize())
         Route::delete('/ballot-template/cache', [CatalogController::class, 'clearBallotTemplateCache']);
 
+        // Reiniciar Base de Datos (Solo ADMIN)
+        Route::post('/admin/reset-database', [\App\Http\Controllers\Api\V1\ResultsController::class, 'resetDatabase']);
+
         // Fase 1 & 2: Gestión y Auditoría de Actas Electorales
         Route::get('/acts', [\App\Http\Controllers\Api\V1\ActController::class, 'index']);
 
