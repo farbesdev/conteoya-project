@@ -710,6 +710,19 @@ class AppDatabase extends _$AppDatabase {
       ]);
     });
   }
+
+  Future<void> clearTransactionalData() {
+    return transaction(() async {
+      await delete(localActEvidenceTable).go();
+      await delete(localActResultsTable).go();
+      await delete(localActTotalsTable).go();
+      await delete(localActsTable).go();
+      await delete(localSyncOperationsTable).go();
+      try {
+        await customStatement('DELETE FROM local_ballot_templates_table');
+      } catch (_) {}
+    });
+  }
 }
 
 LazyDatabase _openConnection() {

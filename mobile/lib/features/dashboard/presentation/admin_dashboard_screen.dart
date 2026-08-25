@@ -204,6 +204,73 @@ class AdminDashboardScreen extends ConsumerWidget {
                 }
               },
             ),
+            const SizedBox(height: 10),
+
+            _buildActionTile(
+              context: context,
+              icon: Icons.delete_forever_rounded,
+              title: 'Reiniciar Base de Datos (Reset)',
+              subtitle: 'Restablecer conteos a cero en VPS y local',
+              color: AppColors.danger,
+              onTap: () {
+                showDialog<void>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('¿Reiniciar Base de Datos?'),
+                    content: const Text(
+                      'Esta acción eliminará de forma permanente todas las actas, totales, resultados y evidencias tanto en este dispositivo (local) como en el servidor VPS (producción). Los conteos se restablecerán a cero.\n\n¿Desea continuar?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Cancelar'),
+                      ),
+                      TextButton(
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.dangerOf(context),
+                        ),
+                        onPressed: () async {
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Reiniciando base de datos...'),
+                              backgroundColor: AppColors.info,
+                              duration: Duration(seconds: 1),
+                            ),
+                          );
+                          try {
+                            // 1. Resetear base de datos remota
+                            await ref.read(apiClientProvider).post<void>('/admin/reset-database');
+
+                            // 2. Resetear base de datos local
+                            await ref.read(appDatabaseProvider).clearTransactionalData();
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('✓ Base de datos reiniciada exitosamente.'),
+                                  backgroundColor: AppColors.success,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('⚠️ Error al reiniciar base de datos: $e'),
+                                  backgroundColor: AppColors.danger,
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        child: const Text('Reiniciar', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),
