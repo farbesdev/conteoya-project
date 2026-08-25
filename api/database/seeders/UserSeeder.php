@@ -78,36 +78,26 @@ class UserSeeder extends Seeder
             ]
         );
 
-        // ─── MESA YUYAPICHIS (PUERTO INCA) ──────────────────────────────────
-        // 1. Asegurar la existencia de Departamento, Provincia y Distrito para Yuyapichis
-        \Illuminate\Support\Facades\DB::table('departments')->updateOrInsert(
-            ['code' => '10'],
-            ['name' => 'HUANUCO', 'updated_at' => now(), 'created_at' => now()]
-        );
-        \Illuminate\Support\Facades\DB::table('provinces')->updateOrInsert(
-            ['code' => '1009'],
-            ['department_code' => '10', 'name' => 'PUERTO INCA', 'updated_at' => now(), 'created_at' => now()]
-        );
-        \Illuminate\Support\Facades\DB::table('districts')->updateOrInsert(
-            ['code' => '100905'],
-            ['province_code' => '1009', 'department_code' => '10', 'name' => 'YUYAPICHIS', 'updated_at' => now(), 'created_at' => now()]
-        );
-
-        // 2. Obtener o crear la ElectoralLocation vinculada al distrito de Yuyapichis
+        // ─── MESA YUYAPICHIS (PUERTO INCA, HUÁNUCO) ────────────────────────
+        // Obtener o crear la ElectoralLocation vinculada al distrito real de Yuyapichis (090805)
         $electoralLocation = \App\Models\ElectoralLocation::firstOrCreate(
-            ['name' => 'I.E. YUYAPICHIS', 'district_code' => '100905'],
+            ['name' => 'I.E. YUYAPICHIS', 'district_code' => '090805'],
             [
                 'address' => 'Av. Principal s/n, Yuyapichis',
             ]
         );
 
-        // 3. Crear o recuperar la Mesa 040104 vinculada a la ElectoralLocation válida
+        // Obtener o crear la Mesa 021038 (Yuyapichis, Huánuco)
         $mesaYuyapichis = \App\Models\PollingStation::firstOrCreate(
-            ['code' => '040104'],
+            ['code' => '021038'],
             [
                 'electoral_location_id' => $electoralLocation->id,
                 'registered_voters'     => 305,
                 'status'                => 'ACTIVE',
+                'department_code'       => '09',
+                'department_name'       => 'HUANUCO',
+                'province_name'         => 'PUERTO INCA',
+                'district_name'         => 'YUYAPICHIS',
             ]
         );
 

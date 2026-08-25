@@ -167,52 +167,66 @@ class CatalogController extends Controller
             $deptName = trim($station->department_name ?? '');
             $provName = trim($station->province_name ?? '');
             $distName = trim($station->district_name ?? '');
-
-            // ─────────────────────────────────────────────────────────────────────
-            // RESOLUCIÓN DE department_code (3 estrategias en orden de confiabilidad)
-            // ─────────────────────────────────────────────────────────────────────
-            //
-            // Estrategia 1 (PRIMARIA — más confiable): Usar el campo department_code
-            // almacenado directamente en polling_stations, derivado del ubigeo RENIEC
-            // del distrito. No depende de comparación de nombres ni tildes.
             $deptCodes = [];
-            if (!empty($station->department_code)) {
-                $deptCodes = [$station->department_code];
-            }
+            $provCode  = null;
+            $distCode  = null;
 
-            // Helper: genera el raw SQL para comparación de texto tolerante a tildes.
-            // En PostgreSQL usa unaccent() (requiere extensión). En SQLite usa LOWER(TRIM()).
+            // ─────────────────────────────────────────────────────────────────────
+            // RESOLUCIÓN DETERMINISTA DE UBIGEO (v_polling_stations_ubigeo + Fallback)
+            // ─────────────────────────────────────────────────────────────────────
             $isPgsql = DB::getDriverName() === 'pgsql';
-            $nameCmp = $isPgsql
-                ? 'unaccent(LOWER(TRIM(%s))) = unaccent(LOWER(TRIM(?)))'
-                : 'LOWER(TRIM(%s)) = LOWER(TRIM(?))';
 
-            // Estrategia 2 (SECUNDARIA): Resolver por ubigeo del distrito via JOIN
-            // (cubre mesas donde department_code aún no fue poblado por la migración)
-            $district = \App\Models\District::whereRaw(
-                sprintf($nameCmp, 'name'), [$distName]
-            )->first();
-            $distCode = $district?->code;
-            $provCode = $district?->province_code ?? \App\Models\Province::whereRaw(
-                sprintf($nameCmp, 'name'), [$provName]
-            )->value('code');
+            if ($isPgsql) {
+                $stationUbigeo = DB::table('v_polling_stations_ubigeo')
+                    ->where('polling_station_code', $stationCode)
+                    ->first();
 
-            if (empty($deptCodes) && $district?->department_code) {
-                $deptCodes = [$district->department_code];
+                if ($stationUbigeo) {
+                    if (!empty($stationUbigeo->department_code)) {
+                        $deptCodes = [$stationUbigeo->department_code];
+                    }
+                    $provCode = $stationUbigeo->province_code;
+                    $distCode = $stationUbigeo->district_code;
+                }
             }
 
-            // Estrategia 3 (FALLBACK): Comparación de nombre de departamento tolerante
-            // a tildes via unaccent (PostgreSQL) o LOWER(TRIM) (SQLite/test).
-            if (empty($deptCodes) && !empty($deptName)) {
-                $deptCodes = \App\Models\Department::whereRaw(
-                    sprintf($nameCmp, 'name'), [$deptName]
-                )->pluck('code')->toArray();
+            // Fallback determinista anclado jerárquicamente por departamento y provincia
+            if (empty($deptCodes)) {
+                if (!empty($station->department_code)) {
+                    $deptCodes = [$station->department_code];
+                } else {
+                    $dep = \App\Models\Department::where('name', $deptName)->first();
+                    if ($dep) {
+                        $deptCodes = [$dep->code];
+                    }
+                }
+            }
+
+            $mainDeptCode = $deptCodes[0] ?? null;
+
+            if (empty($provCode) && $mainDeptCode) {
+                $prov = \App\Models\Province::where('department_code', $mainDeptCode)
+                    ->where(function ($q) use ($provName) {
+                        $q->where('name', $provName)
+                          ->orWhereRaw('UPPER(TRIM(name)) = UPPER(TRIM(?))', [$provName]);
+                    })
+                    ->first();
+                $provCode = $prov?->code;
+            }
+
+            if (empty($distCode) && $provCode) {
+                $dist = \App\Models\District::where('province_code', $provCode)
+                    ->where(function ($q) use ($distName) {
+                        $q->where('name', $distName)
+                          ->orWhereRaw('UPPER(TRIM(name)) = UPPER(TRIM(?))', [$distName]);
+                    })
+                    ->first();
+                $distCode = $dist?->code;
             }
 
             // ─────────────────────────────────────────────────────────────────────
             // GUARDIA: Si el departamento no se pudo resolver por ninguna estrategia,
             // retornar null → 404. NUNCA filtrar sin condición de departamento.
-            // (Sin esta guardia, el whereIn vacío devolvería listas de otro dept.)
             // ─────────────────────────────────────────────────────────────────────
             if (empty($deptCodes)) {
                 \Illuminate\Support\Facades\Log::error(
@@ -277,7 +291,9 @@ class CatalogController extends Controller
                         $orgLogo = str_starts_with($org->logo_url, '/storage/') ? ($base . $org->logo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $org->logo_url);
                     }
 
-                    $provCandidates = $list->candidacies->map(function ($c) use ($base) {
+                    $provCandidates = $list->candidacies->sortBy(function ($c) {
+                        return in_array($c->position, ['ALCALDE PROVINCIAL', 'ALCALDE DISTRITAL', 'GOBERNADOR REGIONAL']) ? 0 : 1;
+                    })->values()->map(function ($c) use ($base) {
                         $photo = null;
                         if ($c->candidate?->local_photo_url) {
                             $photo = $base . '/storage/candidates/' . ltrim($c->candidate->local_photo_url, '/');
@@ -327,7 +343,9 @@ class CatalogController extends Controller
                         $orgLogo = str_starts_with($org->logo_url, '/storage/') ? ($base . $org->logo_url) : str_replace('http://localhost/storage/', $base . '/storage/', $org->logo_url);
                     }
 
-                    $distCandidates = $list->candidacies->map(function ($c) use ($base) {
+                    $distCandidates = $list->candidacies->sortBy(function ($c) {
+                        return in_array($c->position, ['ALCALDE DISTRITAL', 'ALCALDE PROVINCIAL', 'GOBERNADOR REGIONAL']) ? 0 : 1;
+                    })->values()->map(function ($c) use ($base) {
                         $photo = null;
                         if ($c->candidate?->local_photo_url) {
                             $photo = $base . '/storage/candidates/' . ltrim($c->candidate->local_photo_url, '/');

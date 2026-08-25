@@ -2118,14 +2118,24 @@
                                                         "status": {
                                                             "type": "string"
                                                         },
-                                                        "department_code": {},
+                                                        "department_code": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        },
                                                         "department_name": {
                                                             "type": [
                                                                 "string",
                                                                 "null"
                                                             ]
                                                         },
-                                                        "province_code": {},
+                                                        "province_code": {
+                                                            "type": [
+                                                                "string",
+                                                                "null"
+                                                            ]
+                                                        },
                                                         "province_name": {
                                                             "type": [
                                                                 "string",
@@ -5746,6 +5756,76 @@
                         "$ref": "#/components/responses/AuthorizationException"
                     }
                 }
+            }
+        },
+        "/v1/admin/reset-database": {
+            "post": {
+                "operationId": "results.resetDatabase",
+                "description": "Elimina todos los registros de actas, totales, resultados, evidencias y logs de sincronizaci\u00f3n para\nreiniciar los conteos a cero durante fases de prueba.",
+                "summary": "Reiniciar Base de Datos Electorales (Solo ADMIN)",
+                "tags": [
+                    "Resultados y Consolidaci\u00f3n Electoral",
+                    "Results"
+                ],
+                "responses": {
+                    "500": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Base de datos de votaci\u00f3n reiniciada exitosamente a cero."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "const": "No autorizado. Solo administradores pueden reiniciar la base de datos."
+                                        }
+                                    },
+                                    "required": [
+                                        "message"
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
             }
         },
         "/v1/results/summary": {
