@@ -142,7 +142,36 @@ class SyncService
             if (!$act && !empty($payload['act_id'])) {
                 $act = \App\Models\Act::find($payload['act_id']);
             }
+            if (!$act && (!empty($payload['polling_station_code']) || !empty($payload['polling_station_id']))) {
+                $stationQuery = PollingStation::query();
+                if (!empty($payload['polling_station_id'])) {
+                    $stationQuery->where('id', $payload['polling_station_id']);
+                } else {
+                    $stationQuery->where('code', $payload['polling_station_code']);
+                }
+                $st = $stationQuery->first();
+                if ($st) {
+                    $actQuery = \App\Models\Act::where('polling_station_id', $st->id);
+                    if (!empty($payload['election_id'])) {
+                        $actQuery->where('election_id', $payload['election_id']);
+                    }
+                    if (!empty($payload['electoral_level_id'])) {
+                        $actQuery->where('electoral_level_id', $payload['electoral_level_id']);
+                    }
+                    $act = $actQuery->first();
+                }
+            }
+
             if ($act) {
+                if ($personero) {
+                    $hasStation = $personero->pollingStations()->where('polling_stations.id', $act->polling_station_id)->exists();
+                    if (!$hasStation && $act->captured_by_personero_id !== $personero->id) {
+                        throw new \Illuminate\Auth\Access\AuthorizationException(
+                            "El personero no tiene autorización para eliminar el acta de esta mesa."
+                        );
+                    }
+                }
+
                 $act->evidence()->delete();
                 $act->results()->delete();
                 $act->totals()->delete();

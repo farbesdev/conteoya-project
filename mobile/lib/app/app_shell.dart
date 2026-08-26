@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../core/widgets/connectivity_status_badge.dart';
 import '../core/providers.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/theme_notifier.dart';
@@ -213,6 +214,14 @@ class _AppShellState extends ConsumerState<AppShell>
           ],
         ),
         actions: [
+          // ─── Indicador de Conectividad (Online / Offline) ───────────────
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.only(right: 4),
+              child: ConnectivityStatusBadge(enableSnackbars: true),
+            ),
+          ),
+
           // ─── Botón Toggle Tema ──────────────────────────────────────────
           Tooltip(
             message: isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro',

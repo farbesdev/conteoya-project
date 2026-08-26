@@ -11,6 +11,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/hash_utils.dart';
+import '../../../core/widgets/connectivity_status_badge.dart';
 import '../domain/act_validator.dart';
 import '../domain/electoral_level.dart';
 import 'party_logo_widget.dart';
@@ -494,6 +495,139 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
     );
   }
 
+  /// Limpia todos los datos ingresados del acta, elimina el registro en SQLite
+  /// y encola/ejecuta la eliminación en el servidor.
+  Future<void> _clearAct() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        final cs = Theme.of(ctx).colorScheme;
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: const [
+              Icon(Icons.delete_sweep_rounded, color: AppColors.danger, size: 24),
+              SizedBox(width: 8),
+              Text('¿Limpiar Acta?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            ],
+          ),
+          content: Text(
+            'Esta acción restablecerá a cero todos los votos y eliminará la foto de evidencia. '
+            'También se eliminará el registro de esta acta en el celular y en el servidor.',
+            style: TextStyle(color: cs.onSurface.withAlpha(200), fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text('Cancelar', style: TextStyle(color: cs.onSurface.withAlpha(140))),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.danger,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                elevation: 0,
+              ),
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Limpiar', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isSaving = true);
+    try {
+      final db = ref.read(appDatabaseProvider);
+      final levelIds = _selectedLevelId == 2 ? [2, 3] : [1];
+
+      // 1. Eliminar datos en SQLite local
+      await db.deleteActsByStationAndLevels(widget.pollingStationCode, levelIds);
+
+      // 2. Encolar operación DELETE para cada nivel en sync operations
+      for (final lvlId in levelIds) {
+        final deleteOpId = const Uuid().v4();
+        final payload = {
+          'client_act_uuid': _clientActUuid,
+          'election_id': widget.electionId,
+          'electoral_level_id': lvlId,
+          'polling_station_code': widget.pollingStationCode,
+        };
+
+        await db.into(db.localSyncOperationsTable).insert(
+          LocalSyncOperationsTableCompanion(
+            clientOperationId: drift.Value(deleteOpId),
+            entityType: const drift.Value('acts'),
+            entityId: drift.Value('${widget.pollingStationCode}_$lvlId'),
+            operation: const drift.Value('DELETE'),
+            payloadJson: drift.Value(jsonEncode(payload)),
+            checksum: drift.Value(jsonEncode(payload).hashCode.toString()),
+            status: const drift.Value('PENDING'),
+          ),
+        );
+      }
+
+      // 3. Resetear controladores y evidencia en memoria
+      _clientActUuid = const Uuid().v4();
+      _votersWhoVotedController.text = '0';
+      _totalVotesController.text = '0';
+      _blankVotesController.text = '0';
+      _nullVotesController.text = '0';
+      _challengedVotesController.text = '0';
+      _provTotalVotesController.text = '0';
+      _provBlankVotesController.text = '0';
+      _provNullVotesController.text = '0';
+      _provChallengedVotesController.text = '0';
+      _distTotalVotesController.text = '0';
+      _distBlankVotesController.text = '0';
+      _distNullVotesController.text = '0';
+      _distChallengedVotesController.text = '0';
+
+      for (final entry in _partyEntries) {
+        entry.votesController.text = '0';
+        entry.votesProvincialController.text = '0';
+        entry.votesDistritalController.text = '0';
+        entry.source = 'MANUAL';
+        entry.confidence = null;
+      }
+
+      _capturedPhoto = null;
+      _photoSha256 = null;
+
+      _recalculateFromVotes();
+
+      // Disparar sincronización inmediata con el servidor si está online
+      ref.read(syncEngineProvider).syncPendingOperations();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Acta limpiada y restablecida a cero.'),
+            backgroundColor: AppColors.info,
+            duration: Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al limpiar el acta: $e'),
+            backgroundColor: AppColors.danger,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
   Future<void> _saveAct({required bool isConfirmation}) async {
     setState(() => _isSaving = true);
     final db = ref.read(appDatabaseProvider);
@@ -894,6 +1028,12 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
           ],
         ),
         actions: [
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.only(right: 6),
+              child: ConnectivityStatusBadge(showLabel: false, enableSnackbars: true),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.auto_awesome, color: AppColors.info),
             tooltip: 'Asistente OCR / IA',
@@ -1275,52 +1415,77 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
 
                   const SizedBox(height: 24),
 
-                  // ─── 4° Botones de Acción (Borrador / Confirmar) ───────────────────
+                  // ─── 4° Botones de Acción (Borrador / Limpiar / Confirmar) ─────────
                   Container(
-                    padding: const EdgeInsets.all(4),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Row(
                       children: [
+                        // Botón 1: Borrador
                         Expanded(
-                          flex: 2,
                           child: OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
                               foregroundColor: textPrimary,
                               side: BorderSide(color: borderColor, width: 1.5),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 2),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               backgroundColor: surfaceColor,
                             ),
-                            icon: const Icon(Icons.bookmark_border_rounded, size: 18),
+                            icon: const Icon(Icons.bookmark_border_rounded, size: 16),
                             label: const Text(
-                              'Guardar\nBorrador',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, height: 1.1),
+                              'Borrador',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             onPressed: _isSaving ? null : () => _saveAct(isConfirmation: false),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 8),
+
+                        // Botón 2: Limpiar
                         Expanded(
-                          flex: 3,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.danger,
+                              side: BorderSide(color: AppColors.danger.withAlpha(160), width: 1.5),
+                              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 2),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              backgroundColor: AppColors.danger.withAlpha(15),
+                            ),
+                            icon: const Icon(Icons.delete_sweep_outlined, size: 16, color: AppColors.danger),
+                            label: const Text(
+                              'Limpiar',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.danger),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onPressed: _isSaving ? null : _clearAct,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+
+                        // Botón 3: Confirmar
+                        Expanded(
                           child: ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.accent,
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 2),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              elevation: 4,
+                              elevation: 3,
                             ),
                             icon: _isSaving
                                 ? const SizedBox(
-                                    width: 18,
-                                    height: 18,
+                                    width: 14,
+                                    height: 14,
                                     child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                                   )
-                                : const Icon(Icons.check_circle_rounded, size: 20),
+                                : const Icon(Icons.check_circle_rounded, size: 16),
                             label: Text(
-                              _isSaving ? 'Guardando...' : 'Confirmar y\nSincronizar',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, height: 1.1),
+                              _isSaving ? '...' : 'Confirmar',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                             onPressed: _isSaving ? null : () => _saveAct(isConfirmation: true),
                           ),

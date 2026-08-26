@@ -219,7 +219,7 @@ class ActController extends Controller
     }
 
     /**
-     * Eliminar Acta Electoral (Admin)
+     * Eliminar o Limpiar Acta Electoral (Admin, Director o Personero Asignado)
      */
     public function destroy(Request $request, Act $act): JsonResponse
     {

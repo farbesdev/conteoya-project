@@ -698,6 +698,19 @@ Transiciona el estado del acta a `CONFIRMED` e inserta la marca temporal de conf
 
 ---
 
+### `DELETE /api/v1/acts/{id}`
+Elimina o limpia de forma completa un acta electoral y sus registros relacionados (`act_totals`, `act_results`, `act_evidences`).
+> 🔒 **Permisos:** Accesible por `ADMIN`, `DIRECTOR` y por `PERSONERO` únicamente para las actas correspondientes a sus mesas asignadas o creadas por él (acción "Limpiar").
+
+**Respuesta `200 OK`**
+```json
+{
+  "message": "Acta electoral eliminada exitosamente del sistema."
+}
+```
+
+---
+
 ### `POST /api/v1/acts/{id}/evidence/upload-url`
 Genera una Presigned PUT URL privada para Cloudflare R2 con TTL de 15 minutos.
 

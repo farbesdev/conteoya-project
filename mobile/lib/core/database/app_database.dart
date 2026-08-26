@@ -179,6 +179,29 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
+  /// Elimina un acta por su UUID junto con sus totales, resultados y evidencias asociadas.
+  Future<void> deleteActCompletely(String clientActUuid) async {
+    await transaction(() async {
+      await (delete(localActEvidenceTable)..where((t) => t.clientActUuid.equals(clientActUuid))).go();
+      await (delete(localActTotalsTable)..where((t) => t.clientActUuid.equals(clientActUuid))).go();
+      await (delete(localActResultsTable)..where((t) => t.clientActUuid.equals(clientActUuid))).go();
+      await (delete(localActsTable)..where((t) => t.clientActUuid.equals(clientActUuid))).go();
+    });
+  }
+
+  /// Elimina actas de una mesa por nivel(es) electoral(es) especificado(s).
+  Future<void> deleteActsByStationAndLevels(String pollingStationCode, List<int> electoralLevelIds) async {
+    final acts = await (select(localActsTable)
+          ..where((t) =>
+              t.pollingStationCode.equals(pollingStationCode) &
+              t.electoralLevelId.isIn(electoralLevelIds)))
+        .get();
+
+    for (final act in acts) {
+      await deleteActCompletely(act.clientActUuid);
+    }
+  }
+
   Future<void> updateActStatus(String clientActUuid, String status, {int? serverActId}) {
     return (update(localActsTable)..where((t) => t.clientActUuid.equals(clientActUuid))).write(
       LocalActsTableCompanion(

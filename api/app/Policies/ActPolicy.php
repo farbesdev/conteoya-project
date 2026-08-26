@@ -111,10 +111,22 @@ class ActPolicy
     }
 
     /**
-     * Determina si el usuario puede eliminar el acta.
+     * Determina si el usuario puede eliminar o limpiar el acta.
      */
     public function delete(User $user, Act $act): bool
     {
-        return $user->role === Role::ADMIN;
+        if ($user->role === Role::ADMIN || $user->role === Role::DIRECTOR) {
+            return true;
+        }
+
+        if ($user->role === Role::PERSONERO) {
+            $personeroId = $user->personero?->id;
+            return $personeroId && (
+                $act->captured_by_personero_id === $personeroId
+                || $user->personero->pollingStations()->where('polling_stations.id', $act->polling_station_id)->exists()
+            );
+        }
+
+        return false;
     }
 }

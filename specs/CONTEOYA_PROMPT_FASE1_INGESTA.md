@@ -422,4 +422,28 @@ La Fase 1 se considera terminada cuando:
 
 > Un personero puede registrar completamente un acta sin internet, incluyendo fotografía, cerrar la aplicación, volver a abrirla, revisar la información, recuperar conectividad y sincronizarla con Laravel sin pérdida, duplicación ni corrupción.
 
+---
+
+# 13. Acción Limpiar, Detección de Conectividad y Botonera
+
+### 13.1 Acción "Limpiar" (Reset & Delete)
+- **Local (SQLite):** Restablece todos los campos numéricos de votos y totales a 0, elimina la evidencia fotográfica y borra los registros locales en `local_acts_table`, `local_act_totals_table`, `local_act_results_table` y `local_act_evidence_table`.
+- **Sincronización:**
+  - **Online:** Envía la solicitud de eliminación al backend y limpia de inmediato en PostgreSQL.
+  - **Offline:** Encola una `SyncOperation` con `operation: 'DELETE'` en `local_sync_operations_table`.
+- **Resolución de Conflictos Offline:** Si el personero limpia el acta offline y posteriormente ingresa nuevos datos y confirma, **el último registro confirmado por el personero prevalece** como la verdad física de la mesa de votación, actualizando el servidor al restablecerse la conexión.
+
+### 13.2 Detección de Conectividad en Tiempo Real
+- Widget interactivo `ConnectivityStatusBadge` en la cabecera (`AppBar`):
+  - 🟢 **Verde / Wi-Fi:** *"Servidor Conectado"* (Online).
+  - 🔴 **Rojo / Wi-Fi Off:** *"Servidor Desconectado"* (Offline).
+- Notificaciones no intrusivas (*SnackBars*) al ocurrir transiciones de estado de conectividad.
+
+### 13.3 Botonera Estandarizada
+- Botonera de 3 acciones concisas adaptadas a pantallas móviles:
+  - **`[ Borrador ]`** (Guardar local sin validaciones).
+  - **`[ Limpiar ]`** (Confirmación destructiva y reseteo a cero).
+  - **`[ Confirmar ]`** (Validación de totales y sincronización).
+
 Después de esto se habilita la Fase 2.
+
