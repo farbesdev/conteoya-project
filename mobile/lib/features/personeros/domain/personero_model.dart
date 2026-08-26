@@ -1,5 +1,6 @@
 class PersoneroModel {
   final int id;
+  final int? userId;
   final String dni;
   final String firstName;
   final String lastName;
@@ -14,6 +15,7 @@ class PersoneroModel {
 
   PersoneroModel({
     required this.id,
+    this.userId,
     required this.dni,
     required this.firstName,
     required this.lastName,
@@ -38,6 +40,7 @@ class PersoneroModel {
 
   PersoneroModel copyWith({
     int? id,
+    int? userId,
     String? dni,
     String? firstName,
     String? lastName,
@@ -53,6 +56,7 @@ class PersoneroModel {
   }) {
     return PersoneroModel(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       dni: dni ?? this.dni,
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,

@@ -762,9 +762,12 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                       setModalState(() => isSaving = true);
                       final newPass = passwordController.text.trim();
                       try {
+                        final targetUserId = personero.userId;
+                        if (targetUserId == null || targetUserId <= 0) {
+                          throw Exception('ID de usuario no disponible para este personero.');
+                        }
                         final apiClient = ref.read(apiClientProvider);
-                        // Intentar buscar ID del usuario o reset por API
-                        await apiClient.post('/users/${personero.id}/reset-password', data: {'password': newPass});
+                        await apiClient.post('/users/$targetUserId/reset-password', data: {'password': newPass});
                       } catch (_) {
                         // Fallback local resiliente
                       }

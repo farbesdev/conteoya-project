@@ -70,10 +70,12 @@ class PersonerosRepository {
             final politicalOrg = item['political_organization_name']?.toString();
             final status = item['status']?.toString();
             final personeroType = item['personero_type']?.toString();
+            final userId = item['user_id'] as int?;
 
             items.add(
               PersoneroModel(
                 id: id,
+                userId: userId,
                 dni: dni,
                 firstName: firstName,
                 lastName: lastName,
