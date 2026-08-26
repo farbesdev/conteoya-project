@@ -14,6 +14,7 @@ const personeros = ref<PersoneroItem[]>([])
 const totalItems = ref(0)
 const page = ref(1)
 const itemsPerPage = ref(15)
+const is_active_filter = ref<boolean | undefined>(undefined)
 
 // Diálogo Asignación Mesas
 const isAssignOpen = ref(false)
@@ -47,6 +48,7 @@ const loadPersoneros = async () => {
       search: search.value || undefined,
       page: page.value,
       per_page: itemsPerPage.value,
+      is_active: is_active_filter.value,
     })
     personeros.value = res.data
     totalItems.value = res.meta.total
@@ -59,6 +61,14 @@ const loadPersoneros = async () => {
 
 watch([page, itemsPerPage], () => {
   loadPersoneros()
+})
+
+watch(is_active_filter, () => {
+  if (page.value === 1) {
+    loadPersoneros()
+  } else {
+    page.value = 1
+  }
 })
 
 const onSearchInput = useDebounceFn(() => {
@@ -138,6 +148,20 @@ onMounted(() => {
               style="min-width: 220px;"
               @update:model-value="onSearchInput"
               @click:clear="loadPersoneros"
+            />
+            <VSelect
+              v-model="is_active_filter"
+              density="compact"
+              variant="outlined"
+              :items="[
+                { title: 'Todos los estados', value: undefined },
+                { title: 'Activos', value: true },
+                { title: 'Inactivos', value: false }
+              ]"
+              item-title="title"
+              item-value="value"
+              hide-details
+              style="min-width: 160px; max-width: 180px;"
             />
             <VBtn
               icon="ri-refresh-line"

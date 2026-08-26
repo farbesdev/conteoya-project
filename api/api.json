@@ -7,7 +7,7 @@
     },
     "servers": [
         {
-            "url": "http://127.0.0.1:8000/api"
+            "url": "http://localhost/api"
         }
     ],
     "paths": {
@@ -4502,6 +4502,16 @@
                 "tags": [
                     "Personeros",
                     "Personero"
+                ],
+                "parameters": [
+                    {
+                        "name": "is_active",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    }
                 ],
                 "responses": {
                     "200": {

@@ -23,6 +23,7 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
   bool _isLoading = false;
   bool _isLoadingMore = false;
   bool _hasMore = true;
+  bool? _selectedFilter; // null = Todos, true = Activos, false = Inactivos
 
   // Lista en memoria para paginación y búsqueda remota
   List<PersoneroModel>? _remotePersoneros;
@@ -51,6 +52,7 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
       search: _searchQuery,
       page: 1,
       perPage: 15,
+      isActive: _selectedFilter,
     );
 
     if (mounted) {
@@ -70,6 +72,7 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
       search: _searchQuery,
       page: 1,
       perPage: 15,
+      isActive: _selectedFilter,
     );
 
     if (mounted) {
@@ -98,6 +101,7 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
       search: _searchQuery,
       page: nextPage,
       perPage: 15,
+      isActive: _selectedFilter,
     );
 
     if (mounted) {
@@ -129,6 +133,7 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
       search: query,
       page: 1,
       perPage: 15,
+      isActive: _selectedFilter,
     );
 
     if (mounted) {
@@ -196,6 +201,31 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                       borderRadius: BorderRadius.circular(14),
                       borderSide: const BorderSide(color: AppColors.accent, width: 1.5),
                     ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFilterChip(
+                        label: 'Todos',
+                        selected: _selectedFilter == null,
+                        onSelected: (_) => _onFilterChanged(null),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildFilterChip(
+                        label: 'Activos',
+                        selected: _selectedFilter == true,
+                        onSelected: (_) => _onFilterChanged(true),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildFilterChip(
+                        label: 'Inactivos',
+                        selected: _selectedFilter == false,
+                        onSelected: (_) => _onFilterChanged(false),
+                      ),
+                    ],
                   ),
                 ),
                 if (_totalCount > 0) ...[
@@ -285,6 +315,9 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
       data: (personeros) {
         final queryTerms = _searchQuery.toLowerCase().trim().split(RegExp(r'\s+')).where((t) => t.isNotEmpty).toList();
         final filtered = personeros.where((p) {
+          if (_selectedFilter != null && p.isActive != _selectedFilter) {
+            return false;
+          }
           if (queryTerms.isEmpty) return true;
           final searchTarget = '${p.dni} ${p.fullName} ${p.firstName} ${p.lastName} ${p.pollingStationCode} ${p.politicalOrganizationName ?? ''} ${p.email ?? ''}'.toLowerCase();
           return queryTerms.every((term) => searchTarget.contains(term));
@@ -524,7 +557,8 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
                     children: [
                       Switch.adaptive(
                         value: personero.isActive,
-                        activeColor: successColor,
+                        activeTrackColor: successColor.withValues(alpha: 0.5),
+                        activeThumbColor: successColor,
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         onChanged: (val) async {
                           if (index != null && _remotePersoneros != null && index < _remotePersoneros!.length) {
@@ -749,6 +783,49 @@ class _PersonerosScreenState extends ConsumerState<PersonerosScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _onFilterChanged(bool? filter) {
+    if (_selectedFilter == filter) return;
+    setState(() {
+      _selectedFilter = filter;
+      _currentPage = 1;
+      _remotePersoneros = null;
+      _isLoading = true;
+    });
+    _loadInitialData();
+  }
+
+  Widget _buildFilterChip({
+    required String label,
+    required bool selected,
+    required ValueChanged<bool> onSelected,
+  }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return ChoiceChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          color: selected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      selected: selected,
+      onSelected: onSelected,
+      selectedColor: AppColors.accent,
+      backgroundColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: BorderSide(
+          color: selected ? AppColors.accent : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+        ),
+      ),
+      showCheckmark: false,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: VisualDensity.compact,
     );
   }
 }

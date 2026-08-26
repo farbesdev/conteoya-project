@@ -40,7 +40,7 @@ export interface PaginatedResponse<T> {
 }
 
 export const personerosService = {
-  async list(params?: { search?: string; page?: number; per_page?: number }): Promise<PaginatedResponse<PersoneroItem>> {
+  async list(params?: { search?: string; page?: number; per_page?: number; is_active?: boolean | number }): Promise<PaginatedResponse<PersoneroItem>> {
     return apiClient<PaginatedResponse<PersoneroItem>>('/personeros', {
       params,
     })

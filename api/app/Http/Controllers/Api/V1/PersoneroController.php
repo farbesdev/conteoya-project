@@ -21,6 +21,7 @@ class PersoneroController extends Controller
      * @queryParam search string Término de búsqueda (DNI, nombres, apellidos, mesa o partido). Example: 12345678
      * @queryParam per_page int Cantidad de elementos por página (default 15, max 50). Example: 15
      * @queryParam page int Número de página. Example: 1
+     * @queryParam is_active boolean Filtrar por estado activo/inactivo (opcional). Example: true
      */
     public function index(Request $request): JsonResponse
     {
@@ -30,6 +31,13 @@ class PersoneroController extends Controller
         }
 
         $query = Personero::with(['user', 'pollingStations', 'politicalOrganization']);
+
+        if ($request->has('is_active') && $request->input('is_active') !== '') {
+            $isActive = $request->boolean('is_active');
+            $query->whereHas('user', function ($q) use ($isActive) {
+                $q->where('is_active', $isActive);
+            });
+        }
 
         if ($search = $request->input('search')) {
             $search = trim($search);

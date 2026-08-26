@@ -25,6 +25,7 @@ class PersonerosRepository {
     String search = '',
     int page = 1,
     int perPage = 15,
+    bool? isActive,
   }) async {
     if (apiClient == null) return (items: <PersoneroModel>[], hasMore: false, total: 0);
     try {
@@ -34,6 +35,9 @@ class PersonerosRepository {
       };
       if (search.trim().isNotEmpty) {
         queryParams['search'] = search.trim();
+      }
+      if (isActive != null) {
+        queryParams['is_active'] = isActive ? 1 : 0;
       }
       final response = await apiClient!.get<Map<String, Object?>>(
         '/personeros',
