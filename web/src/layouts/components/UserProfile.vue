@@ -93,6 +93,7 @@ const userProfileList = computed(() => [
                 </div>
                 <div class="text-capitalize text-caption text-disabled">
                   {{ userData.role || 'Usuario' }}
+                  <span v-if="userData.personero?.political_organization_name" class="d-block text-xs mt-1 text-primary font-weight-medium">{{ userData.personero.political_organization_name }}</span>
                 </div>
               </div>
             </div>

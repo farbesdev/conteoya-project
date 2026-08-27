@@ -2,6 +2,7 @@
 import navItems from '@/navigation/vertical'
 import { useConfigStore } from '@core/stores/config'
 import { themeConfig } from '@themeConfig'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 // Components
 import Footer from '@/layouts/components/Footer.vue'
@@ -16,6 +17,18 @@ import NavBarI18n from '@core/components/I18n.vue'
 import { VerticalNavLayout } from '@layouts'
 
 const configStore = useConfigStore()
+const authStore = useAuthStore()
+
+const filteredNavItems = computed(() => {
+  return navItems.filter(item => {
+    // Si es personero, ocultamos opciones de gestión que no le corresponden
+    if (authStore.isPersonero) {
+      if (item.heading === 'Administración' || item.title === 'Usuarios') return false
+      if (['Organizaciones', 'Personeros', 'Candidatos', 'Mesas Electorales'].includes(item.title as string)) return false
+    }
+    return true
+  })
+})
 
 // ℹ️ Provide animation name for vertical nav collapse icon.
 const verticalNavHeaderActionAnimationName = ref<'rotate-180' | 'rotate-back-180' | null>(null)
@@ -32,7 +45,7 @@ watch([
 </script>
 
 <template>
-  <VerticalNavLayout :nav-items="navItems">
+  <VerticalNavLayout :nav-items="filteredNavItems">
     <!-- 👉 navbar -->
     <template #navbar="{ toggleVerticalOverlayNavActive }">
       <div class="d-flex h-100 align-center">
