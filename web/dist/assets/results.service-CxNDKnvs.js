@@ -1,1 +1,0 @@
-import{a as t}from"./client-ZE6MG41T.js";const n={async getSummary(s){return t("/results/summary",{params:s})},async getElectionResults(s,e){return t(`/results/elections/${s}`,{params:e})},async getStationResults(s){return t(`/results/polling-stations/${s}`)}};export{n as r};

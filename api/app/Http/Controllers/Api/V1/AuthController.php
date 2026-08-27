@@ -120,6 +120,7 @@ class AuthController extends Controller
                     'name'         => $user->roleModel->name,
                     'display_name' => $user->roleModel->display_name,
                 ] : null,
+                'personero'   => $user->personero ? $user->personero->toArray() : null,
                 'personero_id' => $user->personero?->id,
                 'polling_station_code' => $user->personero?->pollingStations->first()?->code,
             ],

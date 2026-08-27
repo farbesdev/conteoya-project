@@ -1,0 +1,1 @@
+import{$ as u,bf as f,Y as i}from"./index-DcwLugcG.js";const m=(e,a,s,o,r=!1)=>{const n=u(),{global:t}=f();return i(()=>t.name.value==="light"?n.skin==="bordered"&&r?s:e:t.name.value==="dark"?n.skin==="bordered"&&r?o:a:e)};export{m as u};
