@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Personero;
+use App\Models\PoliticalOrganization;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -30,10 +31,10 @@ class UserSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'admin@conteoya.pe'],
             [
-                'name'      => 'Administrador ConteoYA',
-                'password'  => Hash::make('Admin123!'),
-                'role'      => Role::ADMIN,
-                'role_id'   => $adminRole->id,
+                'name' => 'Administrador ConteoYA',
+                'password' => Hash::make('Admin123!'),
+                'role' => Role::ADMIN,
+                'role_id' => $adminRole->id,
                 'is_active' => true,
             ]
         );
@@ -46,10 +47,10 @@ class UserSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'director@conteoya.pe'],
             [
-                'name'      => 'Director Electoral Demo',
-                'password'  => Hash::make('Director123!'),
-                'role'      => Role::DIRECTOR,
-                'role_id'   => $directorRole->id,
+                'name' => 'Director Electoral Demo',
+                'password' => Hash::make('Director123!'),
+                'role' => Role::DIRECTOR,
+                'role_id' => $directorRole->id,
                 'is_active' => true,
             ]
         );
@@ -62,10 +63,10 @@ class UserSeeder extends Seeder
         $puertoIncaUser = User::updateOrCreate(
             ['email' => 'personero.puertoinca@conteoya.pe'],
             [
-                'name'      => 'Personero Puerto Inca - Yuyapichis',
-                'password'  => Hash::make('Puertoinca123!'),
-                'role'      => Role::PERSONERO,
-                'role_id'   => $personeroRole->id,
+                'name' => 'Personero Puerto Inca - Yuyapichis',
+                'password' => Hash::make('Puertoinca123!'),
+                'role' => Role::PERSONERO,
+                'role_id' => $personeroRole->id,
                 'is_active' => true,
             ]
         );
@@ -74,7 +75,9 @@ class UserSeeder extends Seeder
             ['user_id' => $puertoIncaUser->id],
             [
                 'document_number' => '44001122',
-                'phone_number'    => '+51 962 111 222',
+                'phone_number' => '+51 962 111 222',
+                'political_organization_id' => 8,
+                'political_organization_name' => PoliticalOrganization::where('id', 8)->first()->name,
             ]
         );
 
@@ -92,12 +95,12 @@ class UserSeeder extends Seeder
             ['code' => '021038'],
             [
                 'electoral_location_id' => $electoralLocation->id,
-                'registered_voters'     => 305,
-                'status'                => 'ACTIVE',
-                'department_code'       => '09',
-                'department_name'       => 'HUANUCO',
-                'province_name'         => 'PUERTO INCA',
-                'district_name'         => 'YUYAPICHIS',
+                'registered_voters' => 305,
+                'status' => 'ACTIVE',
+                'department_code' => '09',
+                'department_name' => 'HUANUCO',
+                'province_name' => 'PUERTO INCA',
+                'district_name' => 'YUYAPICHIS',
             ]
         );
 
@@ -109,10 +112,10 @@ class UserSeeder extends Seeder
         $inactiveUser = User::updateOrCreate(
             ['email' => 'personero.inactivo@conteoya.pe'],
             [
-                'name'      => 'Personero Inactivo Demo',
-                'password'  => Hash::make('Personero123!'),
-                'role'      => Role::PERSONERO,
-                'role_id'   => $personeroRole->id,
+                'name' => 'Personero Inactivo Demo',
+                'password' => Hash::make('Personero123!'),
+                'role' => Role::PERSONERO,
+                'role_id' => $personeroRole->id,
                 'is_active' => false,
             ]
         );
@@ -121,10 +124,10 @@ class UserSeeder extends Seeder
             ['user_id' => $inactiveUser->id],
             [
                 'document_number' => '11223344',
-                'phone_number'    => '+51 900 000 000',
+                'phone_number' => '+51 900 000 000',
             ]
         );
-        
+
         $inactivePersonero->pollingStations()->sync([$mesaYuyapichis->id]);
         $this->command->info('✅  Usuario PERSONERO INACTIVO creado: personero.inactivo@conteoya.pe / Personero123!');
 
