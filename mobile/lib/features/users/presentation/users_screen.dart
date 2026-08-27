@@ -755,7 +755,7 @@ class _UserFormModalState extends ConsumerState<UserFormModal> {
             const SizedBox(height: 10),
             DropdownButtonFormField<String>(
               isExpanded: true,
-              value: _selectedRole,
+              initialValue: _selectedRole,
               dropdownColor: AppColors.surfaceOf(context),
               style: TextStyle(color: textPrimary),
               decoration: InputDecoration(
@@ -788,7 +788,7 @@ class _UserFormModalState extends ConsumerState<UserFormModal> {
             mesasAsync.when(
               data: (mesas) => DropdownButtonFormField<String>(
                 isExpanded: true,
-                value: _selectedMesaCode,
+                initialValue: _selectedMesaCode,
                 dropdownColor: AppColors.surfaceOf(context),
                 style: TextStyle(color: textPrimary),
                 decoration: InputDecoration(

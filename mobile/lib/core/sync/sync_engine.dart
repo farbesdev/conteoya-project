@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:drift/drift.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -109,7 +110,7 @@ class SyncEngine {
           await _savePullTimestamp();
         } catch (e) {
           // Capturar errores del pull para no interrumpir el flujo de push de actas
-          print("Error al descargar datos del VPS (pull): $e");
+          debugPrint("Error al descargar datos del VPS (pull): $e");
         }
       }
 
