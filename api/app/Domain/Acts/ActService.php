@@ -96,9 +96,9 @@ class ActService
             return $act;
         });
 
-        // Registrar en audit log (user_id puede ser null si no hay personero vinculado)
+        // Registrar en audit log
         AuditLog::create([
-            'user_id'     => $personero?->user_id,
+            'user_id'     => $personero?->user_id ?? auth()->id(),
             'action'      => 'INGEST_ACT',
             'entity_type' => 'acts',
             'entity_id'   => (string)$act->id,

@@ -136,7 +136,7 @@ class SyncEngine {
             };
           }).toList();
 
-          final response = await apiClient.post<Map<String, Object?>>(
+          final response = await apiClient.post<Map<String, dynamic>>(
             '/sync',
             data: {
               'device_uuid': pendingOps.first.deviceUuid,
@@ -145,9 +145,12 @@ class SyncEngine {
           );
 
           if (response.statusCode == 200 && response.data != null) {
-            final dataList = response.data!['data'] as List<Object?>? ?? [];
-            for (final item in dataList) {
-              if (item is Map<String, Object?>) {
+            final resMap = Map<String, dynamic>.from(response.data!);
+            final dataList = resMap['data'] as List<dynamic>? ?? [];
+
+            for (final rawItem in dataList) {
+              if (rawItem is Map) {
+                final item = Map<String, dynamic>.from(rawItem);
                 final clientOpId = item['client_operation_id'] as String?;
                 final status = item['status'] as String? ?? 'FAILED';
 
@@ -161,7 +164,8 @@ class SyncEngine {
                       if (op.operation == 'DELETE') {
                         await db.deleteActByClientUuid(op.entityId);
                       } else {
-                        final serverActId = (item['result'] as Map<String, Object?>?)?['act_id'] as int?;
+                        final resResult = item['result'];
+                        final serverActId = resResult is Map ? (resResult['act_id'] as int?) : null;
                         await db.updateActStatus(op.entityId, 'SYNCED', serverActId: serverActId);
                       }
                     } else if (op.entityType == 'personeros' && op.operation == 'DELETE') {
@@ -184,9 +188,15 @@ class SyncEngine {
               }
             }
           }
-        } catch (e) {
-          // Capturar errores de red/401 en el push para resiliencia offline
-          // Las operaciones permanecerán en estado PENDING para el próximo ciclo
+        } catch (e, stack) {
+          debugPrint('Error durante sync PUSH: $e\n$stack');
+          for (final op in pendingOps) {
+            await db.updateSyncOpStatus(
+              op.clientOperationId,
+              'FAILED',
+              error: e.toString(),
+            );
+          }
         }
       }
 

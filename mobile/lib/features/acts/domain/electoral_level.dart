@@ -32,7 +32,7 @@ const List<ElectoralLevelOption> kElectoralLevels = [
     color: AppColors.accent,
   ),
   ElectoralLevelOption(
-    id: 2,
+    id: 3,
     code: 'MUNICIPAL_PROVINCIAL',
     title: 'Alcalde y Regidores Provinciales',
     shortTitle: 'Municipal Provincial',
@@ -41,7 +41,7 @@ const List<ElectoralLevelOption> kElectoralLevels = [
     color: AppColors.info,
   ),
   ElectoralLevelOption(
-    id: 3,
+    id: 4,
     code: 'MUNICIPAL_DISTRITAL',
     title: 'Alcalde y Regidores Distritales',
     shortTitle: 'Municipal Distrital',

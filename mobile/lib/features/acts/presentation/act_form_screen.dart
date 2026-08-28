@@ -803,19 +803,33 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       }
 
       if (mounted) {
-        // Si el acta fue confirmada, disparar sincronización inmediata en segundo plano
+        String message = 'Borrador guardado localmente.';
+        Color snackColor = AppColors.info;
+
         if (isConfirmation) {
-          ref.read(syncEngineProvider).syncPendingOperations();
+          try {
+            await ref.read(syncEngineProvider).syncPendingOperations();
+            // Verificar si el acta quedó en estado SYNCED o PENDING
+            final updatedAct = await db.getActByStationAndLevel(widget.pollingStationCode, _selectedLevelId);
+            if (updatedAct != null && updatedAct.status == 'SYNCED') {
+              message = '✓ Acta confirmada y sincronizada con el servidor.';
+              snackColor = AppColors.success;
+            } else {
+              message = 'Acta confirmada y guardada localmente (pendiente de sincronización por red/servidor).';
+              snackColor = AppColors.warning;
+            }
+          } catch (e) {
+            debugPrint('Error en sync inmediato: $e');
+            message = 'Acta confirmada localmente. Pendiente de envío al servidor ($e).';
+            snackColor = AppColors.warning;
+          }
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              isConfirmation
-                  ? 'Acta confirmada y enviada para sincronización.'
-                  : 'Borrador guardado localmente.',
-            ),
-            backgroundColor: isConfirmation ? AppColors.success : AppColors.info,
+            content: Text(message),
+            backgroundColor: snackColor,
+            duration: const Duration(seconds: 4),
           ),
         );
         Navigator.pop(context);
@@ -958,12 +972,12 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
     final distChallenged = int.tryParse(_distChallengedVotesController.text) ?? 0;
 
     // UUID para el acta distrital (reutilizar si ya existe en SQLite, o generar nuevo)
-    final existingDistAct = await db.getActByStationAndLevel(widget.pollingStationCode, 3);
+    final existingDistAct = await db.getActByStationAndLevel(widget.pollingStationCode, 4);
     final clientActUuidDist = existingDistAct?.clientActUuid ?? const Uuid().v4();
     final clientOpIdProv = const Uuid().v4();
     final clientOpIdDist = const Uuid().v4();
 
-    // ── 1. Acta Municipal PROVINCIAL (electoral_level_id = 2) ────────────────
+    // ── 1. Acta Municipal PROVINCIAL (electoral_level_id = 3) ────────────────
     final provResults = _partyEntries
         .where((p) => p.isProvincialAdmitted)
         .map((p) {
@@ -983,7 +997,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       act: LocalActsTableCompanion(
         clientActUuid: drift.Value(_clientActUuid),
         electionId: drift.Value(widget.electionId),
-        electoralLevelId: const drift.Value(2),
+        electoralLevelId: const drift.Value(3),
         pollingStationCode: drift.Value(widget.pollingStationCode),
         status: drift.Value(status),
         capturedAt: drift.Value(DateTime.now()),
@@ -1001,7 +1015,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       results: provResults,
     );
 
-    // ── 2. Acta Municipal DISTRITAL (electoral_level_id = 3) ─────────────────
+    // ── 2. Acta Municipal DISTRITAL (electoral_level_id = 4) ─────────────────
     final distResults = _partyEntries
         .where((p) => p.isDistritalAdmitted)
         .map((p) {
@@ -1021,7 +1035,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       act: LocalActsTableCompanion(
         clientActUuid: drift.Value(clientActUuidDist),
         electionId: drift.Value(widget.electionId),
-        electoralLevelId: const drift.Value(3),
+        electoralLevelId: const drift.Value(4),
         pollingStationCode: drift.Value(widget.pollingStationCode),
         status: drift.Value(status),
         capturedAt: drift.Value(DateTime.now()),
@@ -1061,7 +1075,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       final provSyncPayload = {
         'client_act_uuid': _clientActUuid,
         'election_id': widget.electionId,
-        'electoral_level_id': 2,
+        'electoral_level_id': 3,
         'polling_station_code': widget.pollingStationCode,
         'status': 'CONFIRMED',
         'totals': {
@@ -1102,7 +1116,7 @@ class _ActFormScreenState extends ConsumerState<ActFormScreen> {
       final distSyncPayload = {
         'client_act_uuid': clientActUuidDist,
         'election_id': widget.electionId,
-        'electoral_level_id': 3,
+        'electoral_level_id': 4,
         'polling_station_code': widget.pollingStationCode,
         'status': 'CONFIRMED',
         'totals': {
