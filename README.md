@@ -140,6 +140,37 @@ flutter run
 
 ---
 
+## 📄 Generador de Actas Electorales (PDF / ONPE ERM 2026)
+
+ConteoYA incluye un generador programático en Python (`generate-pdf-erm2026`) que consulta directamente la base de datos PostgreSQL (`conteoya_bd`) y genera actas electorales oficiales con diseño vectorial pixel-perfect y cuadre matemático estricto según la normativa ONPE:
+
+* **Acta Regional (`1b`):** Elección de Gobernador y Vicegobernador Regional.
+* **Acta Municipal (`4b`):** Elección Municipal Provincial y Distrital.
+* **Actas Completas:** PDF combinado de 2 páginas con ambas actas.
+
+### Comandos de Ejecución
+
+```bash
+# 1. Ver opciones y ayuda
+./scripts/generate_pdf_erm2026.sh --help
+
+# 2. Generar actas para una o múltiples mesas
+./scripts/generate_pdf_erm2026.sh <mesa_1> <mesa_2> <mesa_3>
+# Ejemplo:
+./scripts/generate_pdf_erm2026.sh 030390 040104 021038
+
+# 3. Especificar carpeta de salida personalizada
+./scripts/generate_pdf_erm2026.sh 030390 -o generate-pdf-erm2026/output
+
+# 4. Modo interactivo (solicita las mesas en consola)
+./scripts/generate_pdf_erm2026.sh
+
+# 5. Ejecución directa con Python
+generate-pdf-erm2026/.venv/bin/python generate-pdf-erm2026/generate.py 030390 -o mis_actas_pdf
+```
+
+Para más detalles sobre la arquitectura de generación y reglas de cuadre matemático, consulta [`generate-pdf-erm2026/README.md`](generate-pdf-erm2026/README.md).
+
 ## 📚 Documentación Técnica Integral
 
 El proyecto cuenta con un compendio de documentación estructurado bajo los estándares **arc42** y **Diátaxis Framework**, organizado en 7 módulos temáticos:
