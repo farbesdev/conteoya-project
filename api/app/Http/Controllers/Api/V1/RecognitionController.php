@@ -53,6 +53,43 @@ class RecognitionController extends Controller
             $station = PollingStation::where('code', $request->input('polling_station_code'))->first();
             if ($station) {
                 $context['registered_voters'] = $station->registered_voters;
+                $levelId = (int)$request->input('electoral_level_id', 1);
+                $context['electoral_level_id'] = $levelId;
+
+                $dept = \App\Models\Department::whereRaw('upper(trim(name)) = ?', [strtoupper(trim($station->department_name))])->first();
+                if ($dept) {
+                    $query = \App\Models\ElectoralList::where('department_code', $dept->code)
+                        ->where('electoral_level_id', $levelId)
+                        ->whereIn('status', ['INSCRITO', 'ADMITIDO', 'INSCRITA', 'ADMITIDA'])
+                        ->with('politicalOrganization');
+
+                    if ($levelId == 3 && $station->province_name) {
+                        $prov = \App\Models\Province::where('department_code', $dept->code)
+                            ->whereRaw('upper(trim(name)) = ?', [strtoupper(trim($station->province_name))])
+                            ->first();
+                        if ($prov) {
+                            $query->where('province_code', $prov->code);
+                        }
+                    } elseif ($levelId == 4 && $station->district_name) {
+                        $dist = \App\Models\District::whereRaw('upper(trim(name)) = ?', [strtoupper(trim($station->district_name))])
+                            ->first();
+                        if ($dist) {
+                            $query->where('district_code', $dist->code);
+                        }
+                    }
+
+                    $lists = $query->get();
+                    if ($lists->isNotEmpty()) {
+                        $context['organizations'] = $lists->map(function ($list) {
+                            return [
+                                'id'                => $list->political_organization_id,
+                                'name'              => $list->politicalOrganization?->name,
+                                'short_name'        => $list->politicalOrganization?->short_name,
+                                'electoral_list_id' => $list->id,
+                            ];
+                        })->toArray();
+                    }
+                }
             }
         }
 

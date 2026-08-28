@@ -43,6 +43,7 @@ class RecognizeActRequest extends FormRequest
             'image_url'            => ['nullable', 'string', 'url'],
             'act_evidence_id'      => ['nullable', 'integer', 'exists:act_evidence,id'],
             'polling_station_code' => ['nullable', 'string', 'exists:polling_stations,code'],
+            'electoral_level_id'   => ['nullable', 'integer', 'exists:electoral_levels,id'],
             'registered_voters'    => ['nullable', 'integer', 'min:0'],
         ];
     }

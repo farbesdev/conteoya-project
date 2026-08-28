@@ -22,43 +22,71 @@ class MockActRecognitionProvider implements ActRecognitionProviderInterface
         }
 
         $pollingStationCode = $context['polling_station_code'] ?? '030390';
-        $registeredVoters   = $context['registered_voters'] ?? 300;
-        $votersWhoVoted     = $context['voters_who_voted'] ?? 280;
+        $registeredVoters   = (int)($context['registered_voters'] ?? 300);
+        $votersWhoVoted     = (int)($context['voters_who_voted'] ?? min($registeredVoters, max(10, (int)($registeredVoters * 0.88))));
+
+        $blankVotes      = 1;
+        $nullVotes       = 4;
+        $challengedVotes = 0;
+        $validVotes      = max(0, $votersWhoVoted - ($blankVotes + $nullVotes + $challengedVotes));
 
         $results = [];
         if (!empty($context['organizations'])) {
+            $numOrgs = count($context['organizations']);
+            $weights = array_map(fn($i) => 1.0 + (sin(($i + 1) * 1.3) + 1.0) * 1.5, range(0, $numOrgs - 1));
+            $sumWeights = array_sum($weights) ?: 1;
+            $votesList = [];
+            foreach ($weights as $w) {
+                $votesList[] = (int)(($w / $sumWeights) * $validVotes);
+            }
+            $diff = $validVotes - array_sum($votesList);
+            for ($k = 0; $k < abs($diff); $k++) {
+                $idx = $k % $numOrgs;
+                if ($diff > 0) {
+                    $votesList[$idx]++;
+                } elseif ($votesList[$idx] > 0) {
+                    $votesList[$idx]--;
+                }
+            }
+
             foreach ($context['organizations'] as $idx => $org) {
+                $orgId = $org['id'] ?? ($idx + 1);
+                $orgName = $org['name'] ?? ("Organización " . ($idx + 1));
+                $orgVotes = $votesList[$idx] ?? 0;
+                $conf = ($idx === 1 && $numOrgs > 2) ? 0.82 : round(0.90 + (($idx % 4) * 0.02), 2);
                 $results[] = [
-                    'political_organization_id' => $org['id'] ?? ($idx + 1),
-                    'electoral_list_id'         => $org['electoral_list_id'] ?? null,
-                    'candidate_id'              => null,
-                    'votes'                     => 80 + ($idx * 15),
-                    'confidence'                => 0.96,
+                    'political_organization_id'   => $orgId,
+                    'political_organization_name' => $orgName,
+                    'electoral_list_id'           => $org['electoral_list_id'] ?? null,
+                    'candidate_id'                => null,
+                    'votes'                       => $orgVotes,
+                    'confidence'                  => $conf,
                 ];
             }
         } else {
             $results = [
-                ['political_organization_id' => 1, 'electoral_list_id' => 1, 'candidate_id' => null, 'votes' => 120, 'confidence' => 0.98],
-                ['political_organization_id' => 2, 'electoral_list_id' => 2, 'candidate_id' => null, 'votes' => 95, 'confidence' => 0.94],
-                ['political_organization_id' => 3, 'electoral_list_id' => 3, 'candidate_id' => null, 'votes' => 45, 'confidence' => 0.78], // Baja confianza de ejemplo (< 0.85)
+                ['political_organization_id' => 1, 'political_organization_name' => 'Organización 1', 'electoral_list_id' => 1, 'candidate_id' => null, 'votes' => (int)($validVotes * 0.5), 'confidence' => 0.98],
+                ['political_organization_id' => 2, 'political_organization_name' => 'Organización 2', 'electoral_list_id' => 2, 'candidate_id' => null, 'votes' => (int)($validVotes * 0.35), 'confidence' => 0.94],
+                ['political_organization_id' => 3, 'political_organization_name' => 'Organización 3', 'electoral_list_id' => 3, 'candidate_id' => null, 'votes' => max(0, $validVotes - (int)($validVotes * 0.85)), 'confidence' => 0.78],
             ];
         }
 
-        $blankVotes      = 10;
-        $nullVotes       = 8;
-        $challengedVotes = 2;
-        $sumResults      = array_sum(array_column($results, 'votes'));
-        $totalVotes      = $sumResults + $blankVotes + $nullVotes + $challengedVotes;
+        $sumResults = array_sum(array_column($results, 'votes'));
+        $totalVotes = $sumResults + $blankVotes + $nullVotes + $challengedVotes;
 
         $confidenceMap = [
-            new ExtractionFieldConfidence('polling_station_code', $pollingStationCode, 0.99),
-            new ExtractionFieldConfidence('registered_voters', $registeredVoters, 0.99),
-            new ExtractionFieldConfidence('voters_who_voted', $votersWhoVoted, 0.95),
-            new ExtractionFieldConfidence('blank_votes', $blankVotes, 0.92),
-            new ExtractionFieldConfidence('null_votes', $nullVotes, 0.88),
-            new ExtractionFieldConfidence('challenged_votes', $challengedVotes, 0.75, true), // Baja confianza
-            new ExtractionFieldConfidence('total_votes', $totalVotes, 0.96),
+            new ExtractionFieldConfidence('electores_habiles', $registeredVoters, 0.98),
+            new ExtractionFieldConfidence('votantes', $votersWhoVoted, 0.95),
+            new ExtractionFieldConfidence('total_votos', $totalVotes, 0.96),
+            new ExtractionFieldConfidence('votos_blancos', $blankVotes, 0.90),
+            new ExtractionFieldConfidence('votos_nulos', $nullVotes, 0.88),
+            new ExtractionFieldConfidence('votos_impugnados', $challengedVotes, 0.99),
         ];
+
+        foreach ($results as $idx => $r) {
+            $name = $r['political_organization_name'] ?? ('partido_' . ($idx + 1) . '_votos');
+            $confidenceMap[] = new ExtractionFieldConfidence($name, $r['votes'], $r['confidence'], $r['confidence'] < 0.85);
+        }
 
         return new ActExtractionResult(
             providerName: $this->getName(),
