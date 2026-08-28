@@ -184,16 +184,38 @@ npm run preview
 
 ### 4. 📄 Generador de Actas Electorales (`generate-pdf-erm2026/` — Python + ReportLab)
 
+#### Setup del Entorno Virtual (.venv) e Instalación de Dependencias
+
 ```bash
-# Opción A: Mediante script bash (desde la raíz del proyecto)
+cd generate-pdf-erm2026/
+
+# Crear entorno virtual
+python3 -m venv .venv
+
+# Activar entorno virtual
+source .venv/bin/activate
+
+# Instalar dependencias requeridas (reportlab, psycopg2-binary, python-dotenv, pillow)
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+#### Comandos de Ejecución
+
+```bash
+# Opción A: Mediante script bash (desde la raíz — crea el .venv automáticamente si no existe)
 ./scripts/generate_pdf_erm2026.sh --help
 ./scripts/generate_pdf_erm2026.sh 030390 040104 021038
 ./scripts/generate_pdf_erm2026.sh 030390 -o generate-pdf-erm2026/output
 
-# Opción B: Modo interactivo
+# Opción B: Modo interactivo (solicita las mesas en consola)
 ./scripts/generate_pdf_erm2026.sh
 
-# Opción C: Ejecución directa con Python
+# Opción C: Ejecución directa con Python (.venv activo)
+cd generate-pdf-erm2026/
+python generate.py 030390 040104 021038 -o output/
+
+# O sin activar .venv, invocando el binario directamente desde la raíz:
 generate-pdf-erm2026/.venv/bin/python generate-pdf-erm2026/generate.py 030390 -o mis_actas_pdf
 ```
 
