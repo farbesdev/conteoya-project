@@ -44,3 +44,8 @@ files/*.csv
 .pub-cache/
 .pub/
 build/
+
+# Generate Pdf erm2026 output & venv
+generate-pdf-erm2026/output/
+generate-pdf-erm2026/.venv/
+generate-pdf-erm2026/*.png

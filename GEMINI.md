@@ -91,6 +91,8 @@ Antes de escribir código en cualquier área, **leer el skill correspondiente**.
 | `ocr-ia-adapter-pattern` | Integración OCR/IA, ActRecognitionService |
 | `offline-first-sync-engine` | Motor de sincronización Flutter ↔ Laravel |
 | `onpe-actas-escrutinio-personeros` | Reglas de escrutinio, cuadre de actas, personeros y normativa ONPE/JNE ERM 2026 |
+| `pdf-electoral-acta-generator` | Generación programática de actas electorales (ONPE ERM 2026) en PDF con ReportLab |
+| `ocr-electoral-acta-digitizer` | Visión computacional, preprocesamiento de imagen y OCR para actas electorales |
 
 ---
 

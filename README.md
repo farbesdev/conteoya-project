@@ -62,8 +62,10 @@ Permite a los personeros registrar resultados de actas electorales mediante una 
 conteoya-project/
 ├── api/                    # 🟠 Backend Laravel 12 (activo)
 ├── mobile/                 # 🔵 App Móvil Flutter 3.44 (activo)
+├── generate-pdf-erm2026/   # 📄 Generador vectorial de Actas Electorales ERM 2026 (Python/ReportLab)
+├── scripts/                # 🛠️ Scripts utilitarios (generate_pdf_erm2026.sh, etc.)
 ├── database/               # Datos maestros JEE (erm2026.db)
-├── docs/                   # Documentación técnica
+├── docs/                   # Documentación técnica y reportes electorales
 ├── specs/                  # Especificaciones funcionales por fase
 ├── .agents/                # Skills y customizations para agentes IA
 ├── GEMINI.md               # Reglas del proyecto para Antigravity
@@ -74,6 +76,7 @@ conteoya-project/
 Ver los READMEs individuales para detalles de cada subproyecto:
 - [`api/README.md`](api/README.md) — Instalación, migraciones, endpoints, comandos backend
 - [`mobile/README.md`](mobile/README.md) — Instalación, arquitectura, features, comandos mobile
+- [`generate-pdf-erm2026/README.md`](generate-pdf-erm2026/README.md) — Generador de actas oficiales ONPE en PDF con ReportLab
 
 ---
 

@@ -132,6 +132,9 @@ Están en `.agents/skills/<nombre>/SKILL.md`.
 | `laravel-api-fase1-ingesta` | Endpoints de ingesta: actas, sync, evidencia |
 | `ocr-ia-adapter-pattern` | ActRecognitionService, providers OCR/IA |
 | `offline-first-sync-engine` | Motor de sync Flutter ↔ Laravel |
+| `onpe-actas-escrutinio-personeros` | Reglas de escrutinio, cuadre de actas y normativa ONPE |
+| `pdf-electoral-acta-generator` | Generación programática de actas electorales en PDF (ReportLab) |
+| `ocr-electoral-acta-digitizer` | Visión computacional, preprocesamiento y OCR para actas |
 
 ---
 

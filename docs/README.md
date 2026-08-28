@@ -13,12 +13,13 @@ La documentación está organizada en **7 módulos temáticos** estructurados en
 | Módulo | Enfoque Diátaxis / Arc42 | Descripción y Contenido |
 |---|---|---|
 | [**`00-arquitectura/`**](00-arquitectura/) | **Explicación / Arc42 §1-4, §7, §9-11** | Visión general del sistema, objetivos, restricciones de negocio, registro de decisiones (ADRs) y topología cloud. |
-| [**`01-modulos/`**](01-modulos/) | **Referencia / Arc42 §5, §6** | Desglose por componentes: Backend API (Laravel 12), App Móvil (Flutter), Base de Datos (PostgreSQL 16) y Motor de Sincronización. |
+| [**`01-modulos/`**](01-modulos/) | **Referencia / Arc42 §5, §6** | Desglose por componentes: Backend API (Laravel 12), App Móvil (Flutter), Base de Datos (PostgreSQL 16), Generador de Actas PDF y Motor de Sincronización. |
 | [**`02-integraciones/`**](02-integraciones/) | **Referencia / Integraciones Cloud** | Almacenamiento privado Cloudflare R2 (S3) con URLs presignadas y Adaptador OCR/IA (Human-in-the-Loop). |
-| [**`03-guias/`**](03-guias/) | **Tutoriales & How-To Guides** | Puesta en marcha local paso a paso, cómo registrar actas de forma idempotente y cómo consultar la plantilla de la cédula. |
+| [**`03-guias/`**](03-guias/) | **Tutoriales & How-To Guides** | Puesta en marcha local paso a paso, cómo registrar actas de forma idempotente, generación de actas PDF y consulta de cédulas. |
 | [**`04-plantillas/`**](04-plantillas/) | **Plantillas Operativas** | Plantilla estándar para Registro de Decisiones de Arquitectura (ADRs). |
 | [**`05-seguridad/`**](05-seguridad/) | **Explicación & Reglas Críticas** | Control de acceso por roles (RBAC), verificación de propiedad de mesa, idempotencia estricta y bitácora de auditoría. |
 | [**`06-glosario/`**](06-glosario/) | **Referencia / Arc42 §12** | Glosario unificado de términos del proceso electoral peruano (ERM 2026), ubigeos y siglas. |
+| [**`listados_electorales/`**](listado_regional_mesas.md) | **Reportes de Consulta** | Listados electorales regionales ([`listado_regional_mesas.md`](listado_regional_mesas.md)) y municipales ([`listado_municipal_mesas.md`](listado_municipal_mesas.md)) de mesas clave. |
 
 ---
 
