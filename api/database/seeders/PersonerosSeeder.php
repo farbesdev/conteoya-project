@@ -217,7 +217,7 @@ class PersonerosSeeder extends Seeder
                 $userBatch[] = [
                     'name'       => $fullName ?: "Personero DNI $dni",
                     'email'      => $email,
-                    'password'   => $defaultHashedPassword,
+                    'password'   => Hash::make("{$dni}!"),
                     'role'       => Role::PERSONERO,
                     'role_id'    => $personeroRole->id,
                     'is_active'  => false,

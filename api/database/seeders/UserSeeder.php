@@ -64,7 +64,7 @@ class UserSeeder extends Seeder
             ['email' => 'personero.puertoinca@conteoya.pe'],
             [
                 'name' => 'Personero Puerto Inca - Yuyapichis',
-                'password' => Hash::make('Puertoinca123!'),
+                'password' => Hash::make('44001122!'),
                 'role' => Role::PERSONERO,
                 'role_id' => $personeroRole->id,
                 'is_active' => true,
@@ -106,14 +106,14 @@ class UserSeeder extends Seeder
 
         $puertoIncaPersonero->pollingStations()->sync([$mesaYuyapichis->id]);
 
-        $this->command->info('✅  Usuario PERSONERO PUERTO INCA creado: personero.puertoinca@conteoya.pe / Puertoinca123!');
+        $this->command->info('✅  Usuario PERSONERO PUERTO INCA creado: personero.puertoinca@conteoya.pe / 44001122!');
 
         // ─── TERCER PERSONERO (INACTIVO POR DEFECTO) ─────────────────────────
         $inactiveUser = User::updateOrCreate(
             ['email' => 'personero.inactivo@conteoya.pe'],
             [
                 'name' => 'Personero Inactivo Demo',
-                'password' => Hash::make('Personero123!'),
+                'password' => Hash::make('11223344!'),
                 'role' => Role::PERSONERO,
                 'role_id' => $personeroRole->id,
                 'is_active' => false,
@@ -129,7 +129,7 @@ class UserSeeder extends Seeder
         );
 
         $inactivePersonero->pollingStations()->sync([$mesaYuyapichis->id]);
-        $this->command->info('✅  Usuario PERSONERO INACTIVO creado: personero.inactivo@conteoya.pe / Personero123!');
+        $this->command->info('✅  Usuario PERSONERO INACTIVO creado: personero.inactivo@conteoya.pe / 11223344!');
 
         $this->command->newLine();
         $this->command->warn('⚠️   Cambiar contraseñas antes de pasar a producción.');

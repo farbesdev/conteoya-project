@@ -123,7 +123,8 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                     'isActive': true,
                   },
                   ...personeros.map((p) => {
-                        'id': p.id,
+                        'id': p.userId,
+                        'personeroId': p.id,
                         'name': p.fullName,
                         'email': p.email ?? 'personero_${p.dni}@conteoya.pe',
                         'role': 'PERSONERO',
@@ -316,7 +317,10 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                 ),
                 onPressed: () => _showResetPasswordModal(
                   context,
-                  userId: user['id'] as int,
+                  userId: user['id'] as int?,
+                  personeroId: user['personeroId'] as int?,
+                  dni: user['dni'] as String?,
+                  role: role,
                   name: user['name'] as String,
                   email: user['email'] as String,
                 ),
@@ -365,8 +369,18 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
     );
   }
 
-  void _showResetPasswordModal(BuildContext context, {required int userId, required String name, required String email}) {
-    final defaultPass = email.toLowerCase().contains('puertoinca') ? 'Puertoinca123!' : 'Personero123!';
+  void _showResetPasswordModal(
+    BuildContext context, {
+    int? userId,
+    int? personeroId,
+    String? dni,
+    required String role,
+    required String name,
+    required String email,
+  }) {
+    final defaultPass = (dni != null && dni.isNotEmpty)
+        ? '$dni!'
+        : (role == 'PERSONERO' ? 'Personero123!' : 'Admin123!');
     final passwordController = TextEditingController(text: defaultPass);
     bool isSaving = false;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -463,7 +477,14 @@ class _UsersScreenState extends ConsumerState<UsersScreen> {
                       final newPass = passwordController.text.trim();
                       try {
                         final apiClient = ref.read(apiClientProvider);
-                        await apiClient.post('/users/$userId/reset-password', data: {'password': newPass});
+                        if (role == 'PERSONERO' && (personeroId != null || (dni != null && dni.isNotEmpty))) {
+                          final target = (dni != null && dni.isNotEmpty) ? dni : personeroId;
+                          await apiClient.post('/personeros/$target/reset-password', data: {'password': newPass});
+                        } else if (userId != null) {
+                          await apiClient.post('/users/$userId/reset-password', data: {'password': newPass});
+                        } else {
+                          await apiClient.post('/users/$email/reset-password', data: {'password': newPass});
+                        }
                       } catch (_) {
                         // Resiliente si está offline
                       }

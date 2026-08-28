@@ -273,12 +273,12 @@ Todo el código Flutter/Dart debe ser completamente type-safe.
 > ⚠️ Cambiar contraseñas antes de cualquier ambiente no-local.
 
 ```
-admin@conteoya.pe       / Admin123!      → ADMIN     (role_id: 1)
-director@conteoya.pe    / Director123!   → DIRECTOR  (role_id: 2)
-personero@conteoya.pe   / Personero123!  → PERSONERO (role_id: 3)
+admin@conteoya.pe                    / Admin123!     → ADMIN     (role_id: 1)
+director@conteoya.pe                 / Director123!  → DIRECTOR  (role_id: 2)
+personero@conteoya.pe  / [dni]       / [dni]!        → PERSONERO (role_id: 3, ej: 77889900!)
 ```
 
-El usuario `personero@conteoya.pe` tiene un registro en `personeros` (id: 1, document: 12345678).
+El usuario `personero@conteoya.pe` tiene un registro en `personeros` (DNI: `77889900`, password: `77889900!`). Todo personero tiene como contraseña por defecto su `[dni]!`.
 
 ---
 

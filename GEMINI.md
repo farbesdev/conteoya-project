@@ -217,8 +217,9 @@ Antes de entregar cualquier cambio, o cuando el usuario solicite un **commit** o
 |-------|----------|-----|
 | `admin@conteoya.pe` | `Admin123!` | `ADMIN` |
 | `director@conteoya.pe` | `Director123!` | `DIRECTOR` |
-| `personero@conteoya.pe` | `Personero123!` | `PERSONERO` |
+| `personero@conteoya.pe` / DNI | `[dni]!` (ej. `77889900!`) | `PERSONERO` |
 
+> 💡 **Regla de Personeros:** La contraseña por defecto de todo personero es su `[dni]!` (ejemplo: DNI `41947287` tiene contraseña `41947287!`).
 > ⚠️ Cambiar antes de staging/producción. Nunca hardcodear en código fuente.
 
 ---

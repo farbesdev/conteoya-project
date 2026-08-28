@@ -380,7 +380,7 @@ class JeeDatabaseSeeder extends Seeder
         $userId = $this->firstOrInsertGetId('users', [
             'name' => 'Personero Demo ERM',
             'email' => 'personero@conteoya.pe',
-            'password' => bcrypt('password123'),
+            'password' => bcrypt('77889900!'),
             'role' => 'PERSONERO',
             'is_active' => true,
             'created_at' => $now,

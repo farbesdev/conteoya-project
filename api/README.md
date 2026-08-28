@@ -121,8 +121,10 @@ El token se obtiene desde `POST /api/v1/login`. El login acepta indistintamente 
 |-------|----------|-----|---------------|
 | `admin@conteoya.pe` | `Admin123!` | `ADMIN` | — |
 | `director@conteoya.pe` | `Director123!` | `DIRECTOR` | — |
-| `personero@conteoya.pe` / `12345678` | `Personero123!` | `PERSONERO` | Mesa `030390` (Lima Cercado) |
-| `personero.puertoinca@conteoya.pe` / `42275934` | `Puertoinca123!` | `PERSONERO` | Mesa `040104` (Yuyapichis) |
+| `personero@conteoya.pe` / `77889900` | `77889900!` | `PERSONERO` | Mesa `030390` (Lima Cercado) |
+| `personero.puertoinca@conteoya.pe` / `44001122` | `44001122!` | `PERSONERO` | Mesa `021038` (Yuyapichis) |
+
+> 💡 **Regla de Personeros:** La contraseña por defecto de todo personero es su **`[dni]!`** (ejemplo: DNI `41947287` tiene contraseña `41947287!`). Los personeros pueden iniciar sesión usando su correo o su DNI como usuario.
 
 ---
 

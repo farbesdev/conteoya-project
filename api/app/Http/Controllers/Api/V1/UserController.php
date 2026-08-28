@@ -211,13 +211,21 @@ class UserController extends Controller
             return response()->json(['message' => 'No autorizado para restablecer contraseñas.'], 403);
         }
 
-        $user = User::findOrFail($id);
+        $user = is_numeric($id) ? User::find($id) : null;
+        if (!$user) {
+            $user = User::where('email', $id)
+                ->orWhereHas('personero', function ($q) use ($id) {
+                    $q->where('document_number', $id);
+                })
+                ->firstOrFail();
+        }
 
         $validated = $request->validate([
             'password' => 'nullable|string|min:6',
         ]);
 
-        $defaultPassword = str_contains($user->email, 'puertoinca') ? 'Puertoinca123!' : 'Personero123!';
+        $doc = $user->personero?->document_number;
+        $defaultPassword = $doc ? "{$doc}!" : 'Personero123!';
         $newPassword = !empty($validated['password']) ? $validated['password'] : $defaultPassword;
 
         $user->password = Hash::make($newPassword);

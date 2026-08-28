@@ -48,8 +48,8 @@ Autentica al usuario y devuelve un Bearer token junto con el perfil completo (in
 
 ```json
 {
-  "email": "personero@conteoya.pe",
-  "password": "Personero123!",
+  "email": "44001122",
+  "password": "44001122!",
   "device_uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "device_model": "Samsung Galaxy S24"
 }
@@ -366,6 +366,37 @@ Elimina de forma permanente un personero, desvinculando sus mesas de votación a
 ```json
 {
   "message": "Personero no encontrado."
+}
+```
+
+---
+
+### `POST /api/v1/personeros/{id}/reset-password`
+
+Restablece la contraseña de acceso del usuario vinculado al personero especificado por su ID numérico de personero o por su número de documento (DNI). Si no se envía contraseña en el cuerpo, se autogenera una por defecto según el ámbito.
+
+> 🔒 Accesible por `ADMIN` y `DIRECTOR`.
+
+**Headers requeridos:**
+- `Authorization: Bearer <token>`
+- `Content-Type: application/json`
+
+**Body (JSON opcional):**
+```json
+{
+  "password": "NuevaPassword123!"
+}
+```
+
+**Respuesta `200 OK`**
+```json
+{
+  "message": "Contraseña del personero Juan Pérez restablecida correctamente.",
+  "personero_id": 1,
+  "user_id": 3,
+  "document_number": "41947287",
+  "email": "personero_41947287@conteoya.pe",
+  "new_password": "NuevaPassword123!"
 }
 ```
 
@@ -1043,12 +1074,14 @@ Crea una organización política convirtiendo automáticamente cualquier formato
 
 > ⚠️ Cambiar credenciales antes de pasar a producción o staging.
 
-| Email | Password | Rol | `role_id` | Mesa Asignada |
-|-------|----------|-----|-----------|---------------|
+| Email / DNI | Password | Rol | `role_id` | Mesa Asignada |
+|-------------|----------|-----|-----------|---------------|
 | `admin@conteoya.pe` | `Admin123!` | `ADMIN` | `1` | — |
 | `director@conteoya.pe` | `Director123!` | `DIRECTOR` | `2` | — |
-| `personero@conteoya.pe` | `Personero123!` | `PERSONERO` | `3` | Mesa `030390` (Lima) |
-| `personero.puertoinca@conteoya.pe` | `Puertoinca123!` | `PERSONERO` | `3` | Mesa `040104` (Yuyapichis) |
+| `personero@conteoya.pe` / `77889900` | `77889900!` | `PERSONERO` | `3` | Mesa `030390` (Lima) |
+| `personero.puertoinca@conteoya.pe` / `44001122` | `44001122!` | `PERSONERO` | `3` | Mesa `021038` (Yuyapichis) |
+
+> 💡 **Regla de Personeros:** La contraseña por defecto de todo personero es su **`[dni]!`** (su número de DNI seguido del signo de exclamación `!`, ej. `41947287!`, `77889900!`, `44001122!`). Los personeros pueden iniciar sesión usando indistintamente su correo o su DNI.
 
 ---
 

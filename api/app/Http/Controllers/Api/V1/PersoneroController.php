@@ -305,7 +305,7 @@ class PersoneroController extends Controller
                 ['email' => $email],
                 [
                     'name'      => $name,
-                    'password'  => \Illuminate\Support\Facades\Hash::make('Personero123!'),
+                    'password'  => \Illuminate\Support\Facades\Hash::make("{$doc}!"),
                     'role'      => 'PERSONERO',
                     'role_id'   => $role ? $role->id : 3,
                     'is_active' => true,
@@ -462,6 +462,68 @@ class PersoneroController extends Controller
 
         return response()->json([
             'message' => 'Personero eliminado exitosamente del sistema.',
+        ]);
+    }
+
+    /**
+     * Restablecer la contraseña del personero (solo ADMIN y DIRECTOR).
+     *
+     * Permite restablecer la contraseña de acceso del usuario vinculado al personero
+     * especificando su ID numérico de personero o su número de documento (DNI).
+     *
+     * @response 200 { "message": "Contraseña del personero restablecida exitosamente." }
+     */
+    public function resetPassword(Request $request, int|string $id): JsonResponse
+    {
+        $currentUser = $request->user();
+        if (!$currentUser->isAdmin() && !$currentUser->isDirector()) {
+            return response()->json(['message' => 'No autorizado para restablecer contraseñas.'], 403);
+        }
+
+        $personero = Personero::with('user')->find($id);
+        if (!$personero) {
+            $personero = Personero::with('user')->where('document_number', (string)$id)->first();
+        }
+
+        if (!$personero) {
+            return response()->json(['message' => 'Personero no encontrado.'], 404);
+        }
+
+        $user = $personero->user;
+        if (!$user) {
+            $role = \App\Models\Role::where('name', 'PERSONERO')->first();
+            $email = $personero->email ?: "personero_{$personero->document_number}@conteoya.pe";
+            $user = \App\Models\User::firstOrCreate(
+                ['email' => $email],
+                [
+                    'name'      => $personero->full_name ?: "Personero {$personero->document_number}",
+                    'password'  => \Illuminate\Support\Facades\Hash::make("{$personero->document_number}!"),
+                    'role'      => 'PERSONERO',
+                    'role_id'   => $role ? $role->id : 3,
+                    'is_active' => true,
+                ]
+            );
+            $personero->user_id = $user->id;
+            $personero->save();
+        }
+
+        $validated = $request->validate([
+            'password' => 'nullable|string|min:6',
+        ]);
+
+        $defaultPassword = "{$personero->document_number}!";
+        $newPassword = !empty($validated['password']) ? $validated['password'] : $defaultPassword;
+
+        $user->password = \Illuminate\Support\Facades\Hash::make($newPassword);
+        $user->save();
+
+        return response()->json([
+            'message' => "Contraseña del personero {$personero->full_name} restablecida correctamente.",
+            'personero_id' => $personero->id,
+            'user_id' => $user->id,
+            'document_number' => $personero->document_number,
+            'email' => $user->email,
+            'new_password' => $newPassword,
         ]);
     }
 }

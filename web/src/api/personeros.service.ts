@@ -99,6 +99,13 @@ export const personerosService = {
     })
   },
 
+  async resetPassword(personeroId: number | string, password?: string): Promise<{ message: string; generated_password?: string }> {
+    return apiClient<{ message: string; generated_password?: string }>(`/personeros/${personeroId}/reset-password`, {
+      method: 'POST',
+      body: password ? { password } : {},
+    })
+  },
+
   async delete(personeroId: number): Promise<{ message: string }> {
     return apiClient<{ message: string }>(`/personeros/${personeroId}`, {
       method: 'DELETE',

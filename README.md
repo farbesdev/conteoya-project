@@ -126,12 +126,14 @@ flutter run
 
 > ⚠️ Solo para desarrollo. Cambiar credenciales antes de pasar a producción.
 
-| Email | Password | Rol | Mesa Asignada |
-|-------|----------|-----|---------------|
+| Email / Login | Password | Rol | Mesa Asignada |
+|---------------|----------|-----|---------------|
 | `admin@conteoya.pe` | `Admin123!` | `ADMIN` | — |
 | `director@conteoya.pe` | `Director123!` | `DIRECTOR` | — |
-| `personero@conteoya.pe` | `Personero123!` | `PERSONERO` | Mesa `030390` (Lima Cercado) |
-| `personero.puertoinca@conteoya.pe` | `Puertoinca123!` | `PERSONERO` | Mesa `040104` (Yuyapichis) |
+| `personero@conteoya.pe` / `77889900` | `77889900!` | `PERSONERO` | Mesa `030390` (Lima Cercado) |
+| `personero.puertoinca@conteoya.pe` / `44001122` | `44001122!` | `PERSONERO` | Mesa `021038` (Yuyapichis) |
+
+> 💡 **Regla de Personeros:** La contraseña por defecto de todo personero es su **`[dni]!`** (su número de DNI seguido de `!`, ej. `41947287!`, `77889900!`, `44001122!`). Los personeros pueden iniciar sesión usando su correo o su DNI como usuario.
 
 ---
 

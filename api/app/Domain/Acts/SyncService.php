@@ -284,7 +284,7 @@ class SyncService
                 ['email' => $email],
                 [
                     'name'      => $name ?: "Personero $docNumber",
-                    'password'  => \Illuminate\Support\Facades\Hash::make('Personero123!'),
+                    'password'  => \Illuminate\Support\Facades\Hash::make("{$docNumber}!"),
                     'role'      => 'PERSONERO',
                     'role_id'   => $roleModel ? $roleModel->id : 3,
                     'is_active' => true,
