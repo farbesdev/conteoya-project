@@ -106,70 +106,124 @@ Para más detalle, consulta:
 
 ---
 
-## 🔐 Autenticación y Setup Rápido
+## 🚀 Guía de Comandos y Ejecución por Módulo
+
+### 1. 🟠 Backend API (`api/` — Laravel 12 + PostgreSQL + Sanctum)
 
 ```bash
-# Backend (desde api/)
 cd api/
+
+# Instalación de dependencias
 composer install
+
+# Configuración de entorno
 cp .env.example .env
 php artisan key:generate
-php artisan migrate
-php artisan db:seed
+
+# Migraciones y Seeders (Roles, Usuarios, Datos JEE)
+php artisan migrate:fresh --seed
+
+# Iniciar servidor de desarrollo (http://127.0.0.1:8000)
 php artisan serve
 
-# App Móvil (desde mobile/)
-cd mobile/
-flutter pub get
-flutter pub run build_runner build --delete-conflicting-outputs
-flutter run
+# Iniciar worker de colas (procesamiento asíncrono de sync y OCR)
+php artisan queue:work
+
+# Ejecutar suite de pruebas unitarias y de integración
+php artisan test
+
+# Exportar documentación OpenAPI (api.json)
+php artisan scramble:export
 ```
 
-### Usuarios de prueba
+---
 
-> ⚠️ Solo para desarrollo. Cambiar credenciales antes de pasar a producción.
+### 2. 🔵 Aplicación Móvil (`mobile/` — Flutter 3.44 + Drift + Offline-First)
+
+```bash
+cd mobile/
+
+# Instalación de dependencias
+flutter pub get
+
+# Generación de código Drift (SQLite) y Riverpod
+dart run build_runner build --delete-conflicting-outputs
+
+# Ejecutar en emulador o dispositivo físico
+flutter run
+
+# Ejecutar análisis estático y pruebas
+flutter analyze
+flutter test
+
+# Compilar release para Android (APK)
+flutter build apk --release
+```
+
+---
+
+### 3. 🟢 Frontend Web (`web/` — Vue 3.5 + Vuetify 3 + Vite)
+
+```bash
+cd web/
+
+# Instalación de dependencias
+npm install
+
+# Iniciar servidor de desarrollo con Vite (http://localhost:5173)
+npm run dev
+
+# Compilar para producción
+npm run build
+
+# Previsualizar build de producción
+npm run preview
+```
+
+---
+
+### 4. 📄 Generador de Actas Electorales (`generate-pdf-erm2026/` — Python + ReportLab)
+
+```bash
+# Opción A: Mediante script bash (desde la raíz del proyecto)
+./scripts/generate_pdf_erm2026.sh --help
+./scripts/generate_pdf_erm2026.sh 030390 040104 021038
+./scripts/generate_pdf_erm2026.sh 030390 -o generate-pdf-erm2026/output
+
+# Opción B: Modo interactivo
+./scripts/generate_pdf_erm2026.sh
+
+# Opción C: Ejecución directa con Python
+generate-pdf-erm2026/.venv/bin/python generate-pdf-erm2026/generate.py 030390 -o mis_actas_pdf
+```
+
+Para más detalles, consulta [`generate-pdf-erm2026/README.md`](generate-pdf-erm2026/README.md).
+
+---
+
+### 5. 🗄️ Base de Datos y Datos Maestros JEE (`scripts/`)
+
+```bash
+# Construir/actualizar base de datos SQLite con datos oficiales del JEE
+python3 scripts/build_erm2026_db.py
+```
+
+---
+
+### 🔑 Credenciales de Prueba (Entorno de Desarrollo)
+
+> ⚠️ Solo para desarrollo y pruebas locales.
 
 | Email / Login | Password | Rol | Mesa Asignada |
-|---------------|----------|-----|---------------|
-| `admin@conteoya.pe` | `Admin123!` | `ADMIN` | — |
-| `director@conteoya.pe` | `Director123!` | `DIRECTOR` | — |
+|---|---|---|---|
+| `admin@conteoya.pe` | `Admin123!` | `ADMIN` | Acceso global |
+| `director@conteoya.pe` | `Director123!` | `DIRECTOR` | Acceso global |
 | `personero@conteoya.pe` / `77889900` | `77889900!` | `PERSONERO` | Mesa `030390` (Lima Cercado) |
 | `personero.puertoinca@conteoya.pe` / `44001122` | `44001122!` | `PERSONERO` | Mesa `021038` (Yuyapichis) |
 
 > 💡 **Regla de Personeros:** La contraseña por defecto de todo personero es su **`[dni]!`** (su número de DNI seguido de `!`, ej. `41947287!`, `77889900!`, `44001122!`). Los personeros pueden iniciar sesión usando su correo o su DNI como usuario.
 
 ---
-
-## 📄 Generador de Actas Electorales (PDF / ONPE ERM 2026)
-
-ConteoYA incluye un generador programático en Python (`generate-pdf-erm2026`) que consulta directamente la base de datos PostgreSQL (`conteoya_bd`) y genera actas electorales oficiales con diseño vectorial pixel-perfect y cuadre matemático estricto según la normativa ONPE:
-
-* **Acta Regional (`1b`):** Elección de Gobernador y Vicegobernador Regional.
-* **Acta Municipal (`4b`):** Elección Municipal Provincial y Distrital.
-* **Actas Completas:** PDF combinado de 2 páginas con ambas actas.
-
-### Comandos de Ejecución
-
-```bash
-# 1. Ver opciones y ayuda
-./scripts/generate_pdf_erm2026.sh --help
-
-# 2. Generar actas para una o múltiples mesas
-./scripts/generate_pdf_erm2026.sh <mesa_1> <mesa_2> <mesa_3>
-# Ejemplo:
-./scripts/generate_pdf_erm2026.sh 030390 040104 021038
-
-# 3. Especificar carpeta de salida personalizada
-./scripts/generate_pdf_erm2026.sh 030390 -o generate-pdf-erm2026/output
-
-# 4. Modo interactivo (solicita las mesas en consola)
-./scripts/generate_pdf_erm2026.sh
-
-# 5. Ejecución directa con Python
-generate-pdf-erm2026/.venv/bin/python generate-pdf-erm2026/generate.py 030390 -o mis_actas_pdf
-```
-
-Para más detalles sobre la arquitectura de generación y reglas de cuadre matemático, consulta [`generate-pdf-erm2026/README.md`](generate-pdf-erm2026/README.md).
 
 ## 📚 Documentación Técnica Integral
 
